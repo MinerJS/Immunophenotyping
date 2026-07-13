@@ -1,0 +1,1096 @@
+/**
+ * styles.css
+ * Sleek medical dashboard aesthetics for Flow-Gate Learn.
+ */
+
+:root {
+  --bg-main: #020617;      /* Extremely deep navy */
+  --bg-card: #0b1329;      /* Dark glassmorphic background */
+  --bg-sidebar: #070d1e;   /* Dark navy sidebar */
+  --border-color: #1e293b; /* Medium grey border */
+  --border-active: #38bdf8;/* Cyan accent */
+  --text-primary: #f8fafc; /* Clear off-white */
+  --text-secondary: #94a3b8; /* Slate grey */
+  --text-muted: #64748b;
+  --accent-cyan: #00e5ff;
+  --accent-orange: #ff9800;
+  --accent-green: #4caf50;
+  --accent-blue: #2196f3;
+  --accent-purple: #e040fb;
+  --accent-red: #ff2a2a;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+header {
+  background-color: var(--bg-sidebar);
+  border-bottom: 1.5px solid var(--border-color);
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+}
+
+header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+header h1 span {
+  color: var(--accent-cyan);
+}
+
+.case-selectors {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.case-selectors select, .case-selectors button {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.case-selectors select:hover, .case-selectors select:focus {
+  border-color: var(--border-active);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+/* Layout Workspace */
+.workspace {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 60px);
+}
+
+/* ==========================================================================
+   Vertical Activity Tabs & Resizable Sidebar Layout
+   ========================================================================== */
+
+.vertical-tabs-bar {
+  width: 52px;
+  background-color: #040815; /* Ultra-deep dark navy background */
+  border-right: 1.5px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 16px;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.vertical-tab-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 18px;
+}
+
+.vertical-tab-btn:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.vertical-tab-btn.active {
+  color: var(--border-active);
+  background-color: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.3);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
+}
+
+.sidebar-panel {
+  width: 380px;
+  min-width: 280px;
+  max-width: 700px;
+  background-color: var(--bg-sidebar);
+  border-right: 1.5px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sidebar-panel.collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  border-right: none;
+  opacity: 0;
+}
+
+.sidebar-tab-content {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.sidebar-tab-content.active {
+  display: flex;
+}
+
+/* Sidebar resize handle */
+.sidebar-resizer {
+  width: 4px;
+  cursor: col-resize;
+  background-color: var(--border-color);
+  position: relative;
+  z-index: 10;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.sidebar-resizer:hover, .sidebar-resizer.resizing {
+  background-color: var(--border-active);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+}
+
+.sidebar-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-section h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+/* Gating Tree */
+.gating-tree {
+  list-style: none;
+  font-size: 13px;
+  padding-left: 0;
+}
+
+.gating-tree li {
+  position: relative;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+  color: var(--text-secondary);
+}
+
+.gating-tree li:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.gating-tree li.active {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--text-primary);
+  border-left: 3px solid var(--border-active);
+}
+
+.gating-tree li .indent {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+}
+
+.gating-tree li .color-box {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Middle Panel - Canvas Scatter Plot */
+.plot-container {
+  flex: 1;
+  background: var(--bg-main);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  border-right: 1.5px solid var(--border-color);
+  position: relative;
+}
+
+/* Tube Selector Tabs */
+.tube-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-self: flex-start;
+}
+
+.tube-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.tube-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+.tube-btn.active {
+  background: var(--border-active);
+  color: var(--bg-main);
+  border-color: var(--border-active);
+  font-weight: 600;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+/* Plots Layout Wrapper */
+.plots-layout {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  transition: all 0.3s ease;
+  overflow-x: auto;
+}
+
+.plot-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+#plot-title-normal {
+  color: var(--border-active);
+}
+
+#plot-title-aml {
+  color: var(--accent-orange);
+}
+
+/* Plot Card styling */
+.plot-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.plot-card.active-compare-plot {
+  border-color: var(--border-active) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.15) !important;
+}
+
+canvas {
+  background-color: #0f172a;
+  border-radius: 6px;
+  cursor: crosshair;
+}
+
+/* Plot Control Bar */
+.plot-controls {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 500px;
+  margin-top: 12px;
+  gap: 8px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-group label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.control-group select {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  outline: none;
+}
+
+.tool-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.tool-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.tool-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+.tool-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  color: var(--border-active);
+  border-color: var(--border-active);
+}
+
+.tool-btn.danger {
+  color: #f43f5e;
+}
+.tool-btn.danger:hover {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: #f43f5e;
+}
+
+/* Right Panel - Casebook Guide & Tutoring */
+.right-panel {
+  width: 380px;
+  background-color: var(--bg-sidebar);
+  border-left: 1.5px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, border-left-width 0.3s ease;
+  flex-shrink: 0;
+}
+
+.right-panel.collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  border-left-width: 0px !important;
+  border-left: none !important;
+  opacity: 0;
+  overflow: hidden;
+}
+
+/* Floating Right Panel Toggle Button */
+.right-panel-toggle-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 99; /* Float on top of plot cards */
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: rgba(11, 19, 41, 0.85);
+  backdrop-filter: blur(8px);
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.right-panel-toggle-btn:hover {
+  background: rgba(11, 19, 41, 0.95);
+  border-color: var(--border-active);
+  color: var(--text-primary);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+.right-panel-toggle-btn.active {
+  color: var(--border-active);
+  border-color: rgba(56, 189, 248, 0.3);
+  background-color: rgba(56, 189, 248, 0.08);
+}
+
+.panel-header {
+  padding: 16px;
+  border-bottom: 1.5px solid var(--border-color);
+}
+
+.panel-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.panel-header p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.guide-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.glossary-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Patient Vignette Card */
+.vignette-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.vignette-card h4 {
+  font-size: 13px;
+  color: var(--accent-cyan);
+  margin-bottom: 6px;
+}
+
+.vignette-card p {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Tutorial Floating Box */
+.tutorial-box {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 360px;
+  background: rgba(11, 19, 41, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid var(--border-active);
+  border-radius: 12px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.25);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  transition: opacity 0.2s ease, transform 0.2s ease, max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  max-height: 500px;
+}
+
+.tutorial-header {
+  padding: 12px 14px;
+  background: rgba(4, 8, 21, 0.6);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  cursor: move;
+}
+
+.tutorial-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.tutorial-ctrl-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.tutorial-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+#tutorial-close-btn:hover {
+  background: rgba(244, 63, 94, 0.2);
+  color: #f43f5e;
+}
+
+.drag-handle-icon {
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.tutorial-header:hover .drag-handle-icon {
+  color: var(--border-active);
+}
+
+.tutorial-box.minimized {
+  max-height: 41px !important;
+  border-color: var(--border-color);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.tutorial-box.minimized .tutorial-body {
+  display: none;
+}
+
+.tutorial-step-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.tutorial-instructions {
+  background: rgba(2, 6, 23, 0.5);
+  border-left: 3px solid var(--border-active);
+  padding: 8px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-primary);
+  border-radius: 0 4px 4px 0;
+}
+
+.tutorial-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.btn-primary {
+  background: var(--border-active);
+  color: var(--bg-main);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #7dd3fc;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+/* Statistics Table */
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.stats-table th, .stats-table td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.stats-table th {
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.stats-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Dialog Overlay & Modals */
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  padding: 24px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: modalSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlide {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal h3 {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.modal input {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+}
+
+.modal input:focus {
+  border-color: var(--border-active);
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Toast Success Animation */
+.success-toast {
+  position: absolute;
+  top: 20px;
+  background: var(--accent-green);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+  font-size: 13px;
+  animation: toastFade 2.5s ease forwards;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+@keyframes toastFade {
+  0% { transform: translateY(-20px); opacity: 0; }
+  10% { transform: translateY(0); opacity: 1; }
+  90% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-20px); opacity: 0; }
+}
+
+/* Marker Glossary Panel */
+.marker-glossary {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.marker-item {
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 6px;
+}
+
+.marker-item:last-child {
+  border: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.marker-name {
+  font-weight: bold;
+  color: var(--accent-cyan);
+}
+
+/* Accordion Gallery Styles */
+
+.gallery-accordion {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.accordion-item {
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.accordion-item.expanded {
+  flex: 1;
+  overflow: hidden;
+}
+
+.accordion-header {
+  background-color: rgba(11, 19, 41, 0.4);
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  user-select: none;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.accordion-header:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+
+.accordion-item.expanded .accordion-header {
+  color: var(--border-active);
+  background-color: rgba(11, 19, 41, 0.7);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.accordion-arrow {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.accordion-item.expanded .accordion-arrow {
+  transform: rotate(180deg);
+  color: var(--border-active);
+}
+
+.accordion-content {
+  display: none;
+  padding: 10px 8px;
+  background-color: var(--bg-sidebar);
+}
+
+.accordion-item.expanded .accordion-content {
+  display: block;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Individual Gallery Item Cards */
+.gallery-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  background-color: rgba(11, 19, 41, 0.35);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gallery-item:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+  border-color: var(--border-color);
+}
+
+.gallery-item.active {
+  background-color: rgba(56, 189, 248, 0.12);
+  border-color: var(--border-active);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+}
+
+.gallery-item-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0; /* Enable truncation */
+}
+
+.gallery-item-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.gallery-item-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-cyan);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gallery-item-desc {
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+  margin-top: 3px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gallery-thumb-canvas {
+  width: 76px;
+  height: 76px;
+  background-color: #0c111d;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+  transition: border-color 0.2s;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+}
+
+.gallery-item:hover .gallery-thumb-canvas {
+  border-color: var(--text-secondary);
+}
+
+.gallery-item.active .gallery-thumb-canvas {
+  border-color: var(--border-active);
+}
+
+/* Sleek SVG Icons */
+.icon-svg {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* Ensure perfect alignment in flex layouts */
+button .icon-svg {
+  margin-right: 0px; /* Spacing handled by gap */
+}
+
+/* Specific tab/button style overrides for flex alignment */
+.vertical-tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vertical-tab-btn .icon-svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vertical-tab-btn:hover .icon-svg {
+  transform: scale(1.1);
+}
+
+.vertical-tab-btn.active .icon-svg {
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.5));
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: 1;
+}
+
+.tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tool-btn .icon-svg {
+  margin-top: -1px; /* Optical alignment adjustment */
+}
+
+/* Sleek custom scrollbar for overflow areas */
+.accordion-content::-webkit-scrollbar,
+.guide-content::-webkit-scrollbar,
+.right-panel::-webkit-scrollbar,
+.marker-glossary::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.accordion-content::-webkit-scrollbar-track,
+.guide-content::-webkit-scrollbar-track,
+.right-panel::-webkit-scrollbar-track,
+.marker-glossary::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.accordion-content::-webkit-scrollbar-thumb,
+.guide-content::-webkit-scrollbar-thumb,
+.right-panel::-webkit-scrollbar-thumb,
+.marker-glossary::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.accordion-content::-webkit-scrollbar-thumb:hover,
+.guide-content::-webkit-scrollbar-thumb:hover,
+.right-panel::-webkit-scrollbar-thumb:hover,
+.marker-glossary::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  border: 2px solid var(--border-color);
+  border-top-color: var(--border-active);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Legend items in 3D Explorer */
+.explorer-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.legend-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.explorer-marker-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.explorer-marker-btn:hover, .explorer-marker-btn.highlighted {
+  border-color: var(--border-active);
+  background: rgba(56, 189, 248, 0.08);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.15);
+}
+
+.explorer-marker-btn .dot-and-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.explorer-marker-btn .expression-level {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  font-weight: 700;
+}

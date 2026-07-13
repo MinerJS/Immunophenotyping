@@ -1,0 +1,12 @@
+# Exclude large PDF and PowerPoint documents
+*.pdf
+*.pptx
+
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
