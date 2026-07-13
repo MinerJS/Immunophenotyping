@@ -3759,6 +3759,7 @@ function initSimulatorEvents() {
         }
       }
     });
+  }
 }
 
 let oscilloscopePoints = [];
