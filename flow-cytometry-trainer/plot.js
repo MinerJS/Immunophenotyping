@@ -23,6 +23,7 @@ class FlowPlot {
     this.events = [];         // All events for the case
     this.filteredEvents = []; // Events that passed the parent gate
     this.gates = [];          // User gates: [{ id, name, type: 'rect'|'poly', xAttr, yAttr, color, points: [...] }]
+    this.temporaryPoints = []; // Temporary interrogated cell indicator points
     
     // Gating drawing state
     this.activeTool = null;   // 'rect', 'poly', or 'zoom'
@@ -725,7 +726,110 @@ class FlowPlot {
       }
     }
     
+    // Draw temporary interrogated indicator points
+    if (this.temporaryPoints && this.temporaryPoints.length > 0) {
+      this.temporaryPoints.forEach(pt => {
+        const px = this.toPixelX(pt.x);
+        const py = this.toPixelY(pt.y);
+        
+        // Skip drawing if outside crop
+        if (pt.x < xMin || pt.x > xMax || pt.y < yMin || pt.y > yMax) return;
+        
+        this.ctx.save();
+        this.ctx.strokeStyle = pt.color;
+        this.ctx.fillStyle = pt.color;
+        this.ctx.globalAlpha = pt.alpha;
+        
+        // Expanding ring
+        this.ctx.lineWidth = 2.5;
+        this.ctx.beginPath();
+        this.ctx.arc(px, py, pt.radius, 0, Math.PI * 2);
+        this.ctx.stroke();
+        
+        // Core dot
+        this.ctx.beginPath();
+        this.ctx.arc(px, py, 4, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        this.ctx.restore();
+      });
+    }
+    
     this.ctx.restore();
+  }
+
+  addInterrogatedPoint(cellType) {
+    let cx = 500;
+    let cy = 500;
+    
+    // Approximate gating positions based on clinical panels in data.js
+    if (cellType === 'CD4_TCell' || cellType === 'CD8_TCell' || cellType === 'gd_TCell' || cellType === 'BCell' || cellType === 'NKCell') {
+      if (this.xAxis === 'CD45') cx = 740 + Math.random() * 50;
+      else if (this.xAxis === 'FSC_A') cx = 350 + Math.random() * 60;
+      else if (this.xAxis === 'CD3') cx = (cellType === 'BCell' || cellType === 'NKCell') ? 120 : 750 + Math.random() * 60;
+      else if (this.xAxis === 'CD4') cx = (cellType === 'CD4_TCell') ? 700 + Math.random() * 60 : 100;
+      else if (this.xAxis === 'CD8') cx = (cellType === 'CD8_TCell') ? 680 + Math.random() * 60 : 100;
+      
+      if (this.yAxis === 'SSC_A') cy = 180 + Math.random() * 30;
+      else if (this.yAxis === 'CD19') cy = (cellType === 'BCell') ? 720 + Math.random() * 60 : 90;
+      else if (this.yAxis === 'CD8') cy = (cellType === 'CD8_TCell') ? 680 + Math.random() * 60 : 100;
+      else if (this.yAxis === 'CD38') cy = 200 + Math.random() * 50;
+    } else if (cellType === 'Monocyte') {
+      if (this.xAxis === 'CD45') cx = 780 + Math.random() * 40;
+      else if (this.xAxis === 'FSC_A') cx = 650 + Math.random() * 60;
+      else if (this.xAxis === 'CD3') cx = 90;
+      else if (this.xAxis === 'CD14') cx = 720 + Math.random() * 60;
+      
+      if (this.yAxis === 'SSC_A') cy = 350 + Math.random() * 45;
+      else if (this.yAxis === 'HLA_DR') cy = 600 + Math.random() * 50;
+    } else if (cellType === 'Granulocyte') {
+      if (this.xAxis === 'CD45') cx = 550 + Math.random() * 50;
+      else if (this.xAxis === 'FSC_A') cx = 600 + Math.random() * 60;
+      
+      if (this.yAxis === 'SSC_A') cy = 760 + Math.random() * 80;
+    } else if (cellType === 'AML_Blast') {
+      if (this.xAxis === 'CD45') cx = 460 + Math.random() * 50;
+      else if (this.xAxis === 'FSC_A') cx = 480 + Math.random() * 50;
+      else if (this.xAxis === 'CD34') cx = 680 + Math.random() * 60;
+      
+      if (this.yAxis === 'SSC_A') cy = 250 + Math.random() * 45;
+      else if (this.yAxis === 'CD117') cy = 650 + Math.random() * 65;
+      else if (this.yAxis === 'HLA_DR') cy = 550 + Math.random() * 50;
+    } else if (cellType === 'NormalProgenitor') {
+      if (this.xAxis === 'CD45') cx = 510 + Math.random() * 40;
+      else if (this.xAxis === 'FSC_A') cx = 460 + Math.random() * 40;
+      
+      if (this.yAxis === 'SSC_A') cy = 230 + Math.random() * 30;
+      else if (this.yAxis === 'CD34') cy = 640 + Math.random() * 50;
+    } else if (cellType === 'Debris') {
+      cx = 60 + Math.random() * 40;
+      cy = 60 + Math.random() * 40;
+    }
+    
+    const pt = {
+      x: cx,
+      y: cy,
+      alpha: 1.0,
+      radius: 6,
+      color: '#00e5ff'
+    };
+    
+    this.temporaryPoints.push(pt);
+    
+    const animatePoint = () => {
+      pt.alpha -= 0.04;
+      pt.radius += 0.7;
+      this.draw();
+      
+      if (pt.alpha > 0) {
+        requestAnimationFrame(animatePoint);
+      } else {
+        this.temporaryPoints = this.temporaryPoints.filter(p => p !== pt);
+        this.draw();
+      }
+    };
+    
+    requestAnimationFrame(animatePoint);
   }
 
   // Draw current established gates

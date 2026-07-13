@@ -1280,3 +1280,99 @@ input:checked + .sim-slider:before {
   border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
+/* Oscilloscope style */
+.oscilloscope-box {
+  width: 100%;
+  height: 80px;
+  background: #020617;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.oscilloscope-grid-line {
+  position: absolute;
+  background: rgba(56, 189, 248, 0.05);
+}
+
+.oscilloscope-label-text {
+  position: absolute;
+  font-size: 8px;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+/* Sound/Volume Button */
+.vol-btn {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.vol-btn:hover {
+  border-color: var(--text-muted);
+  background: rgba(51, 65, 85, 0.6);
+}
+
+.vol-btn.active {
+  border-color: var(--accent-cyan);
+  color: var(--text-primary);
+  background: rgba(0, 229, 255, 0.05);
+}
+
+/* Fluidics Mode layout adjustments */
+.fluidics-controls-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(30, 41, 59, 0.2);
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* Simulation actions button */
+.sim-action-btn {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+}
+
+.sim-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.4);
+}
+
+.sim-action-btn:active {
+  transform: translateY(0);
+}
+
+.sim-action-btn:disabled {
+  background: #334155;
+  color: var(--text-muted);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+

@@ -2347,6 +2347,123 @@ const MARKER_FLUOROCHROMES = {
 // Simulator State
 let isConjugationActive = false;
 let activeLasers = { violet: false, blue: false, red: false };
+let isFluidicsActive = false;
+let isInjecting = false;
+let injectionProgress = 0;
+let currentInterrogatedCellType = 'CD4_TCell';
+
+const FlowSoundSynth = {
+  ctx: null,
+  isMuted: true,
+  
+  init() {
+    if (this.ctx) return;
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) {
+      console.warn("Web Audio API not supported", e);
+    }
+  },
+  
+  playCellBeep(cellType) {
+    if (this.isMuted) return;
+    this.init();
+    if (!this.ctx) return;
+    
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+    
+    const now = this.ctx.currentTime;
+    
+    let freqStart = 440;
+    let freqEnd = 440;
+    let duration = 0.08;
+    let noiseFactor = 0;
+    
+    if (cellType === 'CD4_TCell' || cellType === 'CD8_TCell' || cellType === 'gd_TCell' || cellType === 'BCell' || cellType === 'NKCell') {
+      // Lymphocytes: clear medium/high pitch
+      freqStart = cellType === 'CD4_TCell' ? 660 : (cellType === 'CD8_TCell' ? 580 : 520);
+      freqEnd = freqStart;
+      duration = 0.06;
+    } else if (cellType === 'Monocyte') {
+      // Monocytes: larger, lower tone
+      freqStart = 330;
+      freqEnd = 300;
+      duration = 0.12;
+    } else if (cellType === 'Granulocyte') {
+      // Granulocytes: lower complex tone with noise
+      freqStart = 220;
+      freqEnd = 180;
+      duration = 0.15;
+      noiseFactor = 0.35;
+    } else if (cellType === 'NormalProgenitor') {
+      // Progenitor: high frequency sweep
+      freqStart = 880;
+      freqEnd = 1200;
+      duration = 0.08;
+    } else if (cellType === 'AML_Blast') {
+      // Leukemic Blast: rising frequency sweep
+      freqStart = 380;
+      freqEnd = 980;
+      duration = 0.22;
+    } else if (cellType === 'Debris') {
+      // Debris: short click
+      freqStart = 1500;
+      freqEnd = 2200;
+      duration = 0.015;
+    } else if (cellType === 'Doublets') {
+      // Doublet: double beep
+      this.playBeepTone(400, 400, 0.04, 0, now);
+      this.playBeepTone(440, 440, 0.04, 0, now + 0.06);
+      return;
+    }
+    
+    this.playBeepTone(freqStart, freqEnd, duration, noiseFactor, now);
+  },
+  
+  playBeepTone(freqStart, freqEnd, duration, noiseFactor, startTime) {
+    const osc = this.ctx.createOscillator();
+    const gainNode = this.ctx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freqStart, startTime);
+    if (freqEnd !== freqStart) {
+      osc.frequency.exponentialRampToValueAtTime(freqEnd, startTime + duration);
+    }
+    
+    gainNode.gain.setValueAtTime(0.12, startTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    
+    if (noiseFactor > 0) {
+      const bufferSize = this.ctx.sampleRate * duration;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+      
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(noiseFactor * 0.06, startTime);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+      
+      noise.connect(noiseGain);
+      noiseGain.connect(this.ctx.destination);
+      
+      noise.start(startTime);
+      noise.stop(startTime + duration);
+    }
+    
+    osc.connect(gainNode);
+    gainNode.connect(this.ctx.destination);
+    
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+  }
+};
 
 // ==========================================================================
 // 3D Cell Explorer View Navigation & Rendering
@@ -2378,6 +2495,7 @@ function init3DCellExplorer(cellType) {
   const details = CELL_DETAILS[cellType] || CELL_DETAILS.Debris;
   
   // Reset simulator state when entering new cell
+  currentInterrogatedCellType = cellType;
   resetSimulatorStates();
 
   // Populate text
@@ -2714,6 +2832,58 @@ function initThreeJSRenderer(container, details) {
     }
   });
 
+  // Simulator Nozzle, flow chamber, streamlines, and scatter lines
+  const nozzleGeom = new THREE.CylinderGeometry(0.15, 0.4, 1.5, 12);
+  nozzleGeom.translate(0, 6, 0);
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
+  const nozzleMesh = new THREE.Mesh(nozzleGeom, metalMat);
+  nozzleMesh.visible = isFluidicsActive;
+  scene.add(nozzleMesh);
+
+  const glassGeom = new THREE.CylinderGeometry(1.6, 1.6, 11, 16, 1, true);
+  const glassMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.08, wireframe: true });
+  const glassMesh = new THREE.Mesh(glassGeom, glassMat);
+  glassMesh.visible = isFluidicsActive;
+  scene.add(glassMesh);
+
+  const linesGroup = new THREE.Group();
+  linesGroup.visible = isFluidicsActive;
+  scene.add(linesGroup);
+  
+  const lineCount = 8;
+  const lineSpeed = 0.15;
+  const linesData = [];
+  
+  for (let i = 0; i < lineCount; i++) {
+    const angle = (i / lineCount) * Math.PI * 2;
+    const r = 1.0 + Math.random() * 0.4;
+    const lGeom = new THREE.CylinderGeometry(0.01, 0.01, 2.5, 4);
+    const lMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.25 });
+    const lMesh = new THREE.Mesh(lGeom, lMat);
+    const yVal = -5 + Math.random() * 10;
+    const xVal = Math.cos(angle) * r;
+    const zVal = Math.sin(angle) * r;
+    lMesh.position.set(xVal, yVal, zVal);
+    linesGroup.add(lMesh);
+    linesData.push({ mesh: lMesh, speed: lineSpeed + Math.random() * 0.05, r });
+  }
+
+  // Scatter rays
+  const scatterGroup = new THREE.Group();
+  scene.add(scatterGroup);
+  
+  const scatterMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
+  const fscGeom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(12, 0, 0)]);
+  const sscGeom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 10, 0)]);
+  const fscLine = new THREE.Line(fscGeom, scatterMat);
+  const sscLine = new THREE.Line(sscGeom, scatterMat.clone());
+  scatterGroup.add(fscLine);
+  scatterGroup.add(sscLine);
+  
+  let hasBeepedViolet = false;
+  let hasBeepedBlue = false;
+  let hasBeepedRed = false;
+
   // Simulator Lasers
   const laserBeams = {};
   const laserConfig = {
@@ -2783,6 +2953,11 @@ function initThreeJSRenderer(container, details) {
     antibodyMeshes,
     fluorochromeMeshes,
     laserBeams,
+    nozzleMesh,
+    glassMesh,
+    linesGroup,
+    fscLine,
+    sscLine,
     animationFrameId: null,
     autoRotate: () => autoRotate,
     cleanup: () => {
@@ -2807,15 +2982,136 @@ function initThreeJSRenderer(container, details) {
   const animate = () => {
     threeJSData.animationFrameId = requestAnimationFrame(animate);
     
-    if (autoRotate) {
-      cellGroup.rotation.y += 0.004;
-      cellGroup.rotation.x += 0.001;
+    // Camera transition
+    if (isFluidicsActive) {
+      camera.position.x += (0 - camera.position.x) * 0.06;
+      camera.position.y += (1.0 - camera.position.y) * 0.06;
+      camera.position.z += (17 - camera.position.z) * 0.06;
+    } else {
+      camera.position.x += (0 - camera.position.x) * 0.06;
+      camera.position.y += (0 - camera.position.y) * 0.06;
+      camera.position.z += (12 - camera.position.z) * 0.06;
+    }
+    camera.lookAt(0, isFluidicsActive ? 0.5 : 0, 0);
+    
+    // Toggle nozzle, flow cell visibility
+    nozzleMesh.visible = isFluidicsActive;
+    glassMesh.visible = isFluidicsActive;
+    linesGroup.visible = isFluidicsActive;
+    
+    // Animate streamlines
+    if (isFluidicsActive) {
+      linesData.forEach(l => {
+        l.mesh.position.y -= l.speed;
+        if (l.mesh.position.y < -5.5) {
+          l.mesh.position.y = 5.5;
+        }
+      });
+    }
+    
+    // Cell motion and rotation
+    if (isFluidicsActive) {
+      if (isInjecting) {
+        // travel from y = 5.2 (nozzle mouth) to y = -5.5 (waste)
+        cellGroup.position.y = 5.2 - 10.7 * injectionProgress;
+        
+        // Squeezing: squeeze cell off-center initially and align at center by progress = 0.5
+        const focusFactor = Math.max(0, 1 - (injectionProgress * 2));
+        cellGroup.position.x = 0.6 * focusFactor;
+        cellGroup.position.z = 0.6 * focusFactor;
+        
+        // Spin slowly
+        cellGroup.rotation.y += 0.02;
+        cellGroup.rotation.x = 0;
+        
+        // Pulse calculation
+        const cellType = currentInterrogatedCellType;
+        const size = cellTypeSizeMultiplier(cellType);
+        
+        let hasVioletConjugate = 0;
+        let hasBlueConjugate = 0;
+        let hasRedConjugate = 0;
+        
+        if (isConjugationActive) {
+          Object.entries(details.markers).forEach(([key, m]) => {
+            const abData = MARKER_FLUOROCHROMES[key];
+            if (abData) {
+              const exprVal = m.expression === 'Very Bright' ? 1.0 : (m.expression === 'Bright' ? 0.8 : (m.expression === 'Moderate' ? 0.5 : 0.2));
+              if (abData.laser === 'violet') hasVioletConjugate = Math.max(hasVioletConjugate, exprVal);
+              if (abData.laser === 'blue') hasBlueConjugate = Math.max(hasBlueConjugate, exprVal);
+              if (abData.laser === 'red') hasRedConjugate = Math.max(hasRedConjugate, exprVal);
+            }
+          });
+        }
+        
+        const vPulse = activeLasers.violet ? (0.15 * size + (hasVioletConjugate * 0.75)) * Math.exp(-Math.pow((injectionProgress - 0.31)/0.04, 2)) : 0;
+        const bPulse = activeLasers.blue ? (0.15 * size + (hasBlueConjugate * 0.75)) * Math.exp(-Math.pow((injectionProgress - 0.50)/0.04, 2)) : 0;
+        const rPulse = activeLasers.red ? (0.15 * size + (hasRedConjugate * 0.75)) * Math.exp(-Math.pow((injectionProgress - 0.68)/0.04, 2)) : 0;
+        
+        const totalPulse = Math.min(1.0, vPulse + bPulse + rPulse);
+        updateOscilloscope(totalPulse);
+        
+        // Trigger scatter rays at laser points
+        const isNearLaser = totalPulse > 0.08;
+        if (isNearLaser) {
+          fscLine.material.opacity = totalPulse * 0.8;
+          sscLine.material.opacity = totalPulse * 0.6;
+          fscLine.position.y = cellGroup.position.y;
+          sscLine.position.y = cellGroup.position.y;
+        } else {
+          fscLine.material.opacity = 0;
+          sscLine.material.opacity = 0;
+        }
+        
+        // Trigger audio playbacks
+        if (injectionProgress >= 0.31 && injectionProgress < 0.35 && !hasBeepedViolet) {
+          hasBeepedViolet = true;
+          if (activeLasers.violet) FlowSoundSynth.playCellBeep(cellType);
+        }
+        if (injectionProgress >= 0.50 && injectionProgress < 0.54 && !hasBeepedBlue) {
+          hasBeepedBlue = true;
+          if (activeLasers.blue) FlowSoundSynth.playCellBeep(cellType);
+        }
+        if (injectionProgress >= 0.68 && injectionProgress < 0.72 && !hasBeepedRed) {
+          hasBeepedRed = true;
+          if (activeLasers.red) FlowSoundSynth.playCellBeep(cellType);
+        }
+        
+        // Progress step
+        injectionProgress += 0.0065;
+        if (injectionProgress >= 1.0) {
+          isInjecting = false;
+          injectionProgress = 0;
+          hasBeepedViolet = false;
+          hasBeepedBlue = false;
+          hasBeepedRed = false;
+          drawOscilloscopeCompleted();
+          plotInterrogatedCellEvent();
+        }
+      } else {
+        cellGroup.position.set(0, 5.2, 0); // ready position below nozzle
+        if (autoRotate) {
+          cellGroup.rotation.y += 0.004;
+          cellGroup.rotation.x += 0.001;
+        }
+        fscLine.material.opacity = 0;
+        sscLine.material.opacity = 0;
+      }
+    } else {
+      // Normal Inspect Mode
+      cellGroup.position.set(0, 0, 0);
+      if (autoRotate) {
+        cellGroup.rotation.y += 0.004;
+        cellGroup.rotation.x += 0.001;
+      }
+      fscLine.material.opacity = 0;
+      sscLine.material.opacity = 0;
     }
     
     const time = Date.now() * 0.001;
-    const scale = 1 + 0.015 * Math.sin(time * 2);
-    cellMesh.scale.set(scale, scale, scale);
-
+    const cellScale = (isFluidicsActive ? 0.6 : 1) * (1 + 0.015 * Math.sin(time * 2));
+    cellMesh.scale.set(cellScale, cellScale, cellScale);
+    
     // Update laser beam opacity
     Object.entries(laserBeams).forEach(([laserKey, beam]) => {
       const targetOpacity = activeLasers[laserKey] ? 0.35 + 0.05 * Math.sin(Date.now() * 0.01) : 0;
@@ -2954,16 +3250,34 @@ function initCanvas3DRenderer(container, details) {
   const centerX = width / 2;
   const centerY = height / 2;
   
+  let cellYOffset = 0;
+  let hasBeepedViolet = false;
+  let hasBeepedBlue = false;
+  let hasBeepedRed = false;
+  
   function project(x, y, z) {
+    const scale = isFluidicsActive ? 0.45 : 1.0;
+    x *= scale;
+    y *= scale;
+    z *= scale;
+    
     const x1 = x * Math.cos(ry) - z * Math.sin(ry);
     const z1 = x * Math.sin(ry) + z * Math.cos(ry);
     
     const y2 = y * Math.cos(rx) - z1 * Math.sin(rx);
     const z2 = y * Math.sin(rx) + z1 * Math.cos(rx);
     
+    const finalY = y2 - cellYOffset;
+    
+    let finalX = x1;
+    if (isFluidicsActive && isInjecting) {
+      const focusFactor = Math.max(0, 1 - (injectionProgress * 2));
+      finalX += 25 * focusFactor;
+    }
+    
     const perspective = distance / (z2 + distance);
-    const sx = centerX + x1 * perspective;
-    const sy = centerY + y2 * perspective;
+    const sx = centerX + finalX * perspective;
+    const sy = centerY + finalY * perspective;
     
     return { sx, sy, sz: z2 };
   }
@@ -2974,7 +3288,116 @@ function initCanvas3DRenderer(container, details) {
     
     ctx.clearRect(0, 0, width, height);
     
-    if (autoRotate) {
+    if (isFluidicsActive) {
+      if (isInjecting) {
+        cellYOffset = 170 - 340 * injectionProgress;
+      } else {
+        cellYOffset = 170;
+      }
+    } else {
+      cellYOffset = 0;
+    }
+    
+    if (isFluidicsActive && isInjecting) {
+      const cellType = currentInterrogatedCellType;
+      const details = CELL_DETAILS[cellType] || CELL_DETAILS.Debris;
+      const size = cellTypeSizeMultiplier(cellType);
+      
+      let hasVioletConjugate = 0;
+      let hasBlueConjugate = 0;
+      let hasRedConjugate = 0;
+      
+      if (isConjugationActive) {
+        Object.entries(details.markers).forEach(([key, m]) => {
+          const abData = MARKER_FLUOROCHROMES[key];
+          if (abData) {
+            const exprVal = m.expression === 'Very Bright' ? 1.0 : (m.expression === 'Bright' ? 0.8 : (m.expression === 'Moderate' ? 0.5 : 0.2));
+            if (abData.laser === 'violet') hasVioletConjugate = Math.max(hasVioletConjugate, exprVal);
+            if (abData.laser === 'blue') hasBlueConjugate = Math.max(hasBlueConjugate, exprVal);
+            if (abData.laser === 'red') hasRedConjugate = Math.max(hasRedConjugate, exprVal);
+          }
+        });
+      }
+      
+      const vPulse = activeLasers.violet ? (0.15 * size + (hasVioletConjugate * 0.75)) * Math.exp(-Math.pow((injectionProgress - 0.31)/0.04, 2)) : 0;
+      const bPulse = activeLasers.blue ? (0.15 * size + (hasBlueConjugate * 0.75)) * Math.exp(-Math.pow((injectionProgress - 0.50)/0.04, 2)) : 0;
+      const rPulse = activeLasers.red ? (0.15 * size + (hasRedConjugate * 0.75)) * Math.exp(-Math.pow((injectionProgress - 0.68)/0.04, 2)) : 0;
+      
+      const totalPulse = Math.min(1.0, vPulse + bPulse + rPulse);
+      updateOscilloscope(totalPulse);
+      
+      if (totalPulse > 0.08) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, ' + (totalPulse * 0.7) + ')';
+        ctx.lineWidth = 1.5;
+        const cellPt = project(0, 0, 0);
+        
+        ctx.beginPath();
+        ctx.moveTo(cellPt.sx, cellPt.sy);
+        ctx.lineTo(width, cellPt.sy);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(cellPt.sx, cellPt.sy);
+        ctx.lineTo(cellPt.sx, 0);
+        ctx.stroke();
+      }
+      
+      if (injectionProgress >= 0.31 && injectionProgress < 0.35 && !hasBeepedViolet) {
+        hasBeepedViolet = true;
+        if (activeLasers.violet) FlowSoundSynth.playCellBeep(cellType);
+      }
+      if (injectionProgress >= 0.50 && injectionProgress < 0.54 && !hasBeepedBlue) {
+        hasBeepedBlue = true;
+        if (activeLasers.blue) FlowSoundSynth.playCellBeep(cellType);
+      }
+      if (injectionProgress >= 0.68 && injectionProgress < 0.72 && !hasBeepedRed) {
+        hasBeepedRed = true;
+        if (activeLasers.red) FlowSoundSynth.playCellBeep(cellType);
+      }
+      
+      injectionProgress += 0.0065;
+      if (injectionProgress >= 1.0) {
+        isInjecting = false;
+        injectionProgress = 0;
+        hasBeepedViolet = false;
+        hasBeepedBlue = false;
+        hasBeepedRed = false;
+        drawOscilloscopeCompleted();
+        plotInterrogatedCellEvent();
+      }
+    }
+    
+    if (isFluidicsActive) {
+      ctx.strokeStyle = 'rgba(14, 165, 233, 0.07)';
+      ctx.lineWidth = 1.5;
+      const t = Date.now() * 0.01;
+      for (let offset = -40; offset <= 40; offset += 20) {
+        ctx.beginPath();
+        const yPos = (t * 8) % height;
+        ctx.moveTo(centerX + offset, 0);
+        ctx.lineTo(centerX + offset, height);
+        ctx.stroke();
+      }
+      
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 60, 0);
+      ctx.lineTo(centerX - 60, height);
+      ctx.moveTo(centerX + 60, 0);
+      ctx.lineTo(centerX + 60, height);
+      ctx.stroke();
+      
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.35)';
+      ctx.beginPath();
+      ctx.moveTo(centerX - 12, 0);
+      ctx.lineTo(centerX - 35, 45);
+      ctx.lineTo(centerX + 35, 45);
+      ctx.lineTo(centerX + 12, 0);
+      ctx.fill();
+    }
+    
+    if (autoRotate && (!isFluidicsActive || !isInjecting)) {
       ry += 0.004;
       rx += 0.001;
     }
@@ -3188,8 +3611,18 @@ function resetSimulatorStates() {
   activeLasers.blue = false;
   activeLasers.red = false;
   
+  isFluidicsActive = false;
+  isInjecting = false;
+  injectionProgress = 0;
+  
   const conjugationToggle = document.getElementById('sim-conjugation-toggle');
   if (conjugationToggle) conjugationToggle.checked = false;
+  
+  const fluidicsToggle = document.getElementById('sim-fluidics-toggle');
+  if (fluidicsToggle) fluidicsToggle.checked = false;
+  
+  const fluidicsControlsContainer = document.getElementById('fluidics-controls-container');
+  if (fluidicsControlsContainer) fluidicsControlsContainer.style.display = 'none';
   
   const laserControlsContainer = document.getElementById('laser-controls-container');
   if (laserControlsContainer) {
@@ -3206,6 +3639,8 @@ function resetSimulatorStates() {
   
   const card = document.getElementById('explorer-conjugate-card');
   if (card) card.style.display = 'none';
+  
+  drawOscilloscopeReady();
 }
 
 function initSimulatorEvents() {
@@ -3214,6 +3649,11 @@ function initSimulatorEvents() {
   const laserBlueBtn = document.getElementById('laser-blue-btn');
   const laserRedBtn = document.getElementById('laser-red-btn');
   const laserControlsContainer = document.getElementById('laser-controls-container');
+  
+  const fluidicsToggle = document.getElementById('sim-fluidics-toggle');
+  const fluidicsControlsContainer = document.getElementById('fluidics-controls-container');
+  const injectBtn = document.getElementById('sim-inject-btn');
+  const volumeBtn = document.getElementById('sim-volume-btn');
   
   if (conjugationToggle) {
     conjugationToggle.addEventListener('change', (e) => {
@@ -3262,6 +3702,239 @@ function initSimulatorEvents() {
   setupLaserToggle(laserVioletBtn, 'violet');
   setupLaserToggle(laserBlueBtn, 'blue');
   setupLaserToggle(laserRedBtn, 'red');
+
+  // Fluidics Interrogation Events
+  if (fluidicsToggle) {
+    fluidicsToggle.addEventListener('change', (e) => {
+      isFluidicsActive = e.target.checked;
+      isInjecting = false;
+      injectionProgress = 0;
+      
+      if (fluidicsControlsContainer) {
+        fluidicsControlsContainer.style.display = isFluidicsActive ? 'flex' : 'none';
+      }
+      
+      drawOscilloscopeReady();
+      
+      // Sync ThreeJS model positions and visibility
+      if (threeJSData) {
+        if (threeJSData.nozzleMesh) threeJSData.nozzleMesh.visible = isFluidicsActive;
+        if (threeJSData.glassMesh) threeJSData.glassMesh.visible = isFluidicsActive;
+        if (threeJSData.linesGroup) threeJSData.linesGroup.visible = isFluidicsActive;
+        
+        if (isFluidicsActive) {
+          threeJSData.cellGroup.position.set(0, 5.2, 0); // Position below nozzle mouth
+        } else {
+          threeJSData.cellGroup.position.set(0, 0, 0); // Center position
+        }
+      }
+    });
+  }
+
+  if (injectBtn) {
+    injectBtn.addEventListener('click', () => {
+      if (isInjecting) return; // Prevent double injection
+      
+      // Initialize synth context on user interaction
+      FlowSoundSynth.init();
+      
+      isInjecting = true;
+      injectionProgress = 0;
+      oscilloscopePoints = [];
+    });
+  }
+
+  if (volumeBtn) {
+    // Sync initial class
+    volumeBtn.classList.toggle('active', !FlowSoundSynth.isMuted);
+    volumeBtn.addEventListener('click', () => {
+      FlowSoundSynth.isMuted = !FlowSoundSynth.isMuted;
+      volumeBtn.classList.toggle('active', !FlowSoundSynth.isMuted);
+      
+      // Initialize if unmuting
+      if (!FlowSoundSynth.isMuted) {
+        FlowSoundSynth.init();
+        if (FlowSoundSynth.ctx && FlowSoundSynth.ctx.state === 'suspended') {
+          FlowSoundSynth.ctx.resume();
+        }
+      }
+    });
 }
+
+let oscilloscopePoints = [];
+
+function cellTypeSizeMultiplier(cellType) {
+  switch (cellType) {
+    case 'Monocyte': return 0.8;
+    case 'Granulocyte': return 0.7;
+    case 'AML_Blast': return 0.65;
+    case 'CD4_TCell':
+    case 'CD8_TCell':
+    case 'gd_TCell':
+    case 'BCell':
+    case 'NKCell': return 0.45;
+    case 'NormalProgenitor': return 0.5;
+    case 'Doublets': return 0.9;
+    case 'Debris': return 0.15;
+    default: return 0.5;
+  }
+}
+
+function cellTypeGranularityMultiplier(cellType) {
+  switch (cellType) {
+    case 'Granulocyte': return 0.9;
+    case 'Monocyte': return 0.5;
+    case 'AML_Blast': return 0.45;
+    case 'Doublets': return 0.6;
+    case 'NormalProgenitor': return 0.3;
+    case 'CD4_TCell':
+    case 'CD8_TCell':
+    case 'gd_TCell':
+    case 'BCell':
+    case 'NKCell': return 0.2;
+    case 'Debris': return 0.1;
+    default: return 0.3;
+  }
+}
+
+function updateOscilloscope(pulseValue) {
+  const canvas = document.getElementById('oscilloscope-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  
+  ctx.clearRect(0, 0, w, h);
+  
+  // Grid
+  ctx.strokeStyle = 'rgba(0, 229, 255, 0.05)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < w; x += 30) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+  }
+  for (let y = 0; y < h; y += 20) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+  
+  // Append pulse value
+  oscilloscopePoints.push(pulseValue);
+  if (oscilloscopePoints.length > w) {
+    oscilloscopePoints.shift();
+  }
+  
+  // Neon green glow pulse line
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  
+  for (let i = 0; i < oscilloscopePoints.length; i++) {
+    const x = i;
+    const y = h - 10 - (oscilloscopePoints[i] * (h - 20));
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.font = '8px monospace';
+  ctx.fillText(`PULSE: ${(pulseValue * 10).toFixed(2)} V`, 8, 12);
+}
+
+function drawOscilloscopeReady() {
+  const canvas = document.getElementById('oscilloscope-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  
+  ctx.clearRect(0, 0, w, h);
+  
+  // Grid
+  ctx.strokeStyle = 'rgba(0, 229, 255, 0.05)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < w; x += 30) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+  }
+  for (let y = 0; y < h; y += 20) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+  
+  // Flat line
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, h - 10);
+  ctx.lineTo(w, h - 10);
+  ctx.stroke();
+  
+  ctx.fillStyle = '#00e5ff';
+  ctx.font = '9px monospace';
+  ctx.fillText("READY - PRESS INJECT", 8, 14);
+}
+
+function drawOscilloscopeCompleted() {
+  const canvas = document.getElementById('oscilloscope-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  
+  ctx.fillStyle = '#00e5ff';
+  ctx.font = '9px monospace';
+  ctx.fillText("ACQUISITION COMPLETE", 8, 26);
+}
+
+function plotInterrogatedCellEvent() {
+  const details = CELL_DETAILS[currentInterrogatedCellType] || CELL_DETAILS.Debris;
+  
+  if (typeof flowPlot !== 'undefined' && flowPlot) {
+    flowPlot.addInterrogatedPoint(currentInterrogatedCellType);
+  }
+  if (typeof flowPlotAML !== 'undefined' && flowPlotAML) {
+    flowPlotAML.addInterrogatedPoint(currentInterrogatedCellType);
+  }
+  
+  const toast = document.createElement('div');
+  toast.style.position = 'absolute';
+  toast.style.bottom = '85px';
+  toast.style.left = '50%';
+  toast.style.transform = 'translateX(-50%)';
+  toast.style.background = 'rgba(2, 6, 23, 0.9)';
+  toast.style.border = '1px solid #00e5ff';
+  toast.style.color = '#00e5ff';
+  toast.style.padding = '8px 16px';
+  toast.style.borderRadius = '20px';
+  toast.style.fontWeight = '600';
+  toast.style.fontSize = '11px';
+  toast.style.boxShadow = '0 0 10px rgba(0, 229, 255, 0.3)';
+  toast.style.zIndex = '100';
+  toast.style.pointerEvents = 'none';
+  toast.innerText = `Event plotted: ${details.name} (FSC, SSC, and fluorescence recorded)`;
+  
+  const container = document.getElementById('explorer-3d-container');
+  if (container) {
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.transition = 'opacity 0.4s ease';
+      toast.style.opacity = '0';
+      setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 400);
+    }, 2500);
+  }
+}
+
 
 
