@@ -1094,3 +1094,189 @@ button .icon-svg {
   color: var(--accent-cyan);
   font-weight: 700;
 }
+
+/* 3D Explorer Simulator Overlay */
+.simulator-overlay-panel {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 320px;
+  background: rgba(11, 19, 41, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 20px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(56, 189, 248, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 50;
+  max-height: 85%;
+  overflow-y: auto;
+}
+
+.simulator-title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  letter-spacing: 1px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.simulator-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.simulator-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Custom Toggle Switch */
+.sim-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+
+.sim-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.sim-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #334155;
+  transition: .3s;
+  border-radius: 34px;
+  border: 1px solid var(--border-color);
+}
+
+.sim-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+input:checked + .sim-slider {
+  background-color: #0284c7;
+  border-color: #0ea5e9;
+}
+
+input:checked + .sim-slider:before {
+  transform: translateX(22px);
+}
+
+.sim-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(30, 41, 59, 0.4);
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.sim-control-row span {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Laser Button Group */
+.laser-btn-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.laser-btn {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 8px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.laser-btn:hover {
+  border-color: var(--text-muted);
+  background: rgba(51, 65, 85, 0.8);
+}
+
+/* Laser button specific active states */
+.laser-btn.laser-violet.active {
+  background: rgba(168, 85, 247, 0.15);
+  border-color: #c084fc;
+  color: #f3e8ff;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+}
+
+.laser-btn.laser-blue.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: #60a5fa;
+  color: #eff6ff;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.laser-btn.laser-red.active {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #f87171;
+  color: #fef2f2;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+.laser-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--text-muted);
+  transition: background-color 0.2s ease;
+}
+
+.laser-btn.laser-violet.active .laser-indicator-dot { background-color: #c084fc; box-shadow: 0 0 6px #c084fc; }
+.laser-btn.laser-blue.active .laser-indicator-dot { background-color: #60a5fa; box-shadow: 0 0 6px #60a5fa; }
+.laser-btn.laser-red.active .laser-indicator-dot { background-color: #f87171; box-shadow: 0 0 6px #f87171; }
+
+/* Dynamic Explainer Card */
+.explainer-text-card {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  background: rgba(2, 6, 23, 0.3);
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+

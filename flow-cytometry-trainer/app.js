@@ -775,6 +775,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Highlight active plot card and expand active tube accordion on startup
   highlightActiveGalleryItem();
+
+  // Initialize 3D Explorer Simulator events
+  initSimulatorEvents();
 });
 
 // Load patient case
@@ -2315,6 +2318,36 @@ const CELL_DETAILS = {
   }
 };
 
+const MARKER_FLUOROCHROMES = {
+  CD45: { antibody: "Anti-CD45 Monoclonal", fluorochrome: "V500 (AmCyan conjugate)", laser: "violet", laserName: "Violet Laser (405nm)", emissionColor: "#00ffff", emissionWavelength: "500 nm" },
+  CD3: { antibody: "Anti-CD3 Monoclonal", fluorochrome: "FITC (Fluorescein)", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#22c55e", emissionWavelength: "525 nm" },
+  CD4: { antibody: "Anti-CD4 Monoclonal", fluorochrome: "PE (Phycoerythrin)", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#eab308", emissionWavelength: "578 nm" },
+  CD8: { antibody: "Anti-CD8 Monoclonal", fluorochrome: "APC (Allophycocyanin)", laser: "red", laserName: "Red Laser (633nm)", emissionColor: "#f43f5e", emissionWavelength: "660 nm" },
+  CD5: { antibody: "Anti-CD5 Monoclonal", fluorochrome: "PE-Cy5", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#b91c1c", emissionWavelength: "670 nm" },
+  CD2: { antibody: "Anti-CD2 Monoclonal", fluorochrome: "Alexa Fluor 488", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#4ade80", emissionWavelength: "519 nm" },
+  CD7: { antibody: "Anti-CD7 Monoclonal", fluorochrome: "Pacific Blue", laser: "violet", laserName: "Violet Laser (405nm)", emissionColor: "#60a5fa", emissionWavelength: "455 nm" },
+  TCR_gd: { antibody: "Anti-TCR γδ Monoclonal", fluorochrome: "PE (Phycoerythrin)", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#eab308", emissionWavelength: "578 nm" },
+  CD19: { antibody: "Anti-CD19 Monoclonal", fluorochrome: "PE-Cy7", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#701a75", emissionWavelength: "778 nm" },
+  CD20: { antibody: "Anti-CD20 Monoclonal", fluorochrome: "APC-H7", laser: "red", laserName: "Red Laser (633nm)", emissionColor: "#450a0a", emissionWavelength: "780 nm" },
+  CD200: { antibody: "Anti-CD200 Monoclonal", fluorochrome: "PE (Phycoerythrin)", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#eab308", emissionWavelength: "578 nm" },
+  CD10: { antibody: "Anti-CD10 Monoclonal", fluorochrome: "APC (Allophycocyanin)", laser: "red", laserName: "Red Laser (633nm)", emissionColor: "#f43f5e", emissionWavelength: "660 nm" },
+  CD56: { antibody: "Anti-CD56 Monoclonal", fluorochrome: "PE-Cy7", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#701a75", emissionWavelength: "778 nm" },
+  CD16: { antibody: "Anti-CD16 Monoclonal", fluorochrome: "FITC (Fluorescein)", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#22c55e", emissionWavelength: "525 nm" },
+  CD14: { antibody: "Anti-CD14 Monoclonal", fluorochrome: "APC (Allophycocyanin)", laser: "red", laserName: "Red Laser (633nm)", emissionColor: "#f43f5e", emissionWavelength: "660 nm" },
+  CD64: { antibody: "Anti-CD64 Monoclonal", fluorochrome: "PerCP-Cy5.5", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#be123c", emissionWavelength: "695 nm" },
+  CD33: { antibody: "Anti-CD33 Monoclonal", fluorochrome: "PE (Phycoerythrin)", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#eab308", emissionWavelength: "578 nm" },
+  CD13: { antibody: "Anti-CD13 Monoclonal", fluorochrome: "APC (Allophycocyanin)", laser: "red", laserName: "Red Laser (633nm)", emissionColor: "#f43f5e", emissionWavelength: "660 nm" },
+  CD11b: { antibody: "Anti-CD11b Monoclonal", fluorochrome: "Pacific Orange", laser: "violet", laserName: "Violet Laser (405nm)", emissionColor: "#f97316", emissionWavelength: "603 nm" },
+  HLA_DR: { antibody: "Anti-HLA-DR Monoclonal", fluorochrome: "V450 (PacBlue equivalent)", laser: "violet", laserName: "Violet Laser (405nm)", emissionColor: "#818cf8", emissionWavelength: "450 nm" },
+  CD34: { antibody: "Anti-CD34 Monoclonal", fluorochrome: "FITC (Fluorescein)", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#22c55e", emissionWavelength: "525 nm" },
+  CD117: { antibody: "Anti-CD117 Monoclonal", fluorochrome: "PE-Cy7", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#701a75", emissionWavelength: "778 nm" },
+  CD38: { antibody: "Anti-CD38 Monoclonal", fluorochrome: "APC-H7", laser: "red", laserName: "Red Laser (633nm)", emissionColor: "#450a0a", emissionWavelength: "780 nm" },
+};
+
+// Simulator State
+let isConjugationActive = false;
+let activeLasers = { violet: false, blue: false, red: false };
+
 // ==========================================================================
 // 3D Cell Explorer View Navigation & Rendering
 // ==========================================================================
@@ -2344,6 +2377,9 @@ function init3DCellExplorer(cellType) {
   const legend = document.getElementById('explorer-3d-legend');
   const details = CELL_DETAILS[cellType] || CELL_DETAILS.Debris;
   
+  // Reset simulator state when entering new cell
+  resetSimulatorStates();
+
   // Populate text
   document.getElementById('explorer-cell-name').innerText = details.name;
   document.getElementById('explorer-cell-lineage').innerText = details.lineage;
@@ -2362,6 +2398,8 @@ function init3DCellExplorer(cellType) {
   legend.innerHTML = '<h5 style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 700;">CD Legend</h5>';
   
   const markerEntries = Object.entries(details.markers);
+  let savedLasers = null;
+
   markerEntries.forEach(([key, marker]) => {
     // Sidebar list item
     const btn = document.createElement('button');
@@ -2378,12 +2416,50 @@ function init3DCellExplorer(cellType) {
     btn.title = `${marker.label}: ${marker.info}`;
     listContainer.appendChild(btn);
     
-    // Add hover event to highlight marker in 3D
+    // Add hover event to highlight marker in 3D and show conjugate details
     btn.addEventListener('mouseenter', () => {
       highlight3DMarker(key, true);
+      
+      const abData = MARKER_FLUOROCHROMES[key];
+      if (abData) {
+        document.getElementById('conjugate-target').innerText = key;
+        document.getElementById('conjugate-antibody').innerText = abData.antibody;
+        
+        const fSpan = document.getElementById('conjugate-fluorochrome');
+        fSpan.innerText = abData.fluorochrome;
+        fSpan.style.color = abData.emissionColor;
+        
+        document.getElementById('conjugate-laser').innerText = abData.laserName;
+        document.getElementById('conjugate-emission').innerText = abData.emissionWavelength;
+        
+        document.getElementById('explorer-conjugate-card').style.display = 'block';
+        
+        // Auto-excite fluorochrome by temporarily activating the laser (if conjugation is toggled on)
+        if (isConjugationActive) {
+          savedLasers = { ...activeLasers };
+          activeLasers.violet = (abData.laser === 'violet');
+          activeLasers.blue = (abData.laser === 'blue');
+          activeLasers.red = (abData.laser === 'red');
+          
+          document.getElementById('laser-violet-btn').classList.toggle('active', activeLasers.violet);
+          document.getElementById('laser-blue-btn').classList.toggle('active', activeLasers.blue);
+          document.getElementById('laser-red-btn').classList.toggle('active', activeLasers.red);
+        }
+      }
     });
     btn.addEventListener('mouseleave', () => {
       highlight3DMarker(key, false);
+      
+      document.getElementById('explorer-conjugate-card').style.display = 'none';
+      
+      if (savedLasers) {
+        activeLasers = { ...savedLasers };
+        savedLasers = null;
+        
+        document.getElementById('laser-violet-btn').classList.toggle('active', activeLasers.violet);
+        document.getElementById('laser-blue-btn').classList.toggle('active', activeLasers.blue);
+        document.getElementById('laser-red-btn').classList.toggle('active', activeLasers.red);
+      }
     });
     
     // Legend overlay item
@@ -2516,6 +2592,8 @@ function initThreeJSRenderer(container, details) {
   
   // CD Markers / Receptors
   const markerMeshes = {};
+  const antibodyMeshes = {};
+  const fluorochromeMeshes = {};
   const markersList = Object.entries(details.markers);
   let totalReceptors = 0;
   
@@ -2527,6 +2605,8 @@ function initThreeJSRenderer(container, details) {
     else if (marker.expression === 'Dim') count = 4;
     
     markerMeshes[key] = [];
+    antibodyMeshes[key] = [];
+    fluorochromeMeshes[key] = [];
     
     // Create receptor geometry (stalk + head)
     const rodGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.8, 8);
@@ -2544,6 +2624,63 @@ function initThreeJSRenderer(container, details) {
     const headMat = new THREE.MeshPhongMaterial({ color: marker.color, emissive: marker.color, emissiveIntensity: 0.1 });
     const headMesh = new THREE.Mesh(headGeom, headMat);
     receptorGeom.add(headMesh);
+
+    // Y-shaped antibody group
+    const abData = MARKER_FLUOROCHROMES[key];
+    let abGroup = null;
+    
+    if (abData) {
+      abGroup = new THREE.Group();
+      abGroup.name = "antibodyGroup";
+      abGroup.visible = isConjugationActive;
+      
+      const abMat = new THREE.MeshPhongMaterial({ color: 0x8892b0, transparent: true, opacity: 0.8 });
+      
+      // Stem
+      const stemGeom = new THREE.CylinderGeometry(0.02, 0.02, 0.25, 6);
+      stemGeom.translate(0, 0.125, 0);
+      const stemMesh = new THREE.Mesh(stemGeom, abMat);
+      abGroup.add(stemMesh);
+      
+      // Left arm
+      const lArmGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.2, 6);
+      lArmGeom.translate(0, 0.1, 0);
+      const lArmMesh = new THREE.Mesh(lArmGeom, abMat);
+      lArmMesh.position.set(0, 0.25, 0);
+      lArmMesh.rotation.z = Math.PI / 4;
+      abGroup.add(lArmMesh);
+      
+      // Right arm
+      const rArmGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.2, 6);
+      rArmGeom.translate(0, 0.1, 0);
+      const rArmMesh = new THREE.Mesh(rArmGeom, abMat);
+      rArmMesh.position.set(0, 0.25, 0);
+      rArmMesh.rotation.z = -Math.PI / 4;
+      abGroup.add(rArmMesh);
+      
+      // Fluorochrome spheres
+      const fMat = new THREE.MeshPhongMaterial({
+        color: abData.emissionColor,
+        emissive: abData.emissionColor,
+        emissiveIntensity: 0.15,
+        transparent: true,
+        opacity: 0.95
+      });
+      const fGeom = new THREE.SphereGeometry(0.065, 8, 8);
+      
+      const lf = new THREE.Mesh(fGeom, fMat);
+      lf.name = "fluorochrome";
+      lf.position.set(-0.14, 0.38, 0);
+      abGroup.add(lf);
+      
+      const rf = new THREE.Mesh(fGeom, fMat);
+      rf.name = "fluorochrome";
+      rf.position.set(0.14, 0.38, 0);
+      abGroup.add(rf);
+      
+      abGroup.position.y = 0.8;
+      receptorGeom.add(abGroup);
+    }
     
     // Distribute receptors on the sphere using Fibonacci spiral
     for (let i = 0; i < count; i++) {
@@ -2565,7 +2702,41 @@ function initThreeJSRenderer(container, details) {
       
       cellGroup.add(receptorInstance);
       markerMeshes[key].push(receptorInstance);
+
+      if (abGroup) {
+        const clonedAb = receptorInstance.children.find(c => c.name === "antibodyGroup");
+        if (clonedAb) {
+          antibodyMeshes[key].push(clonedAb);
+          const clonedFluors = clonedAb.children.filter(c => c.name === "fluorochrome");
+          fluorochromeMeshes[key].push(...clonedFluors);
+        }
+      }
     }
+  });
+
+  // Simulator Lasers
+  const laserBeams = {};
+  const laserConfig = {
+    violet: { color: 0xa855f7, y: 1.8 },
+    blue: { color: 0x3b82f6, y: 0 },
+    red: { color: 0xef4444, y: -1.8 }
+  };
+  
+  Object.entries(laserConfig).forEach(([laserKey, config]) => {
+    const laserGeom = new THREE.CylinderGeometry(0.18, 0.18, 30, 8);
+    laserGeom.rotateZ(Math.PI / 2);
+    
+    const laserMat = new THREE.MeshBasicMaterial({
+      color: config.color,
+      transparent: true,
+      opacity: 0,
+      depthWrite: false
+    });
+    
+    const laserMesh = new THREE.Mesh(laserGeom, laserMat);
+    laserMesh.position.set(0, config.y, 0);
+    scene.add(laserMesh);
+    laserBeams[laserKey] = laserMesh;
   });
   
   // Interaction states
@@ -2609,6 +2780,9 @@ function initThreeJSRenderer(container, details) {
     camera,
     cellGroup,
     markerMeshes,
+    antibodyMeshes,
+    fluorochromeMeshes,
+    laserBeams,
     animationFrameId: null,
     autoRotate: () => autoRotate,
     cleanup: () => {
@@ -2619,6 +2793,13 @@ function initThreeJSRenderer(container, details) {
       if (renderer.domElement && renderer.domElement.parentNode) {
         renderer.domElement.parentNode.removeChild(renderer.domElement);
       }
+      scene.traverse(obj => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+          else obj.material.dispose();
+        }
+      });
       renderer.dispose();
     }
   };
@@ -2634,6 +2815,32 @@ function initThreeJSRenderer(container, details) {
     const time = Date.now() * 0.001;
     const scale = 1 + 0.015 * Math.sin(time * 2);
     cellMesh.scale.set(scale, scale, scale);
+
+    // Update laser beam opacity
+    Object.entries(laserBeams).forEach(([laserKey, beam]) => {
+      const targetOpacity = activeLasers[laserKey] ? 0.35 + 0.05 * Math.sin(Date.now() * 0.01) : 0;
+      beam.material.opacity += (targetOpacity - beam.material.opacity) * 0.15;
+    });
+
+    // Animate fluorochrome pulsing when excited
+    markersList.forEach(([key, marker]) => {
+      const abData = MARKER_FLUOROCHROMES[key];
+      if (abData && fluorochromeMeshes[key]) {
+        const isExcited = isConjugationActive && activeLasers[abData.laser];
+        fluorochromeMeshes[key].forEach((f, idx) => {
+          if (isExcited) {
+            const offset = idx * 0.2;
+            const pulse = 0.5 + 0.5 * Math.sin(time * 6 + offset);
+            f.material.emissiveIntensity = 0.6 + 0.8 * pulse;
+            const fScale = 1.0 + 0.3 * pulse;
+            f.scale.set(fScale, fScale, fScale);
+          } else {
+            f.material.emissiveIntensity = 0.15;
+            f.scale.set(1, 1, 1);
+          }
+        });
+      }
+    });
     
     renderer.render(scene, camera);
   };
@@ -2772,6 +2979,32 @@ function initCanvas3DRenderer(container, details) {
       rx += 0.001;
     }
     
+    // Draw active lasers first (background of the cell)
+    Object.entries(activeLasers).forEach(([laserKey, active]) => {
+      if (!active) return;
+      let ly = centerY;
+      let laserColor = 'rgba(59, 130, 246, 0.2)';
+      if (laserKey === 'violet') { ly = centerY - 60; laserColor = 'rgba(168, 85, 247, 0.2)'; }
+      else if (laserKey === 'blue') { ly = centerY; laserColor = 'rgba(59, 130, 246, 0.2)'; }
+      else if (laserKey === 'red') { ly = centerY + 60; laserColor = 'rgba(239, 68, 68, 0.2)'; }
+      
+      const grad = ctx.createLinearGradient(0, ly, width, ly);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(0.5, laserColor);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, ly - 8, width, 16);
+      
+      // Draw core bright line in the center of the beam
+      ctx.strokeStyle = laserKey === 'violet' ? '#c084fc' : (laserKey === 'blue' ? '#60a5fa' : '#f87171');
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(0, ly);
+      ctx.lineTo(width, ly);
+      ctx.stroke();
+    });
+    
     ctx.strokeStyle = 'rgba(51, 65, 85, 0.4)';
     ctx.lineWidth = 1;
     
@@ -2842,7 +3075,10 @@ function initCanvas3DRenderer(container, details) {
           basePt,
           tipPt,
           color: m.color,
-          isHighlighted
+          isHighlighted,
+          nx: m.nx,
+          ny: m.ny,
+          nz: m.nz
         });
       });
     });
@@ -2869,6 +3105,64 @@ function initCanvas3DRenderer(container, details) {
         ctx.lineWidth = 1;
         ctx.stroke();
       }
+
+      // Draw Antibody Conjugates (Y-shape + Fluorochromes)
+      if (isConjugationActive) {
+        const abData = MARKER_FLUOROCHROMES[m.key];
+        if (abData) {
+          const dx = m.tipPt.sx - m.basePt.sx;
+          const dy = m.tipPt.sy - m.basePt.sy;
+          const len = Math.sqrt(dx*dx + dy*dy);
+          
+          if (len > 0) {
+            const ux = dx / len;
+            const uy = dy / len;
+            const px = -uy;
+            const py = ux;
+            
+            // Stem end
+            const sx = m.tipPt.sx + ux * 8;
+            const sy = m.tipPt.sy + uy * 8;
+            
+            // Left arm
+            const lx = sx + ux * 6 + px * 5;
+            const ly = sy + uy * 6 + py * 5;
+            
+            // Right arm
+            const rx = sx + ux * 6 - px * 5;
+            const ry = sy + uy * 6 - py * 5;
+            
+            // Draw grey Y body
+            ctx.strokeStyle = '#8892b0';
+            ctx.lineWidth = m.isHighlighted ? 2.5 : 1.2;
+            ctx.beginPath();
+            ctx.moveTo(m.tipPt.sx, m.tipPt.sy);
+            ctx.lineTo(sx, sy);
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(lx, ly);
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(rx, ry);
+            ctx.stroke();
+            
+            // Fluorochrome emission glow & circles
+            const isExcited = activeLasers[abData.laser];
+            const pulseRadius = isExcited ? 3 + 1.2 * Math.sin(Date.now() * 0.01) : 2;
+            
+            if (isExcited) {
+              ctx.shadowBlur = 8;
+              ctx.shadowColor = abData.emissionColor;
+            }
+            
+            ctx.fillStyle = abData.emissionColor;
+            ctx.beginPath();
+            ctx.arc(lx, ly, pulseRadius, 0, 2 * Math.PI);
+            ctx.arc(rx, ry, pulseRadius, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.shadowBlur = 0; // reset
+          }
+        }
+      }
     });
     
     frameId = requestAnimationFrame(draw);
@@ -2887,4 +3181,87 @@ function initCanvas3DRenderer(container, details) {
   canvas3DData.resizeHandler = onResize;
   canvas3DData.animationFrameId = frameId;
 }
+
+function resetSimulatorStates() {
+  isConjugationActive = false;
+  activeLasers.violet = false;
+  activeLasers.blue = false;
+  activeLasers.red = false;
+  
+  const conjugationToggle = document.getElementById('sim-conjugation-toggle');
+  if (conjugationToggle) conjugationToggle.checked = false;
+  
+  const laserControlsContainer = document.getElementById('laser-controls-container');
+  if (laserControlsContainer) {
+    laserControlsContainer.style.opacity = '0.5';
+    laserControlsContainer.style.pointerEvents = 'none';
+  }
+  
+  const vBtn = document.getElementById('laser-violet-btn');
+  const bBtn = document.getElementById('laser-blue-btn');
+  const rBtn = document.getElementById('laser-red-btn');
+  if (vBtn) vBtn.classList.remove('active');
+  if (bBtn) bBtn.classList.remove('active');
+  if (rBtn) rBtn.classList.remove('active');
+  
+  const card = document.getElementById('explorer-conjugate-card');
+  if (card) card.style.display = 'none';
+}
+
+function initSimulatorEvents() {
+  const conjugationToggle = document.getElementById('sim-conjugation-toggle');
+  const laserVioletBtn = document.getElementById('laser-violet-btn');
+  const laserBlueBtn = document.getElementById('laser-blue-btn');
+  const laserRedBtn = document.getElementById('laser-red-btn');
+  const laserControlsContainer = document.getElementById('laser-controls-container');
+  
+  if (conjugationToggle) {
+    conjugationToggle.addEventListener('change', (e) => {
+      isConjugationActive = e.target.checked;
+      
+      if (isConjugationActive) {
+        if (laserControlsContainer) {
+          laserControlsContainer.style.opacity = '1';
+          laserControlsContainer.style.pointerEvents = 'auto';
+        }
+      } else {
+        if (laserControlsContainer) {
+          laserControlsContainer.style.opacity = '0.5';
+          laserControlsContainer.style.pointerEvents = 'none';
+        }
+        
+        activeLasers.violet = false;
+        activeLasers.blue = false;
+        activeLasers.red = false;
+        
+        if (laserVioletBtn) laserVioletBtn.classList.remove('active');
+        if (laserBlueBtn) laserBlueBtn.classList.remove('active');
+        if (laserRedBtn) laserRedBtn.classList.remove('active');
+      }
+      
+      // Update ThreeJS meshes visibility
+      if (threeJSData && threeJSData.antibodyMeshes) {
+        Object.values(threeJSData.antibodyMeshes).forEach(meshes => {
+          meshes.forEach(mesh => {
+            mesh.visible = isConjugationActive;
+          });
+        });
+      }
+    });
+  }
+  
+  const setupLaserToggle = (btn, colorKey) => {
+    if (btn) {
+      btn.addEventListener('click', () => {
+        activeLasers[colorKey] = !activeLasers[colorKey];
+        btn.classList.toggle('active', activeLasers[colorKey]);
+      });
+    }
+  };
+  
+  setupLaserToggle(laserVioletBtn, 'violet');
+  setupLaserToggle(laserBlueBtn, 'blue');
+  setupLaserToggle(laserRedBtn, 'red');
+}
+
 
