@@ -357,6 +357,19 @@
           <!-- Populated dynamically -->
         </div>
 
+        <!-- Zoom Controls Overlay -->
+        <div id="explorer-zoom-controls" style="position: absolute; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 45; pointer-events: auto;">
+          <button id="zoom-in-btn" class="zoom-ctrl-btn" title="Zoom In">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <button id="zoom-out-btn" class="zoom-ctrl-btn" title="Zoom Out">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </button>
+          <button id="zoom-reset-btn" class="zoom-ctrl-btn" style="font-size: 9px; font-weight: 600;" title="Reset Zoom">
+            100%
+          </button>
+        </div>
+
         <!-- Floating Simulator Control Panel -->
         <div class="simulator-overlay-panel" style="pointer-events: auto;">
           <h4 class="simulator-title">

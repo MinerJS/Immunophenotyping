@@ -1375,4 +1375,34 @@ input:checked + .sim-slider:before {
   transform: none;
 }
 
+/* Zoom control buttons in 3D Explorer */
+.zoom-ctrl-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+  background: rgba(11, 19, 41, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid var(--border-color);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.zoom-ctrl-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+  background: rgba(11, 19, 41, 0.95);
+  transform: scale(1.05);
+}
+
+.zoom-ctrl-btn:active {
+  transform: scale(0.95);
+}
+
+
 

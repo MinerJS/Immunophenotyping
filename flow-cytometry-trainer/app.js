@@ -623,6 +623,20 @@ document.addEventListener('DOMContentLoaded', () => {
     cleanup3DCellExplorer();
   });
 
+  // 3D Explorer Zoom Buttons
+  document.getElementById('zoom-in-btn').addEventListener('click', () => {
+    zoomFactor = Math.min(2.5, zoomFactor + 0.15);
+    updateZoomUI();
+  });
+  document.getElementById('zoom-out-btn').addEventListener('click', () => {
+    zoomFactor = Math.max(0.4, zoomFactor - 0.15);
+    updateZoomUI();
+  });
+  document.getElementById('zoom-reset-btn').addEventListener('click', () => {
+    zoomFactor = 1.0;
+    updateZoomUI();
+  });
+
   // Custom events from FlowPlot
   document.addEventListener('flow-zoom-changed', (e) => {
     const { zoomX, zoomY } = e.detail;
@@ -2471,6 +2485,14 @@ const FlowSoundSynth = {
 
 let threeJSData = null;
 let canvas3DData = null;
+let zoomFactor = 1.0;
+
+function updateZoomUI() {
+  const resetBtn = document.getElementById('zoom-reset-btn');
+  if (resetBtn) {
+    resetBtn.innerText = `${Math.round(zoomFactor * 100)}%`;
+  }
+}
 
 function openCell3DExplorer(cell, originCase) {
   // Hide main UI
@@ -2494,18 +2516,22 @@ function init3DCellExplorer(cellType) {
   const legend = document.getElementById('explorer-3d-legend');
   const details = CELL_DETAILS[cellType] || CELL_DETAILS.Debris;
   
-  // Reset simulator state when entering new cell
+  // Reset simulator state and zoom when entering new cell
   currentInterrogatedCellType = cellType;
   resetSimulatorStates();
+  zoomFactor = 1.0;
+  updateZoomUI();
 
   // Populate text
   document.getElementById('explorer-cell-name').innerText = details.name;
   document.getElementById('explorer-cell-lineage').innerText = details.lineage;
   document.getElementById('explorer-cell-desc').innerText = details.desc;
   
-  // Clear container (except loader)
-  const existingCanvas = container.querySelector('canvas');
-  if (existingCanvas) container.removeChild(existingCanvas);
+  // Clear container (except loader and simulator panels)
+  const existingCanvas = container.querySelector(':scope > canvas');
+  if (existingCanvas && existingCanvas.parentNode === container) {
+    container.removeChild(existingCanvas);
+  }
   loader.style.display = 'flex';
   
   // Populate markers list in sidebar
@@ -2940,9 +2966,17 @@ function initThreeJSRenderer(container, details) {
     }, 3000);
   };
   
+  const onWheel = (e) => {
+    e.preventDefault();
+    zoomFactor -= e.deltaY * 0.002;
+    zoomFactor = Math.max(0.4, Math.min(2.5, zoomFactor));
+    updateZoomUI();
+  };
+  
   renderer.domElement.addEventListener('mousedown', onMouseDown);
   renderer.domElement.addEventListener('mousemove', onMouseMove);
   window.addEventListener('mouseup', onMouseUp);
+  renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
   
   threeJSData = {
     renderer,
@@ -2964,6 +2998,7 @@ function initThreeJSRenderer(container, details) {
       renderer.domElement.removeEventListener('mousedown', onMouseDown);
       renderer.domElement.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
+      renderer.domElement.removeEventListener('wheel', onWheel);
       if (autoRotateTimer) clearTimeout(autoRotateTimer);
       if (renderer.domElement && renderer.domElement.parentNode) {
         renderer.domElement.parentNode.removeChild(renderer.domElement);
@@ -2983,14 +3018,16 @@ function initThreeJSRenderer(container, details) {
     threeJSData.animationFrameId = requestAnimationFrame(animate);
     
     // Camera transition
+    const baseZ = isFluidicsActive ? 17 : 12;
+    const targetZ = baseZ / zoomFactor;
     if (isFluidicsActive) {
       camera.position.x += (0 - camera.position.x) * 0.06;
       camera.position.y += (1.0 - camera.position.y) * 0.06;
-      camera.position.z += (17 - camera.position.z) * 0.06;
+      camera.position.z += (targetZ - camera.position.z) * 0.06;
     } else {
       camera.position.x += (0 - camera.position.x) * 0.06;
       camera.position.y += (0 - camera.position.y) * 0.06;
-      camera.position.z += (12 - camera.position.z) * 0.06;
+      camera.position.z += (targetZ - camera.position.z) * 0.06;
     }
     camera.lookAt(0, isFluidicsActive ? 0.5 : 0, 0);
     
@@ -3229,9 +3266,17 @@ function initCanvas3DRenderer(container, details) {
     }, 3000);
   };
   
+  const onWheel = (e) => {
+    e.preventDefault();
+    zoomFactor -= e.deltaY * 0.002;
+    zoomFactor = Math.max(0.4, Math.min(2.5, zoomFactor));
+    updateZoomUI();
+  };
+
   canvas.addEventListener('mousedown', onMouseDown);
   canvas.addEventListener('mousemove', onMouseMove);
   window.addEventListener('mouseup', onMouseUp);
+  canvas.addEventListener('wheel', onWheel, { passive: false });
   
   canvas3DData = {
     canvas,
@@ -3239,6 +3284,7 @@ function initCanvas3DRenderer(container, details) {
       canvas.removeEventListener('mousedown', onMouseDown);
       canvas.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
+      canvas.removeEventListener('wheel', onWheel);
       if (autoRotateTimer) clearTimeout(autoRotateTimer);
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     },
@@ -3256,7 +3302,7 @@ function initCanvas3DRenderer(container, details) {
   let hasBeepedRed = false;
   
   function project(x, y, z) {
-    const scale = isFluidicsActive ? 0.45 : 1.0;
+    const scale = (isFluidicsActive ? 0.45 : 1.0) * zoomFactor;
     x *= scale;
     y *= scale;
     z *= scale;
@@ -3470,7 +3516,8 @@ function initCanvas3DRenderer(container, details) {
     ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
     ctx.beginPath();
     const corePt = project(0, 0, 0);
-    const coreRadius = radius * 0.45 * (distance / (0 + distance));
+    const scaleFactor = (isFluidicsActive ? 0.45 : 1.0) * zoomFactor;
+    const coreRadius = radius * 0.45 * (distance / (corePt.sz + distance)) * scaleFactor;
     ctx.arc(corePt.sx, corePt.sy, coreRadius, 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
@@ -3519,7 +3566,7 @@ function initCanvas3DRenderer(container, details) {
       
       ctx.fillStyle = m.color;
       ctx.beginPath();
-      const headRadius = m.isHighlighted ? 6.5 : 4;
+      const headRadius = (m.isHighlighted ? 6.5 : 4) * scaleFactor;
       ctx.arc(m.tipPt.sx, m.tipPt.sy, headRadius, 0, 2 * Math.PI);
       ctx.fill();
       
@@ -3544,16 +3591,16 @@ function initCanvas3DRenderer(container, details) {
             const py = ux;
             
             // Stem end
-            const sx = m.tipPt.sx + ux * 8;
-            const sy = m.tipPt.sy + uy * 8;
+            const sx = m.tipPt.sx + ux * 8 * scaleFactor;
+            const sy = m.tipPt.sy + uy * 8 * scaleFactor;
             
             // Left arm
-            const lx = sx + ux * 6 + px * 5;
-            const ly = sy + uy * 6 + py * 5;
+            const lx = sx + ux * 6 * scaleFactor + px * 5 * scaleFactor;
+            const ly = sy + uy * 6 * scaleFactor + py * 5 * scaleFactor;
             
             // Right arm
-            const rx = sx + ux * 6 - px * 5;
-            const ry = sy + uy * 6 - py * 5;
+            const rx = sx + ux * 6 * scaleFactor - px * 5 * scaleFactor;
+            const ry = sy + uy * 6 * scaleFactor - py * 5 * scaleFactor;
             
             // Draw grey Y body
             ctx.strokeStyle = '#8892b0';
@@ -3569,7 +3616,8 @@ function initCanvas3DRenderer(container, details) {
             
             // Fluorochrome emission glow & circles
             const isExcited = activeLasers[abData.laser];
-            const pulseRadius = isExcited ? 3 + 1.2 * Math.sin(Date.now() * 0.01) : 2;
+            const basePulse = isExcited ? 3 + 1.2 * Math.sin(Date.now() * 0.01) : 2;
+            const pulseRadius = basePulse * scaleFactor;
             
             if (isExcited) {
               ctx.shadowBlur = 8;
