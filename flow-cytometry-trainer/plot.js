@@ -209,6 +209,24 @@ class FlowPlot {
       return;
     }
 
+    if (this.activeTool === 'auto') {
+      const candidates = this.getCandidateAutoGates();
+      let clickedCand = null;
+      for (let i = candidates.length - 1; i >= 0; i--) {
+        if (this.isPointInGate(dataPt, candidates[i])) {
+          clickedCand = candidates[i];
+          break;
+        }
+      }
+      if (clickedCand) {
+        const autoGateEvent = new CustomEvent('flow-auto-gate-clicked', {
+          detail: clickedCand
+        });
+        document.dispatchEvent(autoGateEvent);
+      }
+      return;
+    }
+
     if (!this.activeTool) {
       // Check if click is inside an existing gate on the current axes
       const activeGatesOnAxes = this.gates.filter(g => g.xAttr === this.xAxis && g.yAttr === this.yAxis);
@@ -322,6 +340,24 @@ class FlowPlot {
       return;
     }
     
+    if (this.activeTool === 'auto') {
+      const isInsidePlot = (mouse.x >= this.padding.left && mouse.x <= this.width - this.padding.right &&
+                            mouse.y >= this.padding.top && mouse.y <= this.height - this.padding.bottom);
+      if (isInsidePlot) {
+        const mouseDataPt = {
+          x: this.toDataX(mouse.x),
+          y: this.toDataY(mouse.y)
+        };
+        const candidates = this.getCandidateAutoGates();
+        const isHovered = candidates.some(cand => this.isPointInGate(mouseDataPt, cand));
+        this.canvas.style.cursor = isHovered ? 'pointer' : 'default';
+      } else {
+        this.canvas.style.cursor = 'default';
+      }
+      this.draw();
+      return;
+    }
+    
     if (this.isDrawing) {
       this.draw();
       return;
@@ -392,6 +428,11 @@ class FlowPlot {
     
     // Draw established gates for the CURRENT active axes
     this.drawGates();
+    
+    // Draw candidate auto gates
+    if (this.activeTool === 'auto') {
+      this.drawCandidateAutoGates();
+    }
     
     // Draw actively drawing gate
     this.drawActiveGateDrawing();
@@ -1169,6 +1210,326 @@ class FlowPlot {
     this.ctx.font = 'italic 9px sans-serif';
     this.ctx.fillText('Click to Inspect Cell 3D', tx + 8, ty + 56);
     
+    this.ctx.restore();
+  }
+
+  getCandidateAutoGates() {
+    const candidates = [];
+    const isAML = this.canvas.id.includes('aml') || (typeof currentCase !== 'undefined' && currentCase === 'aml');
+    const axesKey = `${this.xAxis}_${this.yAxis}`;
+    
+    if (axesKey === 'FSC_A_FSC_H') {
+      candidates.push({
+        name: 'Singlets',
+        desc: 'Excludes doublets/aggregates by selecting cells with a linear area-to-height ratio.',
+        type: 'poly',
+        color: '#795548',
+        points: isAML ? 
+          [{ x: 150, y: 140 }, { x: 800, y: 760 }, { x: 950, y: 910 }, { x: 900, y: 950 }, { x: 740, y: 810 }, { x: 100, y: 190 }] :
+          [{ x: 200, y: 180 }, { x: 850, y: 800 }, { x: 960, y: 910 }, { x: 900, y: 960 }, { x: 760, y: 840 }, { x: 150, y: 220 }]
+      });
+    }
+    else if (axesKey === 'FSC_A_SSC_A') {
+      candidates.push({
+        name: 'Cells',
+        desc: 'Selects viable leukocyte populations while excluding low-FSC cellular debris.',
+        type: 'rect',
+        color: '#607d8b',
+        points: isAML ?
+          [{ x: 200, y: 50 }, { x: 950, y: 950 }] :
+          [{ x: 250, y: 50 }, { x: 950, y: 950 }]
+      });
+    }
+    else if (axesKey === 'CD45_SSC_A') {
+      candidates.push({
+        name: 'Lymphocytes',
+        desc: 'CD45-bright, SSC-low population comprising T, B, and NK cells.',
+        type: 'poly',
+        color: '#ff2a2a',
+        points: [{ x: 700, y: 40 }, { x: 960, y: 40 }, { x: 960, y: 240 }, { x: 800, y: 240 }, { x: 700, y: 140 }]
+      });
+      candidates.push({
+        name: 'Monocytes',
+        desc: 'CD45-bright, SSC-intermediate population. Express CD14 and CD64.',
+        type: 'poly',
+        color: '#4caf50',
+        points: [{ x: 620, y: 280 }, { x: 850, y: 280 }, { x: 850, y: 540 }, { x: 720, y: 580 }, { x: 620, y: 450 }]
+      });
+      candidates.push({
+        name: 'Granulocytes',
+        desc: 'CD45-dim/moderate, SSC-high granulocytic myeloid subset.',
+        type: 'poly',
+        color: '#2196f3',
+        points: [{ x: 420, y: 620 }, { x: 780, y: 620 }, { x: 820, y: 980 }, { x: 420, y: 980 }]
+      });
+      if (isAML) {
+        candidates.push({
+          name: 'Blasts',
+          desc: 'CD45-dim, SSC-low expanded leukemic myeloblast population.',
+          type: 'poly',
+          color: '#9c27b0',
+          points: [{ x: 300, y: 100 }, { x: 560, y: 100 }, { x: 560, y: 360 }, { x: 420, y: 400 }, { x: 300, y: 250 }]
+        });
+      } else {
+        candidates.push({
+          name: 'Blasts / Progenitors',
+          desc: 'CD45-dim, SSC-low rare hematopoietic progenitor cells in normal blood.',
+          type: 'poly',
+          color: '#9c27b0',
+          points: [{ x: 300, y: 100 }, { x: 550, y: 100 }, { x: 550, y: 300 }, { x: 300, y: 300 }]
+        });
+      }
+    }
+    else if (axesKey === 'CD3_CD4') {
+      candidates.push({
+        name: 'CD3+ T Cells',
+        desc: 'Mature T-lymphocytes expressing CD3.',
+        type: 'rect',
+        color: '#00e5ff',
+        points: [{ x: 600, y: 40 }, { x: 980, y: 980 }]
+      });
+      candidates.push({
+        name: 'CD4+ Helper T Cells',
+        desc: 'CD3+ CD4+ helper T-cells.',
+        type: 'rect',
+        color: '#ff9800',
+        points: [{ x: 600, y: 600 }, { x: 980, y: 980 }]
+      });
+    }
+    else if (axesKey === 'CD3_CD8') {
+      candidates.push({
+        name: 'CD8+ Cytotoxic T Cells',
+        desc: 'CD3+ CD8+ cytotoxic T-cells.',
+        type: 'rect',
+        color: '#ff2a2a',
+        points: [{ x: 600, y: 600 }, { x: 980, y: 980 }]
+      });
+    }
+    else if (axesKey === 'CD34_CD117') {
+      candidates.push({
+        name: 'CD34+ CD117+ Blasts',
+        desc: 'Myeloblasts co-expressing early progenitor CD34 and myeloid precursor CD117.',
+        type: 'rect',
+        color: '#9c27b0',
+        points: [{ x: 600, y: 600 }, { x: 980, y: 980 }]
+      });
+    }
+    else if (axesKey === 'CD33_CD13') {
+      if (isAML) {
+        candidates.push({
+          name: 'Aberrant Blasts',
+          desc: 'CD33-positive blasts showing aberrant loss (negativity) of CD13.',
+          type: 'rect',
+          color: '#e91e63',
+          points: [{ x: 600, y: 40 }, { x: 980, y: 250 }]
+        });
+      } else {
+        candidates.push({
+          name: 'Normal Myeloid Progenitors',
+          desc: 'Normal myeloid precursors co-expressing CD33 and CD13.',
+          type: 'rect',
+          color: '#4caf50',
+          points: [{ x: 600, y: 600 }, { x: 980, y: 980 }]
+        });
+      }
+    }
+    else if (axesKey === 'CD34_CD7') {
+      candidates.push({
+        name: 'Aberrant CD7+ Blasts',
+        desc: 'Leukemic blasts expressing progenitor CD34 and aberrantly expressing lymphoid marker CD7.',
+        type: 'rect',
+        color: '#ff2a2a',
+        points: [{ x: 600, y: 600 }, { x: 980, y: 980 }]
+      });
+    }
+    else if (axesKey === 'CD19_SSC_A') {
+      candidates.push({
+        name: 'B Cells',
+        desc: 'CD19+ B-lymphocyte lineage.',
+        type: 'rect',
+        color: '#ff9800',
+        points: [{ x: 600, y: 40 }, { x: 980, y: 250 }]
+      });
+    }
+    else if (axesKey === 'CD3_SSC_A') {
+      candidates.push({
+        name: 'T Cells',
+        desc: 'CD3+ T-lymphocyte lineage.',
+        type: 'rect',
+        color: '#00e5ff',
+        points: [{ x: 600, y: 40 }, { x: 980, y: 250 }]
+      });
+    }
+    else if (axesKey === 'CD56_SSC_A') {
+      candidates.push({
+        name: 'NK Cells',
+        desc: 'CD56+ NK-lymphocyte lineage.',
+        type: 'rect',
+        color: '#ff2a2a',
+        points: [{ x: 600, y: 40 }, { x: 980, y: 250 }]
+      });
+    }
+    else if (axesKey === 'Kappa_Lambda') {
+      candidates.push({
+        name: 'Kappa B Cells',
+        desc: 'B-lymphocytes expressing Kappa light chains.',
+        type: 'rect',
+        color: '#ff9800',
+        points: [{ x: 600, y: 40 }, { x: 980, y: 300 }]
+      });
+      candidates.push({
+        name: 'Lambda B Cells',
+        desc: 'B-lymphocytes expressing Lambda light chains.',
+        type: 'poly',
+        color: '#ff2a2a',
+        points: [{ x: 40, y: 600 }, { x: 320, y: 600 }, { x: 320, y: 980 }, { x: 40, y: 980 }]
+      });
+    }
+    
+    if (candidates.length === 0) {
+      const cleanMarker = m => m.replace('_A', '').replace('_H', '');
+      const labelX = cleanMarker(this.xAxis);
+      const labelY = cleanMarker(this.yAxis);
+      
+      candidates.push({
+        name: `${labelX}+ ${labelY}+ Cells`,
+        desc: `Double-positive population expressing positive levels of both ${labelX} and ${labelY}.`,
+        type: 'rect',
+        color: '#00e5ff',
+        points: [{ x: 500, y: 500 }, { x: 980, y: 980 }]
+      });
+      candidates.push({
+        name: `${labelX}+ ${labelY}- Cells`,
+        desc: `Single-positive population expressing ${labelX} but negative for ${labelY}.`,
+        type: 'rect',
+        color: '#ff9800',
+        points: [{ x: 500, y: 40 }, { x: 980, y: 500 }]
+      });
+      candidates.push({
+        name: `${labelX}- ${labelY}+ Cells`,
+        desc: `Single-positive population expressing ${labelY} but negative for ${labelX}.`,
+        type: 'rect',
+        color: '#ff2a2a',
+        points: [{ x: 40, y: 500 }, { x: 500, y: 980 }]
+      });
+    }
+    
+    candidates.forEach(c => {
+      c.xAttr = this.xAxis;
+      c.yAttr = this.yAxis;
+    });
+    
+    return candidates;
+  }
+
+  drawCandidateAutoGates() {
+    const candidates = this.getCandidateAutoGates();
+    
+    candidates.forEach(cand => {
+      const mouseDataPt = {
+        x: this.toDataX(this.currentMousePos.x),
+        y: this.toDataY(this.currentMousePos.y)
+      };
+      
+      const isHovered = this.isPointInGate(mouseDataPt, cand);
+      
+      this.ctx.save();
+      
+      let strokeColor = cand.color || '#e2e8f0';
+      let fillColor = cand.color || '#e2e8f0';
+      let fillAlpha = isHovered ? 0.18 : 0.04;
+      this.ctx.lineWidth = isHovered ? 2.5 : 1.5;
+      
+      if (!isHovered) {
+        this.ctx.setLineDash([4, 4]);
+      } else {
+        this.ctx.setLineDash([]);
+      }
+      
+      this.ctx.beginPath();
+      if (cand.type === 'rect') {
+        const p1 = cand.points[0];
+        const p2 = cand.points[1];
+        const x1 = this.toPixelX(p1.x);
+        const y1 = this.toPixelY(p1.y);
+        const x2 = this.toPixelX(p2.x);
+        const y2 = this.toPixelY(p2.y);
+        this.ctx.rect(x1, y1, x2 - x1, y2 - y1);
+      } else if (cand.type === 'poly' && cand.points.length >= 3) {
+        const start = cand.points[0];
+        this.ctx.moveTo(this.toPixelX(start.x), this.toPixelY(start.y));
+        for (let i = 1; i < cand.points.length; i++) {
+          const pt = cand.points[i];
+          this.ctx.lineTo(this.toPixelX(pt.x), this.toPixelY(pt.y));
+        }
+        this.ctx.closePath();
+      }
+      
+      this.ctx.globalAlpha = fillAlpha;
+      this.ctx.fillStyle = fillColor;
+      this.ctx.fill();
+      
+      this.ctx.globalAlpha = 0.8;
+      this.ctx.strokeStyle = strokeColor;
+      this.ctx.stroke();
+      
+      let centerX, centerY;
+      if (cand.type === 'rect') {
+        const p1 = cand.points[0];
+        const p2 = cand.points[1];
+        centerX = (p1.x + p2.x) / 2;
+        centerY = (p1.y + p2.y) / 2;
+      } else {
+        const centroid = cand.points.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
+        centerX = centroid.x / cand.points.length;
+        centerY = centroid.y / cand.points.length;
+      }
+      
+      const px = this.toPixelX(centerX);
+      const py = this.toPixelY(centerY);
+      
+      const text = (isHovered ? 'Click to Gate: ' : 'Auto: ') + cand.name;
+      this.ctx.font = '600 11px sans-serif';
+      const textWidth = this.ctx.measureText(text).width;
+      const paddingX = 8;
+      const paddingY = 4;
+      const badgeW = textWidth + paddingX * 2;
+      const badgeH = 18 + paddingY * 2;
+      
+      this.ctx.globalAlpha = 0.85;
+      this.ctx.fillStyle = isHovered ? strokeColor : '#0f172a';
+      this.ctx.strokeStyle = strokeColor;
+      this.ctx.lineWidth = 1;
+      
+      this.drawRoundedRect(px - badgeW / 2, py - badgeH / 2, badgeW, badgeH, 6, true, true);
+      
+      this.ctx.globalAlpha = 1.0;
+      this.ctx.fillStyle = isHovered ? '#0f172a' : '#f8fafc';
+      this.ctx.textAlign = 'center';
+      this.ctx.textBaseline = 'middle';
+      this.ctx.fillText(text, px, py);
+      
+      this.ctx.restore();
+    });
+  }
+
+  drawRoundedRect(x, y, width, height, radius, fill, stroke) {
+    this.ctx.beginPath();
+    this.ctx.moveTo(x + radius, y);
+    this.ctx.lineTo(x + width - radius, y);
+    this.ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    this.ctx.lineTo(x + width, y + height - radius);
+    this.ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    this.ctx.lineTo(x + radius, y + height);
+    this.ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    this.ctx.lineTo(x, y + radius);
+    this.ctx.quadraticCurveTo(x, y, x + radius, y);
+    this.ctx.closePath();
+    if (fill) this.ctx.fill();
+    if (stroke) this.ctx.stroke();
+  }
+
+  restoreContext() {
     this.ctx.restore();
   }
 }

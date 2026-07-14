@@ -607,6 +607,10 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleTool('poly');
   });
 
+  document.getElementById('tool-auto-btn').addEventListener('click', () => {
+    toggleTool('auto');
+  });
+
   document.getElementById('tool-zoom-btn').addEventListener('click', () => {
     toggleTool('zoom');
   });
@@ -744,6 +748,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Custom events from FlowPlot
   document.addEventListener('flow-gate-created', (e) => {
     showGateModal(e.detail);
+  });
+
+  document.addEventListener('flow-auto-gate-clicked', (e) => {
+    const cand = e.detail;
+    showGateModal({
+      type: cand.type,
+      xAttr: cand.xAttr,
+      yAttr: cand.yAttr,
+      points: cand.points,
+      suggestedName: cand.name,
+      desc: cand.desc,
+      isAuto: true
+    });
   });
 
   document.addEventListener('flow-gate-selected', (e) => {
@@ -1409,17 +1426,180 @@ function deleteGateById(gateId) {
 }
 
 // Gate Naming Modal Control
+// Dynamic Suggestions Generator based on active cells captured
+function getSuggestionsForGate(gate) {
+  const currentPlot = (currentCase === 'compare' && activePlot === 'aml') ? flowPlotAML : flowPlot;
+  if (!currentPlot) return { suggestions: [], description: 'Draw a gate to isolate a subset of cells for analysis.', count: 0, pct: '0' };
+  
+  const parentEvents = currentPlot.filteredEvents || [];
+  const insideEvents = parentEvents.filter(e => currentPlot.isPointInGate(e, gate));
+  
+  const totalInside = insideEvents.length;
+  const counts = {};
+  insideEvents.forEach(e => {
+    counts[e.type] = (counts[e.type] || 0) + 1;
+  });
+  
+  const suggestions = [];
+  let description = "Draw a gate to isolate a subset of cells for analysis.";
+  
+  const addSug = (name, desc) => {
+    if (!suggestions.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+      suggestions.push({ name, desc });
+    }
+  };
+  
+  const axesKey = `${gate.xAttr}_${gate.yAttr}`;
+  
+  if (axesKey === 'FSC_A_FSC_H') {
+    addSug('Singlets', 'Excludes doublets/aggregates by selecting cells with a linear area-to-height ratio.');
+    addSug('Cells', 'Leukocyte viable cell cluster.');
+    description = 'Excludes doublet cell aggregates or debris, selecting single cell events.';
+  } else if (axesKey === 'FSC_A_SSC_A') {
+    addSug('Cells', 'Selects viable leukocyte populations while excluding low-FSC cellular debris.');
+    addSug('Singlets', 'Single cell events.');
+    description = 'Isolates viable leukocyte populations and excludes low-FSC cellular debris.';
+  } else if (axesKey === 'CD45_SSC_A') {
+    const blastsCount = counts['AML_Blast'] || counts['NormalProgenitor'] || 0;
+    const lymphsCount = (counts['CD4_TCell'] || 0) + (counts['CD8_TCell'] || 0) + (counts['gd_TCell'] || 0) + (counts['BCell'] || 0) + (counts['NKCell'] || 0);
+    const monoCount = counts['Monocyte'] || 0;
+    const granCount = counts['Granulocyte'] || 0;
+    
+    if (blastsCount > totalInside * 0.3) {
+      addSug('Blasts', 'CD45-dim, SSC-low expanded progenitor population (classic leukemic blasts).');
+      addSug('CD45dim', 'Dim CD45 positive blast/progenitor cells.');
+    }
+    if (lymphsCount > totalInside * 0.3) {
+      addSug('Lymphocytes', 'CD45-bright, SSC-low population comprising T, B, and NK cells.');
+    }
+    if (monoCount > totalInside * 0.3) {
+      addSug('Monocytes', 'CD45-bright, SSC-intermediate population expressing CD14/CD64.');
+    }
+    if (granCount > totalInside * 0.3) {
+      addSug('Granulocytes', 'CD45-dim/moderate, SSC-high granulocytic myeloid subset.');
+    }
+    
+    addSug('Lymphocytes', 'CD45-bright, SSC-low population comprising T, B, and NK cells.');
+    addSug('Blasts', 'CD45-dim, SSC-low expanded progenitor population.');
+    addSug('Monocytes', 'CD45-bright, SSC-intermediate population.');
+    addSug('Granulocytes', 'CD45-dim/moderate, SSC-high granulocytic myeloid subset.');
+    description = 'Leukocyte differential gating using CD45 expression and Side Scatter.';
+  } else {
+    const markers = [gate.xAttr, gate.yAttr];
+    if (markers.includes('CD3')) {
+      addSug('CD3+ T Cells', 'Pan-T cell population expressing CD3.');
+    }
+    if (markers.includes('CD4') && markers.includes('CD3')) {
+      addSug('CD4+ Helper T Cells', 'CD4+ helper T-cells (CD3+ CD4+ CD8-).');
+    }
+    if (markers.includes('CD8') && markers.includes('CD3')) {
+      addSug('CD8+ Cytotoxic T Cells', 'CD8+ cytotoxic T-cells (CD3+ CD8+ CD4-).');
+    }
+    if (markers.includes('CD19')) {
+      addSug('B Cells', 'CD19+ B-lymphocyte lineage.');
+    }
+    if (markers.includes('CD20') && markers.includes('CD19')) {
+      addSug('Mature B Cells', 'CD19+ CD20+ mature B cells.');
+    }
+    if (markers.includes('CD34') && markers.includes('CD117')) {
+      addSug('CD34+ CD117+ Blasts', 'Myeloblasts co-expressing early progenitor CD34 and myeloid precursor CD117.');
+    }
+    if (markers.includes('CD33') && markers.includes('CD13')) {
+      if (counts['AML_Blast'] > 0 && (counts['AML_Blast'] > totalInside * 0.4)) {
+        addSug('Aberrant Blasts', 'Myeloid blasts showing CD33 expression with aberrant loss of CD13.');
+      } else {
+        addSug('Normal Myeloid Progenitors', 'Normal myeloid progenitor subset co-expressing CD33 and CD13.');
+      }
+    }
+    if (markers.includes('CD34') && markers.includes('CD7')) {
+      addSug('Aberrant CD7+ Blasts', 'Early CD34+ blasts aberrantly expressing T-cell marker CD7.');
+    }
+    if (markers.includes('Kappa') || markers.includes('Lambda')) {
+      addSug('Kappa B Cells', 'B-lymphocytes expressing Kappa light chains.');
+      addSug('Lambda B Cells', 'B-lymphocytes expressing Lambda light chains.');
+    }
+    
+    const cleanMarker = m => m.replace('_A', '').replace('_H', '');
+    const labelX = cleanMarker(gate.xAttr);
+    const labelY = cleanMarker(gate.yAttr);
+    addSug(`${labelX}+ Cells`, `Population expressing positive levels of ${labelX}.`);
+    addSug(`${labelY}+ Cells`, `Population expressing positive levels of ${labelY}.`);
+    addSug(`${labelX}+ ${labelY}+ Cells`, `Double-positive population co-expressing ${labelX} and ${labelY}.`);
+  }
+  
+  if (description === "Draw a gate to isolate a subset of cells for analysis." && suggestions.length > 0) {
+    description = suggestions[0].desc;
+  }
+  
+  const pct = parentEvents.length > 0 ? (totalInside / parentEvents.length * 100).toFixed(1) : '0';
+  return { suggestions, description, count: totalInside, pct };
+}
+
+// Gate Naming Modal Control
 function showGateModal(gateDetails) {
   currentCreatedPoints = gateDetails;
   
-  // Suggest a name based on active step or standard names
   const nameInput = document.getElementById('gate-name-input');
+  const list = document.getElementById('gate-suggestions-list');
+  const descPreview = document.getElementById('gate-desc-preview');
+  const statsPreview = document.getElementById('gate-capture-stats');
   
-  if (!sandboxMode && TUTORIAL_STEPS[currentTutorialStep]) {
-    nameInput.value = TUTORIAL_STEPS[currentTutorialStep].gateName;
-  } else {
-    nameInput.value = '';
+  // Dynamic suggestions & stats evaluation
+  const res = getSuggestionsForGate(gateDetails);
+  
+  // Set stats text
+  statsPreview.innerText = `${res.count.toLocaleString()} cells (${res.pct}% of parent)`;
+  
+  // Suggest a default name
+  let defaultValue = '';
+  if (gateDetails.suggestedName) {
+    defaultValue = gateDetails.suggestedName;
+  } else if (!sandboxMode && TUTORIAL_STEPS[currentTutorialStep]) {
+    defaultValue = TUTORIAL_STEPS[currentTutorialStep].gateName;
+  } else if (res.suggestions.length > 0) {
+    defaultValue = res.suggestions[0].name;
   }
+  nameInput.value = defaultValue;
+  
+  // Render badge list
+  list.innerHTML = '';
+  res.suggestions.forEach(sug => {
+    const badge = document.createElement('button');
+    badge.className = 'gate-suggestion-badge';
+    badge.innerText = sug.name;
+    
+    if (sug.name.toLowerCase() === defaultValue.toLowerCase()) {
+      badge.classList.add('active');
+      descPreview.innerText = sug.desc;
+    }
+    
+    badge.addEventListener('click', (e) => {
+      e.preventDefault();
+      nameInput.value = sug.name;
+      descPreview.innerText = sug.desc;
+      document.querySelectorAll('.gate-suggestion-badge').forEach(b => b.classList.remove('active'));
+      badge.classList.add('active');
+    });
+    list.appendChild(badge);
+  });
+  
+  if (!descPreview.innerText || descPreview.innerText === '-') {
+    descPreview.innerText = res.description;
+  }
+  
+  // Highlighting active badge while typing custom names
+  nameInput.oninput = () => {
+    const val = nameInput.value.trim().toLowerCase();
+    document.querySelectorAll('.gate-suggestion-badge').forEach(b => {
+      if (b.innerText.toLowerCase() === val) {
+        b.classList.add('active');
+        const match = res.suggestions.find(s => s.name.toLowerCase() === val);
+        if (match) descPreview.innerText = match.desc;
+      } else {
+        b.classList.remove('active');
+      }
+    });
+  };
   
   document.getElementById('gate-name-modal-overlay').style.display = 'flex';
   nameInput.focus();
