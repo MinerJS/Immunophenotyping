@@ -844,95 +844,14 @@ function loadCase(caseId) {
     activeGatesAML = [];
     activeParentIdAML = 'root';
     
-    // Create default gates for Normal
+    // Create default root gates for Normal and AML (clean slate)
     activeGates = [
       { id: 'root', name: 'All Events', parent: null, xAttr: 'Time', yAttr: 'CD45', type: 'rect', points: [{x:0,y:0},{x:1000,y:1000}], color: '#94a3b8' }
     ];
-    activeGates.push({
-      id: 'singlets',
-      name: 'Singlets',
-      parent: 'root',
-      xAttr: 'FSC_A',
-      yAttr: 'FSC_H',
-      type: 'rect',
-      points: [{x:200, y:200}, {x:800, y:800}],
-      color: '#795548'
-    });
-    activeGates.push({
-      id: 'cells',
-      name: 'Cells',
-      parent: 'singlets',
-      xAttr: 'FSC_A',
-      yAttr: 'SSC_A',
-      type: 'poly',
-      points: [{x:250,y:100},{x:850,y:200},{x:850,y:850},{x:450,y:850},{x:250,y:400}],
-      color: '#607d8b'
-    });
-    activeGates.push({
-      id: 'lymphocytes',
-      name: 'Lymphocytes',
-      parent: 'cells',
-      xAttr: 'CD45',
-      yAttr: 'SSC_A',
-      type: 'rect',
-      points: [{x:600,y:50},{x:950,y:250}],
-      color: '#2196f3'
-    });
-    activeGates.push({
-      id: 'blasts',
-      name: 'Blasts / CD45dim',
-      parent: 'cells',
-      xAttr: 'CD45',
-      yAttr: 'SSC_A',
-      type: 'rect',
-      points: [{x:400,y:50},{x:600,y:250}],
-      color: '#9c27b0'
-    });
-    
-    // Create identical initial gates for AML (can be modified separately!)
     activeGatesAML = [
       { id: 'root', name: 'All Events', parent: null, xAttr: 'Time', yAttr: 'CD45', type: 'rect', points: [{x:0,y:0},{x:1000,y:1000}], color: '#94a3b8' }
     ];
-    activeGatesAML.push({
-      id: 'singlets',
-      name: 'Singlets',
-      parent: 'root',
-      xAttr: 'FSC_A',
-      yAttr: 'FSC_H',
-      type: 'rect',
-      points: [{x:200, y:200}, {x:800, y:800}],
-      color: '#795548'
-    });
-    activeGatesAML.push({
-      id: 'cells',
-      name: 'Cells',
-      parent: 'singlets',
-      xAttr: 'FSC_A',
-      yAttr: 'SSC_A',
-      type: 'poly',
-      points: [{x:250,y:100},{x:850,y:200},{x:850,y:850},{x:450,y:850},{x:250,y:400}],
-      color: '#607d8b'
-    });
-    activeGatesAML.push({
-      id: 'lymphocytes',
-      name: 'Lymphocytes',
-      parent: 'cells',
-      xAttr: 'CD45',
-      yAttr: 'SSC_A',
-      type: 'rect',
-      points: [{x:600,y:50},{x:950,y:250}],
-      color: '#2196f3'
-    });
-    activeGatesAML.push({
-      id: 'blasts',
-      name: 'Blasts / CD45dim',
-      parent: 'cells',
-      xAttr: 'CD45',
-      yAttr: 'SSC_A',
-      type: 'rect',
-      points: [{x:400,y:50},{x:600,y:250}],
-      color: '#9c27b0'
-    });
+    
     
     // Hide tutorial floating box
     document.getElementById('tutorial-container').style.display = 'none';
