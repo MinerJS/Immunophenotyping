@@ -22,6 +22,8 @@ let amlEvents = [];
 let activeGatesAML = [];
 let activeParentIdAML = 'root';
 let activePlot = 'normal'; // 'normal' or 'aml'
+let isFullscreenActive = false;
+let fullscreenTarget = null; // 'both', 'normal', 'aml', or null
 
 
 // Casebook Data & Vignettes
@@ -684,6 +686,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const tutorialDragHandle = document.getElementById('tutorial-drag-handle');
   makeElementDraggable(tutorialBox, tutorialDragHandle);
 
+  // Floating Gating Tools Toolbar draggable and positioning
+  const gatingToolbar = document.getElementById('floating-gating-toolbar');
+  const gatingToolbarDragHandle = document.getElementById('gating-toolbar-drag-handle');
+  if (gatingToolbar) {
+    makeElementDraggable(gatingToolbar, gatingToolbarDragHandle);
+    
+    // Position toolbar on load and window resize
+    setTimeout(positionGatingToolbar, 100);
+    window.addEventListener('resize', () => {
+      if (isFullscreenActive) {
+        resizeCanvasForFullscreen();
+      }
+      positionGatingToolbar();
+    });
+
+    // Global and individual expand/fullscreen buttons
+    const globalFullscreenBtn = document.getElementById('toggle-fullscreen-btn');
+    if (globalFullscreenBtn) {
+      globalFullscreenBtn.addEventListener('click', () => toggleFullscreen('both'));
+    }
+    const normalExpandBtn = document.getElementById('expand-btn-normal');
+    if (normalExpandBtn) {
+      normalExpandBtn.addEventListener('click', () => toggleFullscreen('normal'));
+    }
+    const amlExpandBtn = document.getElementById('expand-btn-aml');
+    if (amlExpandBtn) {
+      amlExpandBtn.addEventListener('click', () => toggleFullscreen('aml'));
+    }
+  }
+
   document.getElementById('tutorial-minimize-btn').addEventListener('click', () => {
     tutorialBox.classList.toggle('minimized');
     const isMinimized = tutorialBox.classList.contains('minimized');
@@ -722,6 +754,8 @@ document.addEventListener('DOMContentLoaded', () => {
         rightPanel.classList.add('collapsed');
         toggleRightBtn.classList.remove('active');
       }
+      positionGatingToolbar();
+      setTimeout(positionGatingToolbar, 310);
     });
   }
 
@@ -814,6 +848,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // Load patient case
 // Load patient case
 function loadCase(caseId) {
+  if (isFullscreenActive) {
+    exitFullscreen();
+  }
   currentCase = caseId;
   
   const plotsLayout = document.getElementById('plots-layout');
@@ -825,6 +862,12 @@ function loadCase(caseId) {
     plotsLayout.style.flexDirection = 'row';
     plotCardAml.style.display = 'flex';
     plotTitleNormal.style.display = 'block';
+    
+    // Show compare target indicator
+    const indicatorSeparator = document.querySelector('.floating-gating-toolbar .indicator-separator');
+    const activeIndicator = document.getElementById('toolbar-active-indicator');
+    if (indicatorSeparator) indicatorSeparator.style.display = 'block';
+    if (activeIndicator) activeIndicator.style.display = 'block';
     
     showToast('Comparison Mode: You can draw different gates on each plot independently.');
     
@@ -866,6 +909,12 @@ function loadCase(caseId) {
     plotCardAml.style.display = 'none';
     plotTitleNormal.style.display = 'none';
     
+    // Hide compare target indicator
+    const indicatorSeparator = document.querySelector('.floating-gating-toolbar .indicator-separator');
+    const activeIndicator = document.getElementById('toolbar-active-indicator');
+    if (indicatorSeparator) indicatorSeparator.style.display = 'none';
+    if (activeIndicator) activeIndicator.style.display = 'none';
+    
     const info = CASES_INFO[caseId];
     document.getElementById('case-title').innerText = info.title;
     document.getElementById('case-subtitle').innerText = info.subtitle;
@@ -906,6 +955,9 @@ function loadCase(caseId) {
   }
   
   syncWorkspace();
+  
+  // Reposition floating toolbar on layout structure changes
+  setTimeout(positionGatingToolbar, 100);
 }
 
 function createDefaultGates(caseId) {
@@ -1006,6 +1058,10 @@ function setupAxesDropdowns(preserveSelection = true) {
   if (flowPlot) {
     flowPlot.xAxis = selectedX;
     flowPlot.yAxis = selectedY;
+    if (currentCase === 'compare' && flowPlotAML) {
+      flowPlotAML.xAxis = selectedX;
+      flowPlotAML.yAxis = selectedY;
+    }
   }
 }
 
@@ -1925,6 +1981,8 @@ function toggleSidebar(show) {
   }
   
   updateTabButtons();
+  positionGatingToolbar();
+  setTimeout(positionGatingToolbar, 310);
 }
 
 function updateTabButtons() {
@@ -1969,12 +2027,16 @@ function initSidebarResizer() {
     if (activeSidebarTab === 'gallery') {
       updateGalleryThumbnails();
     }
+    
+    // Update gating toolbar position dynamically
+    positionGatingToolbar();
   }
   
   function stopDrag(e) {
     document.documentElement.removeEventListener('mousemove', doDrag);
     document.documentElement.removeEventListener('mouseup', stopDrag);
     resizer.classList.remove('resizing');
+    positionGatingToolbar();
   }
   
   // Double-click to reset back to default
@@ -1986,6 +2048,7 @@ function initSidebarResizer() {
     if (activeSidebarTab === 'gallery') {
       updateGalleryThumbnails();
     }
+    positionGatingToolbar();
   });
 }
 
@@ -2123,6 +2186,10 @@ function selectGalleryPlot(tube, figIdx) {
   // 2. Set main axes
   flowPlot.xAxis = figConfig.x;
   flowPlot.yAxis = figConfig.y;
+  if (currentCase === 'compare' && flowPlotAML) {
+    flowPlotAML.xAxis = figConfig.x;
+    flowPlotAML.yAxis = figConfig.y;
+  }
   
   // Sync dropdown selectors
   const xSel = document.getElementById('x-axis-select');
@@ -2201,6 +2268,7 @@ function makeElementDraggable(elmnt, dragHandle) {
     if (e.target.closest('button') || e.target.closest('select') || e.target.closest('input')) return;
     
     e.preventDefault();
+    elmnt.classList.add('dragging');
     pos3 = e.clientX;
     pos4 = e.clientY;
     document.onmouseup = closeDragElement;
@@ -2233,9 +2301,11 @@ function makeElementDraggable(elmnt, dragHandle) {
     elmnt.style.left = newLeft + "px";
     elmnt.style.bottom = "auto";
     elmnt.style.right = "auto";
+    elmnt.dataset.dragged = "true";
   }
 
   function closeDragElement() {
+    elmnt.classList.remove('dragging');
     document.onmouseup = null;
     document.onmousemove = null;
   }
@@ -2255,6 +2325,18 @@ function selectActivePlot(plotId) {
   } else {
     if (cardAML) cardAML.classList.add('active-compare-plot');
     if (cardNormal) cardNormal.classList.remove('active-compare-plot');
+  }
+  
+  // Update toolbar active target text & color
+  const activeText = document.getElementById('toolbar-active-text');
+  if (activeText) {
+    if (plotId === 'normal') {
+      activeText.textContent = 'Normal';
+      activeText.style.color = 'var(--border-active)'; // cyan
+    } else {
+      activeText.textContent = 'AML';
+      activeText.style.color = 'var(--accent-orange)'; // orange
+    }
   }
   
   // Sync Gating Tree & Stats Table to selected plot
@@ -4081,6 +4163,155 @@ function plotInterrogatedCellEvent() {
         if (toast.parentNode) toast.parentNode.removeChild(toast);
       }, 400);
     }, 2500);
+  }
+}
+
+// Dynamically center/position the floating gating tools toolbar
+function positionGatingToolbar() {
+  const toolbar = document.getElementById('floating-gating-toolbar');
+  const container = document.querySelector('.plot-container');
+  if (!toolbar || !container) return;
+  
+  // If user has manually dragged the toolbar, do not auto-reposition it
+  if (toolbar.dataset.dragged === 'true') return;
+  
+  const rect = container.getBoundingClientRect();
+  const toolbarRect = toolbar.getBoundingClientRect();
+  
+  // Center horizontally inside plot-container, place 24px above bottom
+  const targetLeft = rect.left + (rect.width - toolbarRect.width) / 2;
+  const targetTop = rect.bottom - toolbarRect.height - 24;
+  
+  toolbar.style.left = `${targetLeft}px`;
+  toolbar.style.top = `${targetTop}px`;
+  toolbar.style.bottom = 'auto';
+  toolbar.style.right = 'auto';
+}
+
+// Toggle Fullscreen modes ('both', 'normal', 'aml')
+function toggleFullscreen(target) {
+  const body = document.body;
+  const globalBtn = document.getElementById('toggle-fullscreen-btn');
+  const normalBtn = document.getElementById('expand-btn-normal');
+  const amlBtn = document.getElementById('expand-btn-aml');
+  const cardNormal = document.getElementById('plot-card-normal');
+  const cardAML = document.getElementById('plot-card-aml');
+  
+  // If clicking what is already active, exit fullscreen
+  if (isFullscreenActive && fullscreenTarget === target) {
+    exitFullscreen();
+    return;
+  }
+  
+  // If target is 'both' but we are not in comparison mode, treat it as 'normal'
+  if (target === 'both' && currentCase !== 'compare') {
+    target = 'normal';
+    if (isFullscreenActive && fullscreenTarget === target) {
+      exitFullscreen();
+      return;
+    }
+  }
+  
+  isFullscreenActive = true;
+  fullscreenTarget = target;
+  
+  body.classList.add('fullscreen-mode');
+  
+  // Reset all active classes on buttons
+  if (globalBtn) globalBtn.classList.remove('active');
+  if (normalBtn) normalBtn.classList.remove('active');
+  if (amlBtn) amlBtn.classList.remove('active');
+  
+  // Update icons and active button states
+  if (target === 'both') {
+    if (globalBtn) {
+      globalBtn.classList.add('active');
+      globalBtn.innerHTML = `<svg class="icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6m10-6h-6v6M4 10h6V4m10 6h-6V4"/></svg>`;
+    }
+    // Show both cards
+    if (cardNormal) cardNormal.style.display = 'flex';
+    if (cardAML) cardAML.style.display = 'flex';
+  } else if (target === 'normal') {
+    if (normalBtn) normalBtn.classList.add('active');
+    // Hide AML card, show Normal card
+    if (cardNormal) cardNormal.style.display = 'flex';
+    if (cardAML) cardAML.style.display = 'none';
+  } else if (target === 'aml') {
+    if (amlBtn) amlBtn.classList.add('active');
+    // Hide Normal card, show AML card
+    if (cardNormal) cardNormal.style.display = 'none';
+    if (cardAML) cardAML.style.display = 'flex';
+  }
+  
+  // Recalculate canvas sizes and redraw plots
+  resizeCanvasForFullscreen();
+  
+  // Reposition floating gating toolbar since plot area changed
+  setTimeout(positionGatingToolbar, 100);
+}
+
+function exitFullscreen() {
+  const body = document.body;
+  const globalBtn = document.getElementById('toggle-fullscreen-btn');
+  const normalBtn = document.getElementById('expand-btn-normal');
+  const amlBtn = document.getElementById('expand-btn-aml');
+  const cardNormal = document.getElementById('plot-card-normal');
+  const cardAML = document.getElementById('plot-card-aml');
+  
+  isFullscreenActive = false;
+  fullscreenTarget = null;
+  
+  body.classList.remove('fullscreen-mode');
+  
+  if (globalBtn) {
+    globalBtn.classList.remove('active');
+    globalBtn.innerHTML = `<svg class="icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
+  }
+  if (normalBtn) normalBtn.classList.remove('active');
+  if (amlBtn) amlBtn.classList.remove('active');
+  
+  // Restore cards to default based on current case
+  if (cardNormal) cardNormal.style.display = 'flex';
+  if (cardAML) {
+    cardAML.style.display = (currentCase === 'compare') ? 'flex' : 'none';
+  }
+  
+  // Restore default size (460x460)
+  if (flowPlot) flowPlot.resize(460, 460);
+  if (flowPlotAML) flowPlotAML.resize(460, 460);
+  
+  // Reposition floating gating toolbar
+  setTimeout(positionGatingToolbar, 100);
+}
+
+function resizeCanvasForFullscreen() {
+  if (!isFullscreenActive) return;
+  
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  
+  // Sizing math:
+  // Available height: viewport height minus tabs (50px), margins/paddings (50px), controls (100px)
+  const availableHeight = h - 200;
+  
+  if (fullscreenTarget === 'both') {
+    // Both graphs side-by-side:
+    // Available width: (viewport width minus gap and padding (140px)) divided by 2
+    const availableWidth = (w - 140) / 2;
+    const size = Math.floor(Math.max(300, Math.min(availableWidth, availableHeight)));
+    
+    if (flowPlot) flowPlot.resize(size, size);
+    if (flowPlotAML) flowPlotAML.resize(size, size);
+  } else {
+    // Single graph fullscreen:
+    const availableWidth = w - 80;
+    const size = Math.floor(Math.max(300, Math.min(availableWidth, availableHeight)));
+    
+    if (fullscreenTarget === 'normal' && flowPlot) {
+      flowPlot.resize(size, size);
+    } else if (fullscreenTarget === 'aml' && flowPlotAML) {
+      flowPlotAML.resize(size, size);
+    }
   }
 }
 

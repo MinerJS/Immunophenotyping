@@ -1432,6 +1432,543 @@ input:checked + .sim-slider:before {
   box-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
 }
 
+/* Floating Gating Toolbar Styles */
+.floating-gating-toolbar {
+  position: fixed;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(11, 19, 41, 0.85);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1.5px solid var(--border-color);
+  border-radius: 10px;
+  padding: 6px 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(56, 189, 248, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, left 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
+  user-select: none;
+}
+
+.floating-gating-toolbar.dragging {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important; /* Disable position transitions when dragging */
+}
+
+.floating-gating-toolbar:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 15px rgba(56, 189, 248, 0.1);
+}
+
+.floating-gating-toolbar .drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: move;
+  padding-right: 6px;
+  border-right: 1.5px solid rgba(255, 255, 255, 0.08);
+  height: 24px;
+}
+
+.floating-gating-toolbar .drag-handle-icon {
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.floating-gating-toolbar:hover .drag-handle-icon {
+  color: var(--border-active);
+}
+
+.floating-gating-toolbar .toolbar-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.8px;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.floating-gating-toolbar .toolbar-separator {
+  width: 1px;
+  height: 18px;
+  background-color: rgba(255, 255, 255, 0.12);
+  margin: 0 4px;
+}
+
+.floating-gating-toolbar .toolbar-active-indicator {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+  background: rgba(2, 6, 23, 0.5);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Fullscreen Maximization styles */
+.plot-card {
+  position: relative;
+}
+
+.expand-plot-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.6);
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.expand-plot-btn:hover {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: var(--border-active);
+  color: var(--text-primary);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+.expand-plot-btn.active {
+  color: var(--border-active);
+  border-color: var(--border-active);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.global-fullscreen-btn {
+  position: absolute;
+  top: 16px;
+  right: 56px; /* 16px (toggle right btn right) + 32px (width of right btn) + 8px gap = 56px */
+  z-index: 99; /* Float on top of plot cards */
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: rgba(11, 19, 41, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.global-fullscreen-btn:hover {
+  background: rgba(11, 19, 41, 0.95);
+  border-color: var(--border-active);
+  color: var(--text-primary);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+.global-fullscreen-btn.active {
+  color: var(--border-active);
+  border-color: rgba(56, 189, 248, 0.3);
+  background-color: rgba(56, 189, 248, 0.08);
+}
+
+/* Fullscreen Mode Layout Updates */
+body.fullscreen-mode header {
+  display: none !important;
+}
+
+body.fullscreen-mode .vertical-tabs-bar {
+  display: none !important;
+}
+
+body.fullscreen-mode .sidebar-panel {
+  display: none !important;
+}
+
+body.fullscreen-mode .sidebar-resizer {
+  display: none !important;
+}
+
+body.fullscreen-mode .right-panel {
+  display: none !important;
+}
+
+body.fullscreen-mode .right-panel-toggle-btn {
+  display: none !important; /* Hide panel toggle since panel itself is gone */
+}
+
+body.fullscreen-mode .workspace {
+  height: 100vh !important;
+}
+
+body.fullscreen-mode .plot-container {
+  border-right: none !important;
+  padding: 24px;
+}
+
+body.fullscreen-mode .plots-layout {
+  height: calc(100% - 60px); /* Fill space below tabs and header controls */
+  width: 100%;
+}
+
+body.fullscreen-mode .plot-card {
+  flex: 1;
+  height: 100%;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* ==========================================================================
+   Leukaemia Reference & Predictor Page Styles
+   ========================================================================== */
+
+#left-sidebar {
+  container-type: inline-size;
+  container-name: sidebar;
+}
+
+#sidebar-tab-leukaemia {
+  height: 100%;
+  display: none;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+#sidebar-tab-leukaemia.active {
+  display: flex;
+}
+
+/* Sub-tabs inside leukaemia page */
+.leukaemia-subtabs {
+  display: flex;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-bottom: 1.5px solid var(--border-color);
+  padding: 4px;
+  gap: 4px;
+}
+
+.leukaemia-subtab-btn {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.leukaemia-subtab-btn:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.leukaemia-subtab-btn.active {
+  color: var(--accent-cyan);
+  background-color: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.15);
+}
+
+/* Sub-panes layout */
+.leukaemia-subpane {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.leukaemia-subpane.active {
+  display: flex;
+}
+
+/* Scrollable sidebar contents */
+.scrollable-sidebar-content {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.scrollable-sidebar-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollable-sidebar-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+/* Marker State Buttons styling */
+.marker-toggle-group {
+  display: flex;
+  gap: 2px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.marker-state-btn {
+  width: 24px;
+  height: 18px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+  border-radius: 3px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.marker-state-btn:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Neutral state active */
+.marker-state-btn.btn-neutral.active {
+  background-color: #334155;
+  color: #f1f5f9;
+  border-color: #475569;
+}
+
+/* Positive state active */
+.marker-state-btn.btn-pos.active {
+  background-color: rgba(0, 229, 255, 0.15);
+  color: var(--accent-cyan);
+  border-color: rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 6px rgba(0, 229, 255, 0.2);
+}
+
+/* Negative state active */
+.marker-state-btn.btn-neg.active {
+  background-color: rgba(255, 152, 0, 0.15);
+  color: var(--accent-orange);
+  border-color: rgba(255, 152, 0, 0.4);
+  box-shadow: 0 0 6px rgba(255, 152, 0, 0.2);
+}
+
+/* Predictions list styling */
+.predictions-list-section {
+  max-height: 280px;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.predictions-list-section h3 {
+  font-size: 10px !important;
+  margin-bottom: 8px !important;
+}
+
+.predictions-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 4px;
+}
+
+/* Prediction card states */
+.prediction-card {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.prediction-card:hover {
+  border-color: var(--text-muted);
+  background: rgba(11, 19, 41, 0.8);
+  transform: translateX(2px);
+}
+
+.prediction-card.match-perfect {
+  border-color: rgba(0, 229, 255, 0.3);
+  box-shadow: inset 0 0 8px rgba(0, 229, 255, 0.05);
+}
+
+.prediction-card.match-perfect:hover {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.15);
+}
+
+.prediction-card.match-partial {
+  border-color: rgba(255, 152, 0, 0.25);
+}
+
+.prediction-card.match-partial:hover {
+  border-color: var(--accent-orange);
+  box-shadow: 0 0 8px rgba(255, 152, 0, 0.1);
+}
+
+.prediction-card.match-neutral {
+  border-color: var(--border-color);
+}
+
+/* Slide-up detail drawer */
+.leukaemia-drawer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+  border-top: 1.5px solid var(--border-color);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 -10px 25px rgba(0,0,0,0.6);
+}
+
+.leukaemia-drawer.open {
+  transform: translateY(0);
+}
+
+/* Drawer marker boxes styling */
+.drawer-marker-box.marker-label-aberrant {
+  border-color: rgba(255, 42, 42, 0.3) !important;
+  background-color: rgba(255, 42, 42, 0.05) !important;
+  color: var(--accent-red);
+}
+
+/* Flowchart SVG Elements Styling */
+.flow-node rect {
+  fill: #0c152b;
+  stroke: var(--border-color);
+  stroke-width: 1.2;
+  transition: all 0.3s ease;
+}
+
+.flow-node text {
+  fill: var(--text-secondary);
+  font-size: 8.5px;
+  font-weight: 600;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  transition: all 0.3s ease;
+}
+
+/* Flow node type styling */
+.flow-node.root rect {
+  fill: #1e1b4b; /* Deep purple for root */
+  stroke: #4338ca;
+}
+
+.flow-node.root text {
+  fill: #e0e7ff;
+}
+
+.flow-node.branch rect {
+  fill: #0f172a;
+}
+
+.flow-node.disease rect {
+  fill: #0b1329;
+}
+
+/* Flow node highlight states */
+.flow-node.active rect {
+  stroke: var(--accent-cyan);
+  fill: rgba(0, 229, 255, 0.08);
+  stroke-width: 1.8;
+  filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.2));
+}
+
+.flow-node.active text {
+  fill: var(--text-primary);
+  font-weight: 700;
+}
+
+.flow-node.partial rect {
+  stroke: var(--accent-orange);
+  fill: rgba(255, 152, 0, 0.08);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 3px rgba(255, 152, 0, 0.15));
+}
+
+.flow-node.partial text {
+  fill: var(--text-primary);
+}
+
+.flow-node.dimmed {
+  opacity: 0.15;
+}
+
+/* Connection Links */
+.flow-link {
+  fill: none;
+  stroke: var(--border-color);
+  stroke-width: 1.2;
+  transition: all 0.3s ease;
+}
+
+.flow-link.active {
+  stroke: var(--accent-cyan);
+  stroke-width: 2.2;
+  stroke-dasharray: 4,4;
+  animation: flow-dash 1s linear infinite;
+}
+
+.flow-link.partial {
+  stroke: var(--accent-orange);
+  stroke-width: 1.6;
+}
+
+.flow-link.dimmed {
+  stroke: rgba(255, 255, 255, 0.02);
+  stroke-width: 0.8;
+}
+
+@keyframes flow-dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+/* Container Queries for Wide Sidebar */
+@container sidebar (min-width: 480px) {
+  #sidebar-tab-leukaemia {
+    /* If tab is active, we lay out side-by-side */
+  }
+
+  /* Make Predictor section split into two columns */
+  #leukaemia-pane-predictor {
+    flex-direction: row !important;
+    gap: 8px;
+  }
+
+  .marker-groups-container {
+    flex: 1.2 !important;
+    border-right: 1.5px solid var(--border-color);
+  }
+
+  .predictions-list-section {
+    flex: 0.8 !important;
+    max-height: 100% !important;
+    border-top: none !important;
+    background-color: transparent !important;
+  }
+}
+
+
+
+
 
 
 

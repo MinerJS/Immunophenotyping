@@ -78,6 +78,14 @@ class FlowPlot {
     });
   }
 
+  resize(width, height) {
+    this.canvas.width = width;
+    this.canvas.height = height;
+    this.width = width;
+    this.height = height;
+    this.draw();
+  }
+
   // Set the current data
   setData(events, filteredEvents, gates) {
     this.events = events;
