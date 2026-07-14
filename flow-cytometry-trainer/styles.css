@@ -1941,6 +1941,14 @@ body.fullscreen-mode .plot-card {
   }
 }
 
+/* Predictor elements column */
+.predictor-markers-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1.2;
+  overflow: hidden;
+}
+
 /* Container Queries for Wide Sidebar */
 @container sidebar (min-width: 480px) {
   #sidebar-tab-leukaemia {
@@ -1950,25 +1958,186 @@ body.fullscreen-mode .plot-card {
   /* Make Predictor section split into two columns */
   #leukaemia-pane-predictor {
     flex-direction: row !important;
-    gap: 8px;
+    gap: 12px;
   }
 
-  .marker-groups-container {
-    flex: 1.2 !important;
+  .predictor-markers-col {
+    flex: 1.1 !important;
     border-right: 1.5px solid var(--border-color);
   }
 
+  .marker-groups-container {
+    border-right: none !important;
+  }
+
   .predictions-list-section {
-    flex: 0.8 !important;
+    flex: 0.9 !important;
     max-height: 100% !important;
     border-top: none !important;
     background-color: transparent !important;
   }
 }
 
+/* ==========================================================================
+   Leukaemia Full-Page Layout Styles
+   ========================================================================== */
 
+/* Panes container default */
+.leukaemia-panes-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
 
+/* Full-page active state styling */
+.workspace.leukaemia-fullpage-active #left-sidebar {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+}
 
+.workspace.leukaemia-fullpage-active #sidebar-resizer,
+.workspace.leukaemia-fullpage-active .plot-container,
+.workspace.leukaemia-fullpage-active .right-panel {
+  display: none !important;
+}
 
+/* Hide tab bar in full page since both are visible */
+.workspace.leukaemia-fullpage-active .leukaemia-subtabs {
+  display: none !important;
+}
 
+/* Arrange panes side-by-side */
+.workspace.leukaemia-fullpage-active .leukaemia-panes-container {
+  flex-direction: row !important;
+  gap: 16px;
+  padding: 16px;
+  background-color: var(--bg-main);
+  box-sizing: border-box;
+}
 
+/* Layout each subpane as a distinct card panel */
+.workspace.leukaemia-fullpage-active .leukaemia-subpane {
+  display: flex !important;
+  flex: 1;
+  height: 100%;
+  background-color: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+/* Scale flowchart SVG in full-page mode */
+.workspace.leukaemia-fullpage-active #flowchart-svg {
+  height: 100% !important;
+  max-height: 550px;
+}
+
+/* Limit drawer height in full-page mode and make it scrollable */
+.workspace.leukaemia-fullpage-active .leukaemia-drawer {
+  max-height: 450px;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace.leukaemia-fullpage-active .leukaemia-drawer .drawer-body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Simulator panel toggle buttons */
+#hide-simulator-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+#hide-simulator-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+#show-simulator-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: rgba(11, 19, 41, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(56, 189, 248, 0.3);
+  color: var(--accent-cyan);
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  z-index: 50;
+  transition: all 0.2s;
+}
+
+#show-simulator-btn:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: var(--accent-cyan);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+#show-simulator-btn:active {
+  transform: translateY(0);
+}
+
+/* Bottom sliding plots panel styles */
+.explorer-plots-panel {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translate(-50%, 340px);
+  width: 780px;
+  height: 275px;
+  background: rgba(11, 19, 41, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(56, 189, 248, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  z-index: 48;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.explorer-plots-panel.visible {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#explorer-3d-legend, #explorer-zoom-controls {
+  transition: bottom 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#close-plots-panel-btn:hover {
+  color: var(--text-primary) !important;
+  background: rgba(255, 255, 255, 0.08);
+}

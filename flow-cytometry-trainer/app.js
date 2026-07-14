@@ -13,6 +13,10 @@ let sandboxMode = false;
 let currentTutorialStep = 0;
 let flowPlot = null;
 let flowPlotAML = null;
+let explorerPlotsVisible = false;
+let explorerPlotFscSsc = null;
+let explorerPlotCd45Ssc = null;
+let explorerPlotLineage = null;
 let currentCreatedPoints = null; // Temp storage for newly drawn points
 let stepFailures = 0;             // Tracks failures per tutorial step
 let activeSelectedGateId = null;  // Tracks currently selected gate on canvas
@@ -1848,6 +1852,61 @@ function buildGallerySidebar() {
 // Collapsible Sidebar Panel Toggle
 let activeSidebarTab = 'gallery'; // 'gallery' or 'gating'
 let sidebarExpanded = true;
+let leukaemiaViewMode = localStorage.getItem('flow-leukaemia-view-mode') || 'fullpage';
+
+function updateLeukaemiaLayout() {
+  const workspace = document.querySelector('.workspace');
+  if (!workspace) return;
+  
+  if (sidebarExpanded && activeSidebarTab === 'leukaemia' && leukaemiaViewMode === 'fullpage') {
+    workspace.classList.add('leukaemia-fullpage-active');
+  } else {
+    workspace.classList.remove('leukaemia-fullpage-active');
+  }
+  
+  // Update the button UI inside leukaemia header
+  const layoutBtn = document.getElementById('leukaemia-layout-btn');
+  if (layoutBtn) {
+    const isFullPage = workspace.classList.contains('leukaemia-fullpage-active');
+    const span = layoutBtn.querySelector('span');
+    const svg = layoutBtn.querySelector('svg');
+    
+    if (isFullPage) {
+      if (span) span.textContent = 'Dock to Sidebar';
+      if (svg) {
+        svg.innerHTML = '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line>';
+      }
+      layoutBtn.title = 'Dock Leukaemia Reference to Left Sidebar';
+    } else {
+      if (span) span.textContent = 'Expand to Full Page';
+      if (svg) {
+        svg.innerHTML = '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
+      }
+      layoutBtn.title = 'Expand Leukaemia Reference to Full Page';
+    }
+  }
+}
+
+function toggleLeukaemiaViewMode() {
+  leukaemiaViewMode = (leukaemiaViewMode === 'fullpage') ? 'sidebar' : 'fullpage';
+  localStorage.setItem('flow-leukaemia-view-mode', leukaemiaViewMode);
+  
+  if (leukaemiaViewMode === 'sidebar') {
+    // If switching to sidebar mode, make sure the sidebar is open
+    sidebarExpanded = true;
+    const sidebar = document.getElementById('left-sidebar');
+    if (sidebar) sidebar.classList.remove('collapsed');
+    const resizer = document.getElementById('sidebar-resizer');
+    if (resizer) resizer.style.display = 'block';
+  }
+  
+  updateLeukaemiaLayout();
+  updateTabButtons();
+  
+  if (typeof positionGatingToolbar === 'function') {
+    positionGatingToolbar();
+  }
+}
 
 function initSidebar() {
   const sidebar = document.getElementById('left-sidebar');
@@ -1874,6 +1933,12 @@ function initSidebar() {
   // Inner Close Buttons
   if (closeBtn) closeBtn.addEventListener('click', () => toggleSidebar(false));
   if (closeGatingBtn) closeGatingBtn.addEventListener('click', () => toggleSidebar(false));
+  
+  // Layout toggle button in leukaemia header
+  const leukaemiaLayoutBtn = document.getElementById('leukaemia-layout-btn');
+  if (leukaemiaLayoutBtn) {
+    leukaemiaLayoutBtn.addEventListener('click', toggleLeukaemiaViewMode);
+  }
   
   // Initialize Resizer
   initSidebarResizer();
@@ -1910,6 +1975,7 @@ function initSidebar() {
   if (activeContent) activeContent.classList.add('active');
   
   updateTabButtons();
+  updateLeukaemiaLayout();
 }
 
 function switchSidebarTab(tabId) {
@@ -1938,6 +2004,7 @@ function switchSidebarTab(tabId) {
   if (activeContent) activeContent.classList.add('active');
   
   updateTabButtons();
+  updateLeukaemiaLayout();
   
   if (tabId === 'gallery') {
     highlightActiveGalleryItem();
@@ -1981,6 +2048,7 @@ function toggleSidebar(show) {
   }
   
   updateTabButtons();
+  updateLeukaemiaLayout();
   positionGatingToolbar();
   setTimeout(positionGatingToolbar, 310);
 }
@@ -2687,6 +2755,76 @@ function openCell3DExplorer(cell, originCase) {
   // Set case indicator
   document.getElementById('explorer-case-indicator').innerText = originCase;
   
+  // Lazily initialize explorer plots if needed
+  if (!explorerPlotFscSsc) {
+    explorerPlotFscSsc = new FlowPlot('explorer-canvas-fsc-ssc');
+    explorerPlotFscSsc.canvas.style.pointerEvents = 'none';
+    explorerPlotFscSsc.activeTool = null;
+  }
+  if (!explorerPlotCd45Ssc) {
+    explorerPlotCd45Ssc = new FlowPlot('explorer-canvas-cd45-ssc');
+    explorerPlotCd45Ssc.canvas.style.pointerEvents = 'none';
+    explorerPlotCd45Ssc.activeTool = null;
+  }
+  if (!explorerPlotLineage) {
+    explorerPlotLineage = new FlowPlot('explorer-canvas-lineage');
+    explorerPlotLineage.canvas.style.pointerEvents = 'none';
+    explorerPlotLineage.activeTool = null;
+  }
+
+  // Load correct events list (Normal vs AML)
+  const isAml = originCase.includes('AML') || (typeof currentCase !== 'undefined' && currentCase === 'aml');
+  const events = isAml ? (amlEvents.length ? amlEvents : FlowData.generateAMLCase()) : (normalEvents.length ? normalEvents : FlowData.generateNormalCase());
+  
+  explorerPlotFscSsc.setData(events, events, []);
+  explorerPlotCd45Ssc.setData(events, events, []);
+  explorerPlotLineage.setData(events, events, []);
+  
+  // Set plot configurations
+  explorerPlotFscSsc.xAxis = 'FSC_A';
+  explorerPlotFscSsc.yAxis = 'SSC_A';
+  
+  explorerPlotCd45Ssc.xAxis = 'CD45';
+  explorerPlotCd45Ssc.yAxis = 'SSC_A';
+  
+  // Dynamic Lineage plot markers based on cell type
+  let lineX = 'CD3';
+  let lineY = 'CD19';
+  if (cell.type === 'CD4_TCell' || cell.type === 'CD8_TCell' || cell.type === 'gd_TCell') {
+    lineX = 'CD3';
+    lineY = cell.type === 'CD8_TCell' ? 'CD8' : 'CD4';
+  } else if (cell.type === 'BCell') {
+    lineX = 'CD3';
+    lineY = 'CD19';
+  } else if (cell.type === 'Monocyte') {
+    lineX = 'CD45';
+    lineY = 'CD14';
+  } else if (cell.type === 'AML_Blast') {
+    lineX = 'CD34';
+    lineY = 'CD117';
+  } else if (cell.type === 'NormalProgenitor') {
+    lineX = 'CD45';
+    lineY = 'CD34';
+  }
+  
+  explorerPlotLineage.xAxis = lineX;
+  explorerPlotLineage.yAxis = lineY;
+  
+  // Set titles and highlights
+  const lineageTitle = document.getElementById('lineage-graph-title');
+  if (lineageTitle) {
+    lineageTitle.innerText = `${lineX} vs ${lineY} (Lineage)`;
+  }
+  
+  explorerPlotFscSsc.highlightedCellType = cell.type;
+  explorerPlotCd45Ssc.highlightedCellType = cell.type;
+  explorerPlotLineage.highlightedCellType = cell.type;
+  
+  // Render initial plots state
+  explorerPlotFscSsc.draw();
+  explorerPlotCd45Ssc.draw();
+  explorerPlotLineage.draw();
+  
   // Initialize the 3D rendering
   init3DCellExplorer(cell.type);
 }
@@ -2814,6 +2952,8 @@ function init3DCellExplorer(cellType) {
 }
 
 function cleanup3DCellExplorer() {
+  hideExplorerPlotsPanel();
+  
   if (threeJSData) {
     if (threeJSData.cleanup) threeJSData.cleanup();
     if (threeJSData.resizeHandler) window.removeEventListener('resize', threeJSData.resizeHandler);
@@ -3869,6 +4009,12 @@ function resetSimulatorStates() {
   const card = document.getElementById('explorer-conjugate-card');
   if (card) card.style.display = 'none';
   
+  // Reset panel show/hide states
+  const simulatorPanel = document.getElementById('simulator-panel');
+  if (simulatorPanel) simulatorPanel.style.display = 'flex';
+  const showSimulatorBtn = document.getElementById('show-simulator-btn');
+  if (showSimulatorBtn) showSimulatorBtn.style.display = 'none';
+  
   drawOscilloscopeReady();
 }
 
@@ -3883,6 +4029,34 @@ function initSimulatorEvents() {
   const fluidicsControlsContainer = document.getElementById('fluidics-controls-container');
   const injectBtn = document.getElementById('sim-inject-btn');
   const volumeBtn = document.getElementById('sim-volume-btn');
+  
+  // Plots Panel Toggle Events
+  const plotsToggleBtn = document.getElementById('explorer-plots-toggle-btn');
+  const closePlotsPanelBtn = document.getElementById('close-plots-panel-btn');
+  
+  if (plotsToggleBtn) {
+    plotsToggleBtn.addEventListener('click', toggleExplorerPlotsPanel);
+  }
+  if (closePlotsPanelBtn) {
+    closePlotsPanelBtn.addEventListener('click', hideExplorerPlotsPanel);
+  }
+  
+  // Panel show/hide controls
+  const simulatorPanel = document.getElementById('simulator-panel');
+  const hideSimulatorBtn = document.getElementById('hide-simulator-btn');
+  const showSimulatorBtn = document.getElementById('show-simulator-btn');
+  
+  if (hideSimulatorBtn && simulatorPanel && showSimulatorBtn) {
+    hideSimulatorBtn.addEventListener('click', () => {
+      simulatorPanel.style.display = 'none';
+      showSimulatorBtn.style.display = 'flex';
+    });
+    
+    showSimulatorBtn.addEventListener('click', () => {
+      simulatorPanel.style.display = 'flex';
+      showSimulatorBtn.style.display = 'none';
+    });
+  }
   
   if (conjugationToggle) {
     conjugationToggle.addEventListener('change', (e) => {
@@ -3970,6 +4144,9 @@ function initSimulatorEvents() {
       isInjecting = true;
       injectionProgress = 0;
       oscilloscopePoints = [];
+      
+      // Open graphs panel automatically when injection starts
+      showExplorerPlotsPanel();
     });
   }
 
@@ -4135,6 +4312,11 @@ function plotInterrogatedCellEvent() {
   if (typeof flowPlotAML !== 'undefined' && flowPlotAML) {
     flowPlotAML.addInterrogatedPoint(currentInterrogatedCellType);
   }
+  
+  // Add interrogated point flash to 3D explorer plots
+  if (explorerPlotFscSsc) explorerPlotFscSsc.addInterrogatedPoint(currentInterrogatedCellType);
+  if (explorerPlotCd45Ssc) explorerPlotCd45Ssc.addInterrogatedPoint(currentInterrogatedCellType);
+  if (explorerPlotLineage) explorerPlotLineage.addInterrogatedPoint(currentInterrogatedCellType);
   
   const toast = document.createElement('div');
   toast.style.position = 'absolute';
@@ -4314,6 +4496,57 @@ function resizeCanvasForFullscreen() {
     }
   }
 }
+
+function showExplorerPlotsPanel() {
+  const panel = document.getElementById('explorer-plots-panel');
+  const legend = document.getElementById('explorer-3d-legend');
+  const zoomControls = document.getElementById('explorer-zoom-controls');
+  
+  if (panel) {
+    panel.classList.add('visible');
+    explorerPlotsVisible = true;
+    
+    // Shift legend and zoom controls up
+    if (legend) legend.style.bottom = '320px';
+    if (zoomControls) zoomControls.style.bottom = '320px';
+    
+    // Start animation loop for pulsing reticle
+    animateExplorerPlots();
+  }
+}
+
+function hideExplorerPlotsPanel() {
+  const panel = document.getElementById('explorer-plots-panel');
+  const legend = document.getElementById('explorer-3d-legend');
+  const zoomControls = document.getElementById('explorer-zoom-controls');
+  
+  if (panel) {
+    panel.classList.remove('visible');
+    explorerPlotsVisible = false;
+    
+    // Restore legend and zoom controls
+    if (legend) legend.style.bottom = '24px';
+    if (zoomControls) zoomControls.style.bottom = '24px';
+  }
+}
+
+function toggleExplorerPlotsPanel() {
+  if (explorerPlotsVisible) {
+    hideExplorerPlotsPanel();
+  } else {
+    showExplorerPlotsPanel();
+  }
+}
+
+function animateExplorerPlots() {
+  if (explorerPlotsVisible) {
+    if (explorerPlotFscSsc) explorerPlotFscSsc.draw();
+    if (explorerPlotCd45Ssc) explorerPlotCd45Ssc.draw();
+    if (explorerPlotLineage) explorerPlotLineage.draw();
+    requestAnimationFrame(animateExplorerPlots);
+  }
+}
+
 
 
 

@@ -12,7 +12,15 @@ class FlowPlot {
     // Canvas sizing
     this.width = this.canvas.width;
     this.height = this.canvas.height;
-    this.padding = { top: 30, right: 30, bottom: 50, left: 60 };
+    
+    // Adjust padding and fonts for smaller canvas dimensions (e.g. in 3D explorer)
+    if (this.width < 300) {
+      this.padding = { top: 20, right: 15, bottom: 35, left: 45 };
+      this.smallMode = true;
+    } else {
+      this.padding = { top: 30, right: 30, bottom: 50, left: 60 };
+      this.smallMode = false;
+    }
     
     // Plot configuration
     this.xAxis = 'CD45';
@@ -450,6 +458,9 @@ class FlowPlot {
     
     // Draw cell highlight ring & HUD tooltip
     this.drawHoveredCellHighlight();
+    
+    // Draw persistent target highlight for explorer view
+    this.drawPersistentHighlight();
   }
 
   drawGrid() {
@@ -467,7 +478,7 @@ class FlowPlot {
     
     // Draw grid lines and labels
     this.ctx.fillStyle = '#94a3b8'; // Light slate
-    this.ctx.font = '11px sans-serif';
+    this.ctx.font = this.smallMode ? '8px sans-serif' : '11px sans-serif';
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'top';
     
@@ -636,21 +647,21 @@ class FlowPlot {
         if (['FSC_A', 'FSC_H', 'SSC_A'].includes(this.yAxis)) {
           label = Math.round(val * 250).toLocaleString();
         }
-        this.ctx.fillText(label, this.padding.left - 10, yPx);
+        this.ctx.fillText(label, this.padding.left - (this.smallMode ? 6 : 10), yPx);
       }
     }
     
     // Draw Axis Labels
     this.ctx.fillStyle = '#f8fafc'; // Off-white
-    this.ctx.font = 'bold 12px sans-serif';
+    this.ctx.font = this.smallMode ? 'bold 9.5px sans-serif' : 'bold 12px sans-serif';
     this.ctx.textAlign = 'center';
     
     // X Axis Label
-    this.ctx.fillText(this.xAxis, this.padding.left + plotWidth / 2, this.height - 12);
+    this.ctx.fillText(this.xAxis, this.padding.left + plotWidth / 2, this.height - (this.smallMode ? 6 : 12));
     
     // Y Axis Label (rotated)
     this.ctx.save();
-    this.ctx.translate(15, this.padding.top + plotHeight / 2);
+    this.ctx.translate(this.smallMode ? 10 : 15, this.padding.top + plotHeight / 2);
     this.ctx.rotate(-Math.PI / 2);
     this.ctx.fillText(this.yAxis, 0, 0);
     this.ctx.restore();
@@ -1538,6 +1549,122 @@ class FlowPlot {
   }
 
   restoreContext() {
+    this.ctx.restore();
+  }
+
+  getCellTypeCenter(cellType, xAxis, yAxis) {
+    let cx = 500;
+    let cy = 500;
+    
+    if (cellType === 'CD4_TCell' || cellType === 'CD8_TCell' || cellType === 'gd_TCell' || cellType === 'BCell' || cellType === 'NKCell') {
+      if (xAxis === 'CD45') cx = 765;
+      else if (xAxis === 'FSC_A') cx = 380;
+      else if (xAxis === 'CD3') cx = (cellType === 'BCell' || cellType === 'NKCell') ? 120 : 780;
+      else if (xAxis === 'CD4') cx = (cellType === 'CD4_TCell') ? 730 : 100;
+      else if (xAxis === 'CD8') cx = (cellType === 'CD8_TCell') ? 710 : 100;
+      
+      if (yAxis === 'SSC_A') cy = 195;
+      else if (yAxis === 'CD19') cy = (cellType === 'BCell') ? 750 : 90;
+      else if (yAxis === 'CD8') cy = (cellType === 'CD8_TCell') ? 710 : 100;
+      else if (yAxis === 'CD38') cy = 225;
+    } else if (cellType === 'Monocyte') {
+      if (xAxis === 'CD45') cx = 800;
+      else if (xAxis === 'FSC_A') cx = 680;
+      else if (xAxis === 'CD3') cx = 90;
+      else if (xAxis === 'CD14') cx = 750;
+      
+      if (yAxis === 'SSC_A') cy = 372.5;
+      else if (yAxis === 'HLA_DR') cy = 625;
+    } else if (cellType === 'Granulocyte') {
+      if (xAxis === 'CD45') cx = 575;
+      else if (xAxis === 'FSC_A') cx = 630;
+      
+      if (yAxis === 'SSC_A') cy = 800;
+    } else if (cellType === 'AML_Blast') {
+      if (xAxis === 'CD45') cx = 485;
+      else if (xAxis === 'FSC_A') cx = 505;
+      else if (xAxis === 'CD34') cx = 710;
+      
+      if (yAxis === 'SSC_A') cy = 272.5;
+      else if (yAxis === 'CD117') cy = 682.5;
+      else if (yAxis === 'HLA_DR') cy = 575;
+    } else if (cellType === 'NormalProgenitor') {
+      if (xAxis === 'CD45') cx = 530;
+      else if (xAxis === 'FSC_A') cx = 480;
+      
+      if (yAxis === 'SSC_A') cy = 245;
+      else if (yAxis === 'CD34') cy = 665;
+    } else if (cellType === 'Debris') {
+      cx = 80;
+      cy = 80;
+    }
+    
+    return { x: cx, y: cy };
+  }
+
+  drawPersistentHighlight() {
+    if (!this.highlightedCellType) return;
+    
+    const center = this.getCellTypeCenter(this.highlightedCellType, this.xAxis, this.yAxis);
+    const px = this.toPixelX(center.x);
+    const py = this.toPixelY(center.y);
+    
+    const xMin = this.zoomX ? this.zoomX[0] : 0;
+    const xMax = this.zoomX ? this.zoomX[1] : 1000;
+    const yMin = this.zoomY ? this.zoomY[0] : 0;
+    const yMax = this.zoomY ? this.zoomY[1] : 1000;
+    
+    if (center.x < xMin || center.x > xMax || center.y < yMin || center.y > yMax) return;
+    
+    const time = Date.now() / 1000;
+    const pulseRadius = 13 + Math.sin(time * 6) * 3;
+    const opacity = 0.65 + Math.sin(time * 6) * 0.2;
+    
+    let color = '#00e5ff'; // aqua
+    if (this.highlightedCellType === 'BCell') color = '#ff9800'; // orange
+    else if (this.highlightedCellType === 'NKCell') color = '#ff2a2a'; // red
+    else if (this.highlightedCellType === 'Monocyte') color = '#4caf50'; // green
+    else if (this.highlightedCellType === 'Granulocyte') color = '#2196f3'; // blue
+    else if (this.highlightedCellType === 'AML_Blast') color = '#9c27b0'; // purple
+    
+    this.ctx.save();
+    
+    this.ctx.strokeStyle = color;
+    this.ctx.fillStyle = color;
+    this.ctx.lineWidth = 1.8;
+    this.ctx.globalAlpha = opacity;
+    this.ctx.setLineDash([4, 3]);
+    
+    this.ctx.translate(px, py);
+    this.ctx.rotate(time * 0.5);
+    this.ctx.beginPath();
+    this.ctx.arc(0, 0, pulseRadius, 0, Math.PI * 2);
+    this.ctx.stroke();
+    
+    this.ctx.rotate(-time * 0.5);
+    this.ctx.setLineDash([]);
+    this.ctx.lineWidth = 1.2;
+    
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, -pulseRadius - 3);
+    this.ctx.lineTo(0, -pulseRadius + 1);
+    this.ctx.moveTo(0, pulseRadius - 1);
+    this.ctx.lineTo(0, pulseRadius + 3);
+    this.ctx.moveTo(-pulseRadius - 3, 0);
+    this.ctx.lineTo(-pulseRadius + 1, 0);
+    this.ctx.moveTo(pulseRadius - 1, 0);
+    this.ctx.lineTo(pulseRadius + 3, 0);
+    this.ctx.stroke();
+    
+    this.ctx.beginPath();
+    this.ctx.arc(0, 0, 3, 0, Math.PI * 2);
+    this.ctx.fill();
+    
+    this.ctx.font = 'bold 8px sans-serif';
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'bottom';
+    this.ctx.fillText("TARGET", 0, -pulseRadius - 5);
+    
     this.ctx.restore();
   }
 }
