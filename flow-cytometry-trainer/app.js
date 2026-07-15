@@ -1919,7 +1919,11 @@ function initSidebar() {
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.getAttribute('data-tab');
-      switchSidebarTab(tab);
+      if (tab === 'simulator') {
+        openFlowSimulatorPage(currentCase);
+      } else {
+        switchSidebarTab(tab);
+      }
     });
   });
   

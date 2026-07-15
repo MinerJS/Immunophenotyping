@@ -1,0 +1,805 @@
+=== PDF PAGE 89 (0-indexed 88) ===
+773232AH 3-1
+CHAPTER 3
+  Operation Principles
+What This Chapter Explains
+This chapter explains how the Cytometer measures scattered light and fluorescence as cells pass 
+through the laser beam.
+The illustrations in this chapter are not exact representations of the inside of the Cytometer. They 
+ar
+e for explanatory purposes only.
+Sample Flow
+CAUTION
+Possible flow cell damage. To avoid clogging the sample probe, sample tubing or 
+flow cell, ensure that 12 x 75 mm test tubes are free of debris before you use 
+them.
+Sample Loading
+The sample carousel has bar-code labels that identify the carousel and the tube position number. 
+Also, you can put bar-code labels on the sample tubes. See Bar-code Specifications
+The MCL has a bar-code reader that reads the carousel number, the sample tube position, and the 
+sample 
+tube bar-code labels as the carousel rotates. The MCL handles a sample tube as follows:
+ • It  lifts the tube out of the carousel into a centering cup.
+ • I t moves the bottom of the tube in a circular orbit to mix the sample.
+ • It lowers its sample probe into the tube and the tube is pressurized. Sample flow begins.
+The sample probe is cleaned automatically when sample flow ends.
+Hydrodynamic Focusing
+The instrument uses a process called hydrodynamic focusing to ensure that the cells move through 
+the laser beam one at a time, along the same path through the flow cell.
+
+=== PDF PAGE 90 (0-indexed 89) ===
+773232AH  3-2
+  Operation Principles
+Laser Beam Shaping  
+The flow cell (Figure 3.1) contains a rectangular channel. A pressurized stream of sheath fluid enters 
+the channel at the lower end and flows upward. The sensing area of the flow cell is at the center of 
+the c
+hannel.
+While the sheath stream is flowing through the channel, a stream of sample is injected into the 
+middle of the
+ sheath stream. As shown in Figure 3.1, the sheath stream surrounds, but does not mix 
+with, the sample stream. The pressure of the sheath str eam focuses the sample stream so that the 
+cells flow through the laser beam single file. If the cells were to move through the laser beam in 
+different ways during sample flow, sample analysis could be distorted. 
+Figure 3.1  Flow Cell
+Laser Beam Shaping
+Before the laser beams reach the sample stream, cross-cylindrical lenses focus the beams (see 
+Figure 3.2). Focusing keeps the beam perpendicular to th e sample stream flow while making the 
+beam small enough to illuminate only one cell at a time.
+The first lens controls the width of the beam; the second, the height. The resulting elliptical beam 
+is focused on the sensing area of the flow cell.
+1. Wa ste out
+2. Debu bble port
+3. Shea th stream enters here
+4. S
+ample stream enters here
+b
+c
+d
+e
+
+=== PDF PAGE 91 (0-indexed 90) ===
+773232AH 3-3
+  Operation Principles
+Cell Illumination     3
+Figure 3.2  Laser Beam Sha ping 
+Cell Illumination
+As cells in the sample stream go through the sensing area of the flow cell, the elliptical laser beam 
+illuminates them. The cells scatter the laser light and emit fluorescent light from fluorescent dyes 
+attached to them.
+Forward Scatter
+The amount of laser light scattered at narrow angles to the axis of the laser beam is called forward 
+scatter (FS). The amount of FS is proportional to the size of the cell that scattered the laser light.
+Side Scatter and Fluorescent Light
+The amount of laser light scattered at about a 90° angle to the axis of the laser beam is called side 
+scatter (SS). The amount of SS is proportional to the granularity of the cell that scattered the laser 
+light. For example, SS is used to differentiate between lymphocytes, monocytes, and granulocytes.
+In addition to the SS, the cells emit fluorescent light (FL) at all angles to the axis of the laser beam. 
+The amount of FL enables the instrument to measure characteristics of the cells emitting that light, 
+depending on the reagents used. For example, FL is used to identify molecules, such as cell surface 
+antigens.
+1. Viole t laser beams
+2. Bl ue laser beam
+3. Re
+d laser beam
+4. Horizont al beam shaping lens
+5. V
+ertical beam shaping lens
+b
+c
+d
+e
+f
+
+=== PDF PAGE 92 (0-indexed 91) ===
+773232AH  3-4
+  Operation Principles
+Light Collection, Separation And Measurement  
+Light Collection, Separation And Measurement
+Forward Scatter Collection
+The FALS (Forward Angle Light Scatter) detector collects scattered light from a particle that 
+intersects with a laser and delivers information roughly proportional to the size of the particle. The 
+forward angle light is filtered with a 488 nm band pass before it reaches the FS sensor which 
+gener
+ates voltage pulse signals. These signals are proportional to the amount of light the sensor 
+receives. As explained in Signal Processing, the signals are processed to me asure the characteristics 
+of the cells that scattered the light.
+The forward scatter detection in the Navios flow cyto meter is designed to optimize the detector for 
+your desired particle-size sensitivity. The Navios FS detector uses three software controlled settings 
+chosen for optimal versatility of a wide range of particle size characterization. The three FS angle 
+collection options are:
+ • Wide - used for the majority of particles between 1 micron and 20 microns. This forward angle 
+collection provides the best non-specific size performance blend. (1 to 19 FALS angle 
+collection).
+ • Narrow - used for larger particle resolution <40 microns. (1 to 8 FALS angle collection).
+ • Wide Enhanced - used for sub-micron article resolution.
+NOTE   For IVD applications, the wide position should be used unless stated otherwise in the application's 
+instructions for use.
+Side Scatter and Fluorescent Light Collection
+Both side scatter and fluorescence are measured 90 degrees from the laser excitation angle. Side 
+scatter on this system is collected opposite the fluorescence collection.
+The fluorescence pickup lens filter assembly is gel-coupled to the flow cell and collects FL from the 
+flo
+w cell, and focuses it.
+Side Scatter
+The wavelength of SS is 488 nm. It is much more intense than FL. SS is filtered with a 488 nm band-
+pass (488 BP) filter that is mounted inside the fiber optic cable.
+
+=== PDF PAGE 93 (0-indexed 92) ===
+773232AH 3-5
+  Operation Principles
+Light Collection, Separation And Measurement        3
+Figure 3.3  S ide Scatter Collection
+Fluorescent Light
+Band pass and Long pass filters are used to transmit color bands. The color bands are designed to 
+measure fluorescence light from the fluorochromes such as FITC, PE, ECD, PC5, PC5.5, PC7, APC, APC 
+AlexaFluor700, APC AlexaFluor750, Pacific Blue and Krome Orange (with PMT and violet laser 
+upgrades installed) that are excited by illumination from the lasers. Dichroic filters are used to 
+reflect colors. Positions of the dichroic filters have been efficiently designed to reduce the number 
+of optical surfaces fluorescence light must pass to reach the photo sensors. Their locations relative 
+to the optical axis have also been optimized for light to pass symmetrically through each filter. You 
+can individually interchange the optical filters. There is no need to realign the optical system when 
+the filters are changed.
+Figure 3.4  T wo Laser, 6 Color Filter Block Configuration
+1. Violet laser beam
+2. Bl ue laser beam
+3. Re d laser beam
+4. Side  scatter collected through fiber optic cable 
+mounted on the right side of flow cell
+b
+c
+d
+e
+525 BP 40
+575 BP 30 695 BP 30
+620 BP 30 755 LP 660 BP 20
+550 DC SP
+595 DC SP 730 DC SP
+655 DC SP 710 DC SP
+620 BP 30
+755 LP 660 BP 20
+550 DC SP
+655 DC SP 710 DC SP
+595 DC SP 730 DC SP
+525 BP 40
+575 BP 30 695 BP 30/
+675 BP 20
+
+=== PDF PAGE 94 (0-indexed 93) ===
+773232AH  3-6
+  Operation Principles
+Signal Processing  
+Figure 3.5  T wo Laser 8 Color Filter Block Configuration
+Figure 3.6  Thr ee Laser 10 Color Filter Block Configuration
+Signal Processing
+Voltage Pulse Signals
+The Cytometer has up to twelve sensors (FS, SS,FL1-FL10), each generating a voltage pulse signal as 
+each cell passes through the laser beam. A voltage pulse signal is proportional to the intensity of 
+light the sensor received. The Cytometer electronics amplify, condition, integrate, and analyze 
+these pulses.
+Peak Signal
+Figure 3.7 shows how a peak voltage pulse signal forms as a cell crosses the laser beam.
+ • Part I of Figure 3.7 shows when the cell enters the laser beam and some light is scattered.
+525 BP 40
+575 BP 30
+695 BP 30 725 BP 20
+620 BP 30 755 LP 755 LP660 BP 20
+550 DC SP
+595 DC SP 730 DC SP 750 DC SP
+655 DC SP 710 DC SP
+525 BP 40 620 BP 30
+755 LP 660 BP 20
+755 LP
+550 DC SP
+655 DC SP 710 DC SP
+750 DC SP725 BP 20
+595 DC SP
+730 DC SP575 BP 30 695 BP 30/
+675 BP 20
+
+
+=== PDF PAGE 95 (0-indexed 94) ===
+773232AH 3-7
+  Operation Principles
+Signal Processing     3
+ • Part II of Figure 3.7 shows when the cell is in the center of the laser beam and the scattered light, 
+and therefore, the pulse height, reaches a maximum.
+ • Part  III of Figure 3.7 shows when the cell leaves the laser beam and the scattered light decreases.
+The intensity of light scatter or fluorescence determines the height of the peak pulse (see 
+Figure 3.7). The time the particle is in the laser beam determines the width of the pulse. Therefore, 
+the total fluorescence (intensity and time) determines the area under the pulse. Figure 3.8 shows 
+how three cells with the same amount of total fluo rescence but with different fluorescence 
+intensities, produce different peak pulses.
+Figure 3.7  V oltage Pulse Formation, Peak Signal
+1. Lase r beam
+2. Ce ll/Particle
+3. Vo lts
+4. Ti me
+5. P ulse height
+b c
+d
+e
+b
+d
+e
+c
+b
+c
+d
+e
+f
+I
+II
+III
+
+=== PDF PAGE 96 (0-indexed 95) ===
+773232AH  3-8
+  Operation Principles
+Signal Processing  
+Integral Signal
+Because the total fluorescence in all three cells is the same, but the distribution is different, the 
+pulse can be integrated to produce an integral signal (see Figure 3.8).
+The height of the integral pulse is proportional to the tot al fluorescence and is obtained when the 
+cell exits the laser beam. The pulse height, however, represents the most intense amount of 
+fluorescence produced. The area under the pulse is proportional to the total fluorescence.
+Figure 3.8  Int egral and Peak Pulses
+1. Direction of sample flow
+2. Cell in laser beam
+3. Peak pulses
+4. Volts
+5. Time
+6. Integral pulses
+7. Volts
+8. Time
+
+
+=== PDF PAGE 97 (0-indexed 96) ===
+773232AH 3-9
+  Operation Principles
+Signal Processing     3
+Time-Of-Flight Signal
+Time-of-Flight is the transit time of a cell or particle to traverse the laser beam. The pulse width of 
+a peak pulse is measured and can be assigned to any peak signal.  An application for Time-of-Flight 
+is doublet discrimination.
+Figure 3.9  T ime-Of-Flight Pulses
+Amplification
+Some voltage pulses must be amplified so that the characteristics of the cells can be measured. The 
+system lets you:
+ • Incr ease the gain to linearly amplify the integral, peak and Time-of-Flight signals.
+ • Logarithmically tr ansform the linear intregral and peak signal data.
+A logarithmic transformation accentuates the differ ences between the smaller pulses and reduces 
+the differences between the larger pulses.
+1. Pulse height/shape 2. Ti me
+b
+c
+2C 4C 2C + 2C = 4C
+
+=== PDF PAGE 98 (0-indexed 97) ===
+773232AH  3-10
+  Operation Principles
+Protocols  
+Signals Generated
+The signals available are dependant upon whether you have a 6, 8, or 10 color configuration. INT 
+stands for Integral and TOF stands for Time-Of-Flight. 
+ • FS  INT, FS PEAK, FS TOF
+ • SS  INT, SS PEAK, SS TOF
+ • FL1 INT , FL1 PEAK, FL1 TOF
+ • FL2 INT , FL2 PEAK, FL2 TOF
+ • FL3 INT , FL3 PEAK, FL3 TOF
+ • FL4 INT , FL4 PEAK, FL4 TOF
+ • FL5 INT , FL5 PEAK, FL5 TOF
+ • FL6 INT , FL6 PEAK, FL6 TOF
+ • FL7 INT , FL7 PEAK, FL7 TOF
+ • FL8 INT , FL8 PEAK, FL8 TOF
+ • FL9 INT , FL9 PEAK, FL9 TOF
+ • FL10 INT , FL10 PEAK, FL10 TOF
+The software allows you to select a maximum of 1 6 parameters, including derived parameters. Log 
+and linear scaling of the Integral and Peak signals are also available but when Lin and Log 
+parameters are selected for the same signal (Peak or Integral), this will be counted as one parameter. 
+TOF is available in linear only.
+Protocols
+A Protocol is a collection of information about how the Cytometer and Navios software is set up. 
+Protocols can be created for acquiring samples or analyzing stored data. It contains the following 
+information:
+ • Di splay configuration
+ • Par ameter names and configuration
+ • Regi ons
+ • Ga tes
+ • Co lor definitions
+ • St atistics
+ • Instrument settings
+ • Reporting T emplates (FlowPAGEs)
+ Special Protocols and Panels
+QC Protocols (Export): Any Protocol name beginning with the characters “QC” (upper-case only) 
+over-rides the current Export Data Format setting on the Workspace Preferences / Publish tab 
+
+=== PDF PAGE 99 (0-indexed 98) ===
+773232AH 3-11
+  Operation Principles
+Automated Software Features      3
+causing Published data to be formatted as a single row of values. In the case that the Publish Data to 
+MS Excel option is selected, this progressively builds a table on a single spreadsheet.
+Cleanse Protocols: Any Protocol name beginning with the word “Cleanse” overrides the Output 
+Op
+tions setting for Save LMD on the Workspace Preferences - Acquisition Options tab. This allows 
+you to create protocols that do not write a listmode file to disk on completion.
+AS Protocols: There is a series of special protocols whic h include “AS” in their names. These are 
+components of the AutoSetup applications which operate with the Auto Setup Wizard to set up 
+Volts, Gains and Compensation.
+Special Panels
+The cleanse panel utilizes two cleanse protocols (‘cleanse bleach.PRO’ and ‘cleanse di water.PRO) 
+that you should use at the end of the working day or shift on your Navios flow cytometer. 
+Automated Software Features
+Navios software contains the following automated software features.
+ • AutoSetup Wizard
+ • QuickCOMP
+ • QuickSET
+ • Automatic Gate Creation
+ • Automatic Gate Maintenance
+ • Automatic Color Precedence
+ • Elliptical and Contour AutoGating
+ • AutoMATOR Analysis
+Parameters
+TIME Parameter
+The TIME parameter is the amount of time, in seconds, the instrument acquires data. It is displayed 
+on the plot axis in 1-second resolution. The axis labels vary, depending on plot resolution and stop 
+time (duration).
+NOTE  Including TIME as a selected parameter in all protocols allows for an internal quality check on the data 
+acquisition. A TIME versus fluorescence plot may be helpful to monitor system fluidic and optic conditions 
+during acquisition of any given sample. Monitor consistent fluorescence over time as shown below. 
+Unexpected fluctuations in the pattern of fluorescence may indicate compromised fluidics or optic 
+conditions.
+
+=== PDF PAGE 100 (0-indexed 99) ===
+773232AH  3-12
+  Operation Principles
+Parameters  
+Figure 3.10  Ti me vs Fluorescence plot
+The minimum stop time is 10 seconds, the maximum stop time (maximum duration) is 
+1,
+200 seconds and the default stop time is 300 seconds (5 minutes).
+When you assign the TIME parameter to a plot axis, the divisions on the axis change accordingly.
+To find the time (in seconds) per channel in a one-pa rameter histogram, divide the stop time (in 
+seconds) by 1,024 (0.001 second = 1.0 ms). 
+For a two-parameter plot, divide by 64, 128, 256 or 512 depending upon the plot resolution you are 
+using.
+RATIO Parameter
+The RATIO parameter is calculated, not acquired directly. When you select a parameter, you specify 
+which signal is the numerator and which is the denominator.
+A ratio of 1 is at channel 1,023. If you assign RATIO to a plot axis, RATIO events appear at a lower 
+c
+hannel if the intensity of the numerator signal is less than the denominator signal.
+To calculate the actual ratio at a particular inte nsity for a one-parameter histogram, divide the 
+intensity by 1,024. For a two-parameter plot, divide by 64, 128, 256 or 512 depending upon the plot 
+resolution you are using.
+RATIO Numerator
+Denominator------------------------------------ 1024×=
+
+=== PDF PAGE 101 (0-indexed 100) ===
+773232AH 3-13
+  Operation Principles
+Plot Display     3
+Plot Display
+The results of sample analysis appear on the Workstation screen as graphs called plots. You assign 
+the parameters to the plot axes. Plots can be displayed in black and white or color as:
+ • Single-par ameter histogram plot
+ • Dual-par ameter dot plot
+ • Dual-par ameter density plot
+ • Prism plot
+Dual-parameter plots can be displayed in 64 x 64, 128 x 128, 256 x 256, or 512 x 512 resolution. Plots 
+ca
+n be displayed on a black or white background.
+PRISM
+Prism is used to analyze multicolor immunofluorescence samples. With multicolor 
+immunofluorescence a cell is either positive or negative for each of up to ten cell surface markers. 
+A particular combination is called a phenotype. Prism allows you to display percentages on all 
+phenotypic populations in a single plot. It is software derived and can be acquired in either run time 
+or listmode.
+Prism is available on up to ten parameters. TIME, RATIO, 
+ and Prism itself cannot be used for Prism. 
+All other signals can be used for Prism. Generally, the fluorescence parameters are used.
+A Prism plot shows a spike or population for each antibody combination with a percent of the total 
+tha
+t represents the percent of the total events in the Prism plot. See Figure 3.11.
+Figure 3.11  Pr ism Plot
+See Prism Plot for instructions on using Prism.
+
+
+=== PDF PAGE 102 (0-indexed 101) ===
+773232AH  3-14
+  Operation Principles
+Plot Display  
+Regions
+To analyze data or gate plots, you must first create and assign regions to these tasks. You can create 
+five different types of regions (see Regions Introduction). The region types are:
+ • Li near
+ • Rect angular
+ • Qu adrant/FlexQuad
+ • Polygonal
+ • Elliptical
+ • Contour
+Once a region is created it can be assigned to function in a specific way. The functions that are 
+a
+vailable include:
+ • Analysis
+ • Prime
+ • C AL (calibration)
+ • Ga ting
+ • Li nked
+ • Listm ode gating (LIVEGATE)
+ • Co
+ntour AutoGate
+ • Elliptical Auto Gate
+ • Positiv es analysis
+ • Minimum Count.
+These functions are not available for all region types.
+Gating
+The software lets you use gating to specify that only certain cells are to be analyzed. A gate can be 
+defined as the events that are inside or out of one or more regions.
+Data Storage
+Sample results can be printed out, saved to removable media, saved to a local hard drive or saved to 
+a network drive. You can store sample results in the form of a list of the measurements from each 
+cell, called listmode data. Listmode data can be replayed into plots or archived for analysis later. 
+Histograms can also be saved to a file. The runtime protocol is always saved to the listmode file.
+
+=== PDF PAGE 103 (0-indexed 102) ===
+773232AH 3-15
+  Operation Principles
+Plot Display     3
+Histogram Statistics
+Linear Region Statistics
+For linear signals, statistics for histogram regions are calculated as follows:
+Number = Number of cells in the region 
+Mode = Intensity containing the largest numbe r of cells within the region 
+Total is expressed as a percent (%).
+        
+Where d = Standard deviation 
+CV = Coefficient of Variation (expressed in % CV) 
+MH   = High region marker channel 
+ML   = Low region marker channel 
+Cn   = Raw digital channel number 
+Cch   = Channel count 
+N   = Integral of all counts between & including marker channels 
+ = Mean channel number (rounded to nearest whole channel)
+For Mean and SD, the summations are performed over all the channels that lie within the region.
+Median intensity = the smallest intensity such that sum (intensity)   
+Sum (intensity) = sum of events from the lower edge of the region to the intensity
+Where FWHM=the Full Width Half Max value of a  Normal or Gaussian peak.
+Log Region Statistics
+The method of geometric calculations of Means depends on your Advanced Statistics Configuration.
+total Number of events in region
+Total number of events in the gated display----------------------------------------------------------------------------------------------------------- 100×=
+total Number of cells in region
+Total number of cells in the file------------------------------------------------------------------------------ 100×=
+Mean median intensity 0.5
+sum median intensity() area
+2-----------–
+count in median intensity--------------------------------------------------------------------------------– +=
+area
+2-----------
+Half Peak CV FWHM
+2.354--------------------=
+
+=== PDF PAGE 104 (0-indexed 103) ===
+773232AH  3-16
+  Operation Principles
+Plot Display  
+Log-Log Mean Method
+Weighting each channel according to its face value as given by the log scale performs this 
+calculation of Mean.
+Example 
+When using a four-decade uncalibrated logarithmic di splay reporting output as Channels, you 
+might give channel zero (the lowest channel) a value 10-1 = 0.1 and on a 1024 channel display, 
+channel 1023 is given the value 10-3 = 1000. All raw digital channel values are converted to an 
+absolute value (Relative Channel Number) in the range 0.1 to 1000 before calculations are performed 
+for the mean.
+The mean can then be reported in Channel numbers in the range 0 to 1023 thus:
+Where: 
+Cn   = Raw digital channel number 
+Cch   = Channel count 
+Cd   = Channels per decade 
+N   = Integral of all counts between & including marker channels 
+ = Mean channel number (rounded to nearest whole channel) 
+For Calibrated values, the calculation is reported as the calibrated value in the range Log Offset to
+The log offset cannot be zero since a log offset of zer o is 10 (minus infinity), which is not possible to 
+represent on paper or on screen. Navios software does not allow log offset values of less than 0.1. 
+Numbers entered in the logarithmic offset are clamped at 0.1 if a number less than this is entered.
+Lin-Log Mean Method
+This method of Mean calculation is worked out by performing a simple arithmetic mean channel 
+calculation on raw data according to its channel value in the range 0 to 1023 (for 1024 channel data).  
+The Mean value can then be reported as channels (in the range 0 to 1023) or converted to the 
+Relative Channel value.
+Using the same data as in the previous example…
+Lin-Log Mean method reported in Channel numbers in the range 0-1023 thus:
+
+
+=== PDF PAGE 105 (0-indexed 104) ===
+773232AH 3-17
+  Operation Principles
+Plot Display     3
+Where: 
+Cn   = Raw digital channel number 
+Cch   = Channel count 
+Cd   = Channels per decade 
+N   = Integral of all counts between & including marker channels 
+ = Mean channel number (rounded to nearest whole channel)
+For calibrated values, the Mean calculation is reported  as a value in the range Log Offset to (Log 
+offset* 10 Decades Full Scale) thus:
+The log offset cannot be zero since a log offset of zer o is 10 (minus infinity). Since the graphical scale 
+is actually proportional to the exponent, it is not possible to represent this on paper or on screen. 
+Because of this problem, Navios software does not allow log offset values of less than 0.1. Numbers 
+entered in the Logarithmic Offset edit window are clamped at 0.1 if a number less than 0.1 is entered.
+
+
+=== PDF PAGE 106 (0-indexed 105) ===
+773232AH  3-18
+  Operation Principles
+Plot Display  
+
+=== PDF PAGE 107 (0-indexed 106) ===
+773232AH 4-1
+CHAPTER 4
+  Specifications
+Sample Requirements
+See Sample Requirements in the Running Samples chapter for details.
+Instrument Specifications And Characteristics
+Dimensions
+Installation Category
+Category II (per IEC 1010-1 standard).
+Acoustic Noise Level
+Measure Level:  60 dBa
+Component Height Width Depth Weight
+Computer 43.2 cm 
+(17 in.)
+20.3 cm 
+(8 in.)
+45.7 cm 
+(19 in.)
+12.3 kg 
+(27 lb)
+Cytometer and MCL 60.5 cm 
+(23.8 in.)
+95.3cm 
+(37.5 in.)
+70.1 cm 
+(27.6 in.)
+104 kg 
+(230 lb)
+Monitor 
+(typical)
+53.34 cm 
+(21 in.)
+50.8 cm 
+(20 in.)
+25.4 cm 
+(10 in.)
+7.0 kg 
+(15.5 lb)
+Supply Cart 29.8 cm 
+(11.75 in.)
+72.4 cm 
+(28.5 in.)
+49.5 cm 
+(19.5 in.)
+30.39 kg 
+(67 lb)
+
+=== PDF PAGE 108 (0-indexed 107) ===
+773232AH  4-2
+  Specifications
+Instrument Specifications And Characteristics  
+Cytometer
+Flow Cell
+Sensing area: BioSense 150 μm x 46 0 rectangular channel with an integral lens, mounted with a 
+vertical (upward) flow path. See Figure 3.1.
+Flow Rate
+Continuous pressure is applied to the sample tube. The amount of pressure depends on the flow rate 
+you specify:
+ • Lo w approximately 10 uL/min
+ • Medium appr oximately 30 uL/min
+ • High appr oximately 60 uL/min
+Sheath Consumption
+ • 780mL / hour (acquisition)
+ • 0mL / hour (st andby)
+Lasers
+ • Solid-state, software controlled, 22 mW, blue laser operating at 488 nm and
+ • S olid-state, software controlled, 25 mW, red laser operating at 638  nm.
+Optional third laser: 
+ • Solid-state, software controlled, 40 mW, violet laser operating at 405 nm.
+Laser Power Monitoring
+Laser power is monitored by each laser individually. If the laser power deviated more than ±10% a 
+Laser Power Error is displayed on the Status Bar. The system will not run a sample until corrective 
+measures rectify the fault. Follow the instructions in the Tr oubleshooting section for handling this 
+error.
+Beam-Shaping Optics
+Cross cylindrical lenses 10 mm by 80 mm.
+Blue Laser Beam Spot Size
+An elliptical spot 10 μm high  by 84  μm wide.
+
+=== PDF PAGE 109 (0-indexed 108) ===
+773232AH 4-3
+  Specifications
+Instrument Specifications And Characteristics       4
+Red Laser Beam Spot Size
+An elliptical spot 9.6 μm high by 72  μm w ide.
+Violet Laser Beam Spot Size
+An elliptical spot 8.9 μm high by 70  μm w ide.
+Laser Beam Separation
+The laser beams are 125 μm (±12.5 μm)  apart.
+Optical Filters
+The filters used in the Navios system are dependant upon your system configuration. See Figure 3.4, 
+Figure 3.5 and Figure 3.6.
+Sensors
+ • The FS sensor and the SS sensor are photodiodes.
+ • The FL  sensors are photo-multipli er tubes (PMTs) that have a 200-nm to 800-nm spectral range.
+Signal Processing
+ • High voltage amplification, minimum 250 up to 1,100, in increments of 1, for FL1-FL10.
+ • V ernier gain (fine amplification), up to 1,000 (labeled volts), in increments of 1, for FS and SS. A 
+change of 1 to 750 represents a 1-to-4 change in gain:
+ • Linear amplification (gain) by 1.0, 2.0, 5.0, 7.5, 10, 20, 50, 75, 100, 200, 500 or 750 for FS and SS.
+ • Linear amplifica tion (gain) by 1.0 or 2.0 for FL1-FL10.
+ • F our-decade digital logarithmic transformation of FS, SS and FL1-FL10.
+Note: A scale of 0.1 to 1,000 is displayed on the plot axis for logarithmic parameters, but the 
+default statistics are based on an actual scale of 0.1024 to 1024. The displayed scale can be 
+changed to 1 to 10,000.
+ •  Six decade with True View enabled. Data is transformed in a ‘log’ style at high values, but 
+‘linearly’ near the axis. Up to 2 negative decades of data may be displayed. Transform ‘reflects’ 
+around origin and becomes Logarithmic at high negative values.
+ • Fl uorescence color compensation is available in 0.1 increments, from 0  to 100%, for FL1-FL10.
+ • A discrimina tor (maximum value of 1,000) is available for any one of the signals. Only one 
+discriminator can be specified for any one sample acquisition.
+Dynamic range
+20-bit data acquisition
+
+=== PDF PAGE 110 (0-indexed 109) ===
+773232AH  4-4
+  Specifications
+Instrument Specifications And Characteristics  
+Workstation resolution
+1,048,576 channels
+Digital Sampling rate
+40Mhz
+Digital Accuracy
+<5% error
+Workstation
+The descriptions below are minimum configurations.
+Computer
+Intel Pentium Core 2 Duo microprocessor and 4 GB of RAM.
+RAM (Random Access Memory)
+The amount of available RAM in the computer determines the maximum size of a listmode file. This 
+software shares RAM with other processes. To help prevent error messages and system lock-ups 
+from occurring, be aware of the factors that use available RAM. RAM is limited by other factors such 
+as:
+ • other sof tware applications running simultaneously 
+ • t otal number of events acquired
+ • number of parameters
+ • da ta rate
+ • Flo wPAGEs present
+ • auto gating
+ • mo vement of regions with many events in cache memory
+ • li nked regions
+For example, if you have several parameters, FlowPAGEs, a high data rate, and you are moving 
+re
+gions, you may receive a RAM memory error message. If this occurs during acquisition, the 
+listmode file will not be saved.
+NOTE  A protocol's "Maximum Acquirable Events" limit is denoted on the Cytometer Control Acquisition Setup 
+Ta b and is determined by the number of parameters selected fo r use in the protocol. 
+Data Storage
+ • 160-GB (or larger) nonremovable hard disk.
+ • D VD±RW/CD-RW drive
+
+=== PDF PAGE 111 (0-indexed 110) ===
+773232AH 4-5
+  Specifications
+Software Specifications     4
+Interfaces
+ • Microsoft Windows Vista operating system.
+ • B idirectional asynchronous serial interfaces for communication with mainframe and personal 
+computers.
+Input Devices
+ • PS/2 optical Intellimouse
+ • Full size PS/2 k eyboard.
+Monitor Options
+ • Minimum requirement - color LCD with a 22-in. flat screen.
+ • Op tional second monitor
+Software Specifications
+Data Output and Compatibility
+Output and compatibility features include:
+ • Flo w Cytometric Standard (FCS) file format for listmode and histogram files. Listmode files 
+contain an FCS 2.0 dataset followed by an FCS 3.0 dataset.
+ • Copy and Pa ste, or Drag and Drop plots images to third party programs such as MS Word.
+ • Full- color printouts with the appropriate optional Printer.
+ • Printo ut of sample results and patient reports with FlowPAGE and desktop printing
+ • PDF f ormat for Acquisition printouts or FlowPAGE reports
+ • Pr intout of Worklist for the MCL
+ • Co mpatibility with ALTRA, Elite, XL , XL-MCL and FC 500 flow cytometer files (listmode files 
+only)
+ • Exp ort data to MS Excel 2003 or MS Excel 2007
+ • Sa ve/export data as a text file.
+Reporting Units
+Reporting units for absolute count calibrators are cells/μL for US units or cells/L for SI units.
+Absolute Count Determination
+Absolute counts may be determined by two methods: the Flow-Count (SPT) Method (Direct Method) 
+and the Dual Platform Method (Standard or Indirect Method).
+
+=== PDF PAGE 112 (0-indexed 111) ===
+773232AH  4-6
+  Specifications
+Software Specifications  
+Flow-Count (SPT) Method
+The Flow-Count (SPT) Method uses Flow-Count Fluorospheres and a flow cytometer to determine 
+the absolute counts with the following formula:
+Absolute Count (cells/μL) = (Count of Positively Stained Cells of Interest ÷  
+Count of Flow-Count Fluorospheres) x Flow-Count Fluor ospheres Assayed Concentration
+This Single Platform Technology (SPT) method is automated using the Navios software and requires 
+all of the following:
+ • Flo w-Count Fluorospheres must be used.
+ • The Assa yed concentration of Flow-Count Fluorospheres must be entered in the Absolute Count 
+Calibration dialog box and selected in Acquisition Manager when running a protocol that 
+includes a CAL region.  See Setting a CAL Region. 
+ • The number of fluor ospheres counted must be  1000. 
+Note: A to tal white blood cell count is not necessary for determining an absolute count for the cells 
+of interest if using Flow-Count Fluorospheres.
+The percentages and absolute counts are automatically printed on the Panel Report.
+Dual Platform Method
+The Dual Platform Method calculates absolute counts by combining results from hematology and 
+flow cytometry and using the following formula:
+Absolute Count (cells/μL) = Total White Blood Cell Count (cells/μL) x %Lymphocytes x  
+%Positively Stained Cells of Interest ÷ 104
+Absolute counts are obtained using the Report function of the Navios Software. For information on 
+gener
+ating a report, refer to Printing Panel Reports or the Navios System Help. The percentage and 
+absolute count are automatically printed on the Panel Report.
+Setup Mode
+During Setup mode the workspace is a rolling display that is updated up to three times per second. 
+The maximum number of events can be set on the Cytometer Control Acquisition Setup Tab. The 
+incoming data is not saved.
+Acquisition
+During data acquisition, the plots are updated in real time. When one plot is displayed with statistics 
+underneath, the statistics are also updated in real time. Unlimited one or two parameter plots are 
+available for any given sample.
+One-parameter plots have 1,024-channel resolution. 
+Two-parameter plots have up to 512- x 512-channel resolution.
+
+=== PDF PAGE 113 (0-indexed 112) ===
+773232AH 4-7
+  Specifications
+Software Specifications     4
+Parameters
+16 different signals, including Time and Ratio (derived parameter) can be acquired simultaneously 
+in logarithmic and linear modes, giving up to 32 acquisition parameters from a possible 62. 
+5 different signals available from each detector: 
+ • Integr al linear
+ • I ntegral logarithmic
+ • Peak linear
+ • Peak logarithmic
+ • Ti me of Flight linear.
+Regions
+Up to 32 gates and 256 analysis regions are available for gating, analysis, and autogating per 
+protocol. Up to 8 of those regions can be used to create any one gate. The following types of regions 
+are available for gating and analysis:
+ • Li
+near
+ • Rect angular
+ • Qu adrant
+ • Polygonal
+ • Elliptical
+ • Contour
+.
+Listmode Analysis
+The instrument can store up to 16 parameters including TIME, and RATIO as listmode data. The 
+amount of available random access memory (RAM) in the computer determines the maximum size 
+of a listmode file. See RAM (Random Access Memory).
+Locked Protocols
+User defined protocols can be locked or unlocked by a System Administrator and password 
+protected to prevent inadvertent modifications. The optional application software  
+(e.g. Navios tetra) uses locked protocols that cannot be unloc ked by a System Administrator . The 
+following software screens are disabled when using locked protocols. You cannot make changes to 
+the locked features on these screens.
+Dotplot Properties 
+Region Properties (QC product selection and export region statistics are not locked) 
+Create / Modify Gates 
+Color Precedence 
+Color Blend 
+Cytometer Control 
+

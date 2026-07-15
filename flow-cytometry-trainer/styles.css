@@ -2141,3 +2141,63 @@ body.fullscreen-mode .plot-card {
   color: var(--text-primary) !important;
   background: rgba(255, 255, 255, 0.08);
 }
+
+/* ==========================================================================
+   Flow Cytometer Instrument Simulator Styles
+   ========================================================================== */
+
+#cytometer-simulator-view header button:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+#cytometer-simulator-view select:hover,
+#cytometer-simulator-view select:focus {
+  border-color: var(--border-active);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+.sim-plot-thumb {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sim-plot-thumb:hover {
+  border-color: var(--text-secondary) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.sim-plot-thumb.active {
+  border-color: var(--border-active) !important;
+  background-color: rgba(0, 229, 255, 0.03) !important;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.25) !important;
+}
+
+.sim-left-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sim-left-sidebar::-webkit-scrollbar-track {
+  background: var(--bg-sidebar);
+}
+
+.sim-left-sidebar::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.sim-left-sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Oscilloscope screen grid scanlines */
+#sim-canvas-oscilloscope {
+  background-image: 
+    linear-gradient(rgba(18, 18, 18, 0.95), rgba(18, 18, 18, 0.95)),
+    linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 15px 15px, 15px 15px;
+  box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.15);
+}
+
