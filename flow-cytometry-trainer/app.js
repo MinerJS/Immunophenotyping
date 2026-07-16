@@ -561,7 +561,11 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Event listeners for controls
   document.getElementById('case-select').addEventListener('change', (e) => {
-    loadCase(e.target.value);
+    const val = e.target.value;
+    loadCase(val);
+    if (val === 'compare' && activeSidebarTab === 'simulator') {
+      switchSidebarTab('gallery');
+    }
   });
   
   document.getElementById('x-axis-select').addEventListener('change', (e) => {
@@ -1586,8 +1590,17 @@ function showGateModal(gateDetails) {
 
 function hideGateModal() {
   document.getElementById('gate-name-modal-overlay').style.display = 'none';
+  
+  const currentPlot = (currentCase === 'compare' && activePlot === 'aml') ? flowPlotAML : flowPlot;
+  const wasAuto = currentPlot && currentPlot.activeTool === 'auto';
+  
   currentCreatedPoints = null;
-  toggleTool(null);
+  
+  if (!wasAuto) {
+    toggleTool(null);
+  } else if (currentPlot) {
+    currentPlot.draw();
+  }
 }
 
 function confirmGateCreation() {
@@ -1919,11 +1932,7 @@ function initSidebar() {
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.getAttribute('data-tab');
-      if (tab === 'simulator') {
-        openFlowSimulatorPage(currentCase);
-      } else {
-        switchSidebarTab(tab);
-      }
+      switchSidebarTab(tab);
     });
   });
   
@@ -1937,6 +1946,8 @@ function initSidebar() {
   // Inner Close Buttons
   if (closeBtn) closeBtn.addEventListener('click', () => toggleSidebar(false));
   if (closeGatingBtn) closeGatingBtn.addEventListener('click', () => toggleSidebar(false));
+  const closeSimBtn = document.getElementById('close-sidebar-btn-simulator');
+  if (closeSimBtn) closeSimBtn.addEventListener('click', () => toggleSidebar(false));
   
   // Layout toggle button in leukaemia header
   const leukaemiaLayoutBtn = document.getElementById('leukaemia-layout-btn');
@@ -1980,6 +1991,26 @@ function initSidebar() {
   
   updateTabButtons();
   updateLeukaemiaLayout();
+  
+  // Toggle main views for Simulator on load
+  const simView = document.getElementById('cytometer-simulator-view');
+  const plotContainer = document.querySelector('.plot-container');
+  const rightPanel = document.getElementById('right-panel');
+  const toggleRightBtn = document.getElementById('toggle-right-panel-btn');
+  
+  if (activeSidebarTab === 'simulator') {
+    if (plotContainer) plotContainer.style.display = 'none';
+    if (rightPanel) rightPanel.style.display = 'none';
+    if (toggleRightBtn) toggleRightBtn.style.display = 'none';
+    if (typeof openFlowSimulatorPage === 'function') {
+      openFlowSimulatorPage(currentCase);
+    }
+  } else {
+    if (simView) simView.style.display = 'none';
+    if (plotContainer) plotContainer.style.display = '';
+    if (rightPanel) rightPanel.style.display = '';
+    if (toggleRightBtn) toggleRightBtn.style.display = '';
+  }
 }
 
 function switchSidebarTab(tabId) {
@@ -2013,6 +2044,33 @@ function switchSidebarTab(tabId) {
   if (tabId === 'gallery') {
     highlightActiveGalleryItem();
     setTimeout(updateGalleryThumbnails, 50);
+  }
+  
+  // Toggle main views for Simulator vs Plots
+  const simView = document.getElementById('cytometer-simulator-view');
+  const plotContainer = document.querySelector('.plot-container');
+  const rightPanel = document.getElementById('right-panel');
+  const toggleRightBtn = document.getElementById('toggle-right-panel-btn');
+  
+  if (tabId === 'simulator') {
+    if (plotContainer) plotContainer.style.display = 'none';
+    if (rightPanel) rightPanel.style.display = 'none';
+    if (toggleRightBtn) toggleRightBtn.style.display = 'none';
+    
+    // Open simulator page
+    if (typeof openFlowSimulatorPage === 'function') {
+      openFlowSimulatorPage(currentCase);
+    }
+  } else {
+    if (simView) simView.style.display = 'none';
+    if (plotContainer) plotContainer.style.display = '';
+    if (rightPanel) rightPanel.style.display = '';
+    if (toggleRightBtn) toggleRightBtn.style.display = '';
+    
+    // Stop simulation when switching away
+    if (typeof flowCytometerSim !== 'undefined' && flowCytometerSim) {
+      flowCytometerSim.stopSimulation();
+    }
   }
 }
 

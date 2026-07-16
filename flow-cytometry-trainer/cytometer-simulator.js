@@ -557,7 +557,7 @@ class FlowCytometerSimulator {
   initElements() {
     this.viewContainer = document.getElementById('cytometer-simulator-view');
     this.backBtn = document.getElementById('sim-back-btn');
-    this.caseSelect = document.getElementById('sim-case-select');
+    this.caseSelect = document.getElementById('case-select');
     this.runModeSelect = document.getElementById('sim-run-mode');
     this.tubeSelect = document.getElementById('sim-tube-select');
     this.flowRateSelect = document.getElementById('sim-flow-rate');
@@ -578,6 +578,8 @@ class FlowCytometerSimulator {
     this.pulseAreaText = document.getElementById('sim-pulse-area');
     this.pulseWidthText = document.getElementById('sim-pulse-width');
     this.pulseTypeText = document.getElementById('sim-pulse-type');
+    this.pulseLabelX = document.getElementById('sim-pulse-label-x');
+    this.pulseLabelY = document.getElementById('sim-pulse-label-y');
   }
 
   initCanvases() {
@@ -656,16 +658,25 @@ class FlowCytometerSimulator {
 
   initEventListeners() {
     // Back button
-    this.backBtn.addEventListener('click', () => {
-      this.stopSimulation();
-      this.viewContainer.style.display = 'none';
-      document.querySelector('header').style.display = 'flex';
-      document.querySelector('.workspace').style.display = 'flex';
-    });
+    if (this.backBtn) {
+      this.backBtn.addEventListener('click', () => {
+        if (typeof switchSidebarTab === 'function') {
+          switchSidebarTab('gallery');
+        } else {
+          this.stopSimulation();
+          this.viewContainer.style.display = 'none';
+        }
+      });
+    }
 
     // Case Selector
     this.caseSelect.addEventListener('change', (e) => {
-      this.activeCase = e.target.value;
+      const val = e.target.value;
+      if (val === 'compare') {
+        this.activeCase = 'normal';
+      } else {
+        this.activeCase = val;
+      }
       this.resetSimulation();
     });
 
@@ -1461,6 +1472,13 @@ class FlowCytometerSimulator {
     this.focusedTitle.innerText = config.title;
     this.eduContent.innerHTML = config.edu;
     
+    if (this.pulseLabelX) {
+      this.pulseLabelX.innerText = `CH1 (${config.xAttr}):`;
+    }
+    if (this.pulseLabelY) {
+      this.pulseLabelY.innerText = `CH2 (${config.yAttr}):`;
+    }
+    
     this.redrawPlotGrid(this.focusedCanvas, this.focusedCtx, config, false);
   }
 
@@ -1664,16 +1682,48 @@ class FlowCytometerSimulator {
     const isDoublet = cellData.type === 'Doublets';
     const cellColor = this.getCellColor(cellData);
     
-    const h = cellData.FSC_H ? Math.round(cellData.FSC_H) : 550;
-    const a = cellData.FSC_A ? Math.round(cellData.FSC_A) : 600;
-    const w = isDoublet 
-      ? Math.round(a / h * 85) 
-      : Math.round(a / h * 42);
+    const activePlots = SIM_TUBES[this.activeTube].plots;
+    const config = activePlots[this.activePlotIdx];
+    
+    const xAttr = config ? config.xAttr : 'FSC_A';
+    const yAttr = config ? config.yAttr : 'FSC_H';
+    
+    // Read actual values for X and Y channels from cellData
+    let valX = cellData[xAttr];
+    let valY = cellData[yAttr];
+    
+    if (valX === undefined) valX = 0;
+    if (valY === undefined) valY = 0;
+    
+    // Calculate pulse width based on doublet status
+    const baseW = isDoublet ? 85 : 42;
+    
+    // Format display strings and units
+    let displayX = Math.round(valX);
+    let displayY = Math.round(valY);
+    
+    const getUnit = (attr) => {
+      if (attr === 'Time') return 's';
+      if (attr.includes('FSC') || attr.includes('SSC')) return 'mV';
+      return 'MFI';
+    };
+    
+    const unitX = getUnit(xAttr);
+    const unitY = getUnit(yAttr);
+    
+    if (xAttr === 'Time') {
+      displayX = (valX / 100).toFixed(1); // Scale time down for visual clarity (e.g. 0 to 10.0s)
+    }
+    if (yAttr === 'Time') {
+      displayY = (valY / 100).toFixed(1);
+    }
     
     this.oscPulse = {
-      height: h,
-      area: a,
-      width: w,
+      xValue: valX,
+      yValue: valY,
+      xAttr: xAttr,
+      yAttr: yAttr,
+      width: baseW,
       color: cellColor,
       isDoublet: isDoublet,
       type: cellData.type
@@ -1681,9 +1731,9 @@ class FlowCytometerSimulator {
     
     this.oscSweepX = 0;
     
-    this.pulseHeightText.innerText = `${h} mV`;
-    this.pulseAreaText.innerText = `${a} pC`;
-    this.pulseWidthText.innerText = `${w} µs`;
+    this.pulseHeightText.innerText = `${displayX} ${unitX}`;
+    this.pulseAreaText.innerText = `${displayY} ${unitY}`;
+    this.pulseWidthText.innerText = `${baseW} µs`;
     
     let displayType = cellData.type;
     if (displayType === 'CD4_TCell' || displayType === 'CD8_TCell' || displayType === 'gd_TCell') {
@@ -1714,51 +1764,96 @@ class FlowCytometerSimulator {
     
     ctx.clearRect(0, 0, w, h);
     
-    ctx.strokeStyle = '#00e5ff';
-    ctx.shadowBlur = 4;
-    ctx.shadowColor = '#00e5ff';
-    ctx.lineWidth = 2.0;
+    // Draw background grid scanlines (very subtle)
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.03)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < w; x += 30) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (let y = 0; y < h; y += 20) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
     
     if (this.oscPulse) {
-      ctx.strokeStyle = this.oscPulse.color;
-      ctx.shadowColor = this.oscPulse.color;
-      
-      this.oscSweepX += 6;
+      this.oscSweepX += 8;
       if (this.oscSweepX > w) {
         this.oscSweepX = w;
       }
       
-      ctx.beginPath();
-      ctx.moveTo(0, h - 30);
-      
       const pulseCenter = w / 2;
-      const peakHeightVal = (this.oscPulse.height / 1000) * (h - 50);
       
-      for (let x = 0; x <= this.oscSweepX; x++) {
-        let voltage = 0;
+      // Helper function to draw a pulse trace
+      const drawPulseTrace = (value, attr, strokeColor, shadowColor) => {
+        ctx.strokeStyle = strokeColor;
+        ctx.shadowColor = shadowColor;
+        ctx.shadowBlur = 6;
+        ctx.lineWidth = 2.0;
         
-        if (this.oscPulse.isDoublet) {
-          const peak1 = pulseCenter - 25;
-          const peak2 = pulseCenter + 25;
-          const width1 = this.oscPulse.width * 0.45;
-          const width2 = this.oscPulse.width * 0.45;
+        ctx.beginPath();
+        ctx.moveTo(0, h - 25);
+        
+        const peakHeightVal = (value / 1000) * (h - 45);
+        
+        for (let x = 0; x <= this.oscSweepX; x++) {
+          let voltage = 0;
+          if (attr === 'Time') {
+            // Flat reference baseline for Time parameter
+            voltage = 5;
+          } else if (this.oscPulse.isDoublet) {
+            const peak1 = pulseCenter - 22;
+            const peak2 = pulseCenter + 22;
+            const width1 = this.oscPulse.width * 0.45;
+            const width2 = this.oscPulse.width * 0.45;
+            
+            const y1 = peakHeightVal * Math.exp(-Math.pow(x - peak1, 2) / (2 * Math.pow(width1, 2)));
+            const y2 = (peakHeightVal * 0.85) * Math.exp(-Math.pow(x - peak2, 2) / (2 * Math.pow(width2, 2)));
+            
+            voltage = Math.max(y1, y2);
+          } else {
+            const width = this.oscPulse.width * 0.4;
+            voltage = peakHeightVal * Math.exp(-Math.pow(x - pulseCenter, 2) / (2 * Math.pow(width, 2)));
+          }
           
-          const y1 = peakHeightVal * Math.exp(-Math.pow(x - peak1, 2) / (2 * Math.pow(width1, 2)));
-          const y2 = (peakHeightVal * 0.9) * Math.exp(-Math.pow(x - peak2, 2) / (2 * Math.pow(width2, 2)));
-          
-          voltage = Math.max(y1, y2);
-        } else {
-          const width = this.oscPulse.width * 0.4;
-          voltage = peakHeightVal * Math.exp(-Math.pow(x - pulseCenter, 2) / (2 * Math.pow(width, 2)));
+          ctx.lineTo(x, h - 25 - voltage);
         }
-        
-        ctx.lineTo(x, h - 30 - voltage);
-      }
-      ctx.stroke();
+        ctx.stroke();
+      };
+      
+      // Draw CH1 (X parameter) - Neon Cyan
+      drawPulseTrace(this.oscPulse.xValue, this.oscPulse.xAttr, '#00e5ff', '#00e5ff');
+      
+      // Draw CH2 (Y parameter) - Neon Magenta
+      drawPulseTrace(this.oscPulse.yValue, this.oscPulse.yAttr, '#ff007f', '#ff007f');
+      
+      // Reset canvas style
+      ctx.shadowBlur = 0;
+      
+      // Draw dynamic labels on the canvas screen (top-left)
+      ctx.font = '9px monospace';
+      ctx.fillStyle = '#00e5ff';
+      ctx.fillText(`CH1: ${this.oscPulse.xAttr}`, 8, 14);
+      ctx.fillStyle = '#ff007f';
+      ctx.fillText(`CH2: ${this.oscPulse.yAttr}`, 8, 26);
     } else {
+      // Draw resting flat baselines for both channels
+      ctx.lineWidth = 1.5;
+      
+      ctx.strokeStyle = '#00e5ff';
       ctx.beginPath();
-      ctx.moveTo(0, h - 30);
-      ctx.lineTo(w, h - 30);
+      ctx.moveTo(0, h - 25);
+      ctx.lineTo(w, h - 25);
+      ctx.stroke();
+      
+      ctx.strokeStyle = '#ff007f';
+      ctx.beginPath();
+      ctx.moveTo(0, h - 23);
+      ctx.lineTo(w, h - 23);
       ctx.stroke();
     }
     ctx.shadowBlur = 0;
@@ -1783,13 +1878,6 @@ let flowCytometerSim = null;
 
 // Initialize function that connects to app.js
 function openFlowSimulatorPage(originCase) {
-  // Hide main UI elements
-  document.querySelector('header').style.display = 'none';
-  document.querySelector('.workspace').style.display = 'none';
-  if (document.getElementById('cell-explorer-view')) {
-    document.getElementById('cell-explorer-view').style.display = 'none';
-  }
-
   // Show Simulator page
   const simView = document.getElementById('cytometer-simulator-view');
   simView.style.display = 'flex';
@@ -1799,7 +1887,14 @@ function openFlowSimulatorPage(originCase) {
   }
   
   // Align select case matching originCase
-  const selectCaseValue = originCase && originCase.includes('AML') ? 'aml' : 'normal';
+  let selectCaseValue = 'normal';
+  if (originCase) {
+    if (originCase.toLowerCase().includes('aml') || originCase === 'aml') {
+      selectCaseValue = 'aml';
+    } else if (originCase.toLowerCase().includes('compare') || originCase === 'compare') {
+      selectCaseValue = 'normal';
+    }
+  }
   flowCytometerSim.caseSelect.value = selectCaseValue;
   flowCytometerSim.activeCase = selectCaseValue;
   
