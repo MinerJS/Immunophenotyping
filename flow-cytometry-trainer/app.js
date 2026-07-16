@@ -82,25 +82,117 @@ const TUBE_CONFIGS = {
 
 // Marker Glossary Reference
 const MARKER_GLOSSARY = {
-  CD45: 'Leukocyte Backbone Marker. Expressed on all white blood cells. Helps distinguish lymphocytes (bright), monocytes (moderate-bright), granulocytes (moderate/SSC high), and early progenitors/blasts (dim/low SSC).',
-  CD34: 'Early Hematopoietic Progenitor Marker. Expressed on stem cells, early myeloid progenitors (myeloblasts), and lymphoid progenitors. Normally <0.01% in peripheral blood. High in acute leukemia blasts.',
-  CD117: 'c-Kit receptor. Expressed on early myeloid progenitors (myeloblasts, promyelocytes) and mast cells. Important marker for identifying AML blasts of myeloid origin.',
-  CD33: 'Myeloid Lineage Marker. Expressed strongly on monocytes, moderately on maturing granulocytes, and variably on early myeloid progenitors.',
-  CD13: 'Myeloid Antigen. Expressed on maturing granulocytes, monocytes, and progenitors. Aberrant loss of CD13 is common in myeloid neoplasia (e.g. AML blasts showing CD13 negativity).',
-  CD7: 'T-Cell & NK-Cell Marker. Aberrantly expressed on myeloblasts in about 30% of AML cases, indicating lineage infidelity.',
-  CD19: 'B-Cell Lineage Backbone. Expressed on mature and immature B cells. Used to gate and evaluate B cell neoplasms.',
-  CD20: 'Mature B-Cell Marker. Acquired during later stages of B-cell maturation. Absent on early pro-B cells and plasma cells.',
-  Kappa: 'Immunoglobulin Light Chain. Normal B cell populations are polyclonal, consisting of a mixture of Kappa and Lambda positive cells. Clonal expansion of one light chain indicates lymphoma.',
-  Lambda: 'Immunoglobulin Light Chain. Used in conjunction with Kappa to identify light chain restriction (clonality) in B cell analyses.',
-  CD10: 'Common Acute Lymphoblastic Leukemia Antigen (CALLA). Expressed on mature granulocytes, germinal center B cells, and immature B cell progenitors.',
-  CD200: 'B-cell marker, useful to distinguish chronic lymphocytic leukemia (CLL, typically CD200+) from mantle cell lymphoma (MCL, typically CD200-).',
-  CD3: 'Pan-T-Cell Marker. Highly specific marker defining mature T lymphocytes.',
-  CD4: 'Helper T-Cell Marker. Expressed at high levels on helper T lymphocytes and at lower levels on monocytes.',
-  CD8: 'Cytotoxic T-Cell Marker. Expressed on cytotoxic T lymphocytes, NK cell subsets, and some gamma-delta T cells.',
-  CD56: 'NK-Cell Marker. Expressed on natural killer cells and sub-populations of cytotoxic T cells.',
-  HLA_DR: 'MHC Class II Antigen. Expressed on antigen-presenting cells (monocytes, B cells, dendritic cells) and CD34+ progenitors. Absent on mature granulocytes.',
-  CD123: 'IL-3 Receptor alpha. Expressed on basophils, plasmacytoid dendritic cells, and myeloid progenitors. Variably expressed on AML blasts.'
+  FSC_A: 'Forward Scatter Area (FSC-A): Indicates cell size. When light passes a cell, it diffracts forward. Larger cells produce more forward scatter. Used to distinguish cells from small debris.',
+  FSC_H: 'Forward Scatter Height (FSC-H): Used in combination with Forward Scatter Area (FSC-A) to perform doublet exclusion. Single cells fall along a diagonal line, whereas cell clumps or doublets show disproportionately larger Area compared to Height and lie off the diagonal.',
+  SSC_A: 'Side Scatter Area (SSC-A): Represents internal complexity, granularity, or nuclear shape of the cell. Cells with high granularity (like mature granulocytes/neutrophils) scatter light at 90-degree angles and show high SSC-A, while lymphocytes have simple internal structures and very low SSC-A.',
+  Time: 'Time: Tracks event rate over time during acquisition. A stable run shows a flat distribution. Spikes or gaps indicate fluidic instability, clogs, or speed variations.',
+  CD2: 'CD2: Pan-T and NK-cell marker. Expressed on thymocytes, mature T lymphocytes, and natural killer (NK) cells. Also acts as an adhesion molecule.',
+  CD3: 'CD3: Pan-T-cell marker. Highly specific marker defining mature T lymphocytes. Co-expresses with TCR (T-cell receptor) to form the TCR-CD3 complex.',
+  CD4: 'CD4: Helper T-cell marker. Expressed at high levels on helper T lymphocytes and at lower levels on monocytes/macrophages and dendritic cells.',
+  CD5: 'CD5: T-cell marker. Expressed on all T lymphocytes and a small sub-population of mature B-cells (B-1 cells). Aberrantly expressed on clonal B-cells in CLL and Mantle Cell Lymphoma.',
+  CD7: 'CD7: Early T-cell and NK-cell marker. Expressed on T-cell precursors, mature T-cells, and NK cells. Often aberrantly expressed on myeloblasts in AML (about 30% of cases), indicating lineage infidelity.',
+  CD8: 'CD8: Cytotoxic T-cell marker. Expressed as a heterodimer on cytotoxic T lymphocytes, and also on a subset of NK cells and gamma-delta T cells.',
+  CD10: 'CD10 (CALLA): Common Acute Lymphoblastic Leukemia Antigen. Expressed on early B-cell progenitors (hematogones), mature granulocytes, and germinal center B-cells (follicular lymphomas).',
+  CD11b: 'CD11b: Myeloid adhesion molecule. Expressed strongly on mature neutrophils, monocytes, and NK cells. Acquired late in granulocyte maturation.',
+  CD13: 'CD13: Myeloid marker. Expressed on early myeloid progenitors (myeloblasts), maturing granulocytes, and monocytes. Aberrant loss of CD13 is common in myeloid neoplasms.',
+  CD14: 'CD14: Monocyte marker. Strongly expressed on mature monocytes/macrophages. Absent or extremely low on granulocytes and lymphocytes. Useful for gating monocytes.',
+  CD15: 'CD15: Granulocytic marker. Strongly expressed on mature and maturing granulocytes, monocytes, and Reed-Sternberg cells. Used to monitor granulocytic differentiation.',
+  CD16: 'CD16: FcγRIII receptor. Expressed on mature granulocytes and natural killer (NK) cells. CD16 expression increases during late granulocyte maturation.',
+  CD19: 'CD19: Pan-B-cell marker. Expressed throughout B-cell development (from pro-B cells to mature B-cells, but lost on plasma cells). The primary backbone marker for gating B-cells.',
+  CD20: 'CD20: B-cell Marker. Expressed on B-cells starting from the pre-B stage up to mature B-cells (lost on plasma cells). Target for monoclonal antibody therapies (e.g. rituximab).',
+  CD33: 'CD33: Myeloid marker. Expressed on myeloid progenitors, monocytes (strongly), and maturing granulocytes (moderately). Present on most AML blasts.',
+  CD34: 'CD34: Early Hematopoietic Progenitor Marker. Expressed on pluripotent stem cells and early progenitor cells of myeloid and lymphoid lineages. Normally <0.01% in peripheral blood. Marker of immature blasts.',
+  CD38: 'CD38: Activation marker. Expressed widely on early progenitors, activated T-cells, and B-cells. Strongly expressed at extremely high levels on plasma cells.',
+  CD45: 'CD45: Leukocyte Common Antigen (LCA). Expressed on all white blood cells. Standard backbone marker in flow cytometry. When plotted against SSC-A, it differentiates lymphocytes (bright/low SSC), monocytes (moderate-bright/moderate SSC), granulocytes (moderate/high SSC), and blasts/progenitors (dim/low SSC).',
+  CD56: 'CD56: Neural Cell Adhesion Molecule (NCAM). The primary marker for Natural Killer (NK) cells. Also expressed on a subset of T-cells (NK/T cells) and aberrantly on plasma cells in myeloma.',
+  CD64: 'CD64: High-affinity FcγRI receptor. Expressed strongly on monocytes and promyelocytes/myeloblasts. Upregulated on mature granulocytes during infection/inflammation.',
+  CD117: 'CD117 (c-Kit): Receptor tyrosine kinase. Expressed on early hematopoietic progenitors, mast cells, and progenitors of myeloid lineage. Highly useful for identifying myeloid blasts in AML.',
+  CD123: 'CD123 (IL-3Rα): Interleukin-3 receptor alpha chain. Strongly expressed on plasmacytoid dendritic cells and basophils. Also expressed on early myeloid progenitors and AML blasts.',
+  CD200: 'CD200: B-cell glycoprotein. Expressed on B-lymphocytes. Highly useful in distinguishing Chronic Lymphocytic Leukemia (typically CD200 positive) from Mantle Cell Lymphoma (typically CD200 negative).',
+  Kappa: 'Kappa (κ): Immunoglobulin Light Chain. Normal mature B-cell populations are polyclonal and express a mixture of Kappa and Lambda light chains (normal κ:λ ratio is around 1.4:1). Clonal expansion of either Kappa or Lambda indicates a monoclonal B-cell population (lymphoma).',
+  Lambda: 'Lambda (λ): Immunoglobulin Light Chain. Expressed on the surface of mature B-lymphocytes. Evaluated alongside Kappa to detect light chain restriction/clonality.',
+  HLA_DR: 'HLA-DR: MHC Class II antigen. Expressed on antigen-presenting cells (monocytes, B-cells, dendritic cells) and early progenitors. Absent on mature granulocytes.',
+  TCR_gd: 'TCRγδ: Gamma-delta T-Cell Receptor. Expressed on a minor subset of mature T-lymphocytes (typically CD4- and CD8-, or CD8+ dim) that home to mucosal interfaces.'
 };
+
+// Tube Descriptions for current view adaptation
+const TUBE_DESCRIPTIONS = {
+  B: 'B Cell Tube: Used primarily to identify B-cell lineage cells (CD19+, CD20+) and evaluate B-lymphocyte clonality by assessing the ratio of Kappa to Lambda light chains. Helps screen for B-cell chronic lymphoproliferative disorders like CLL (CD5+, CD200+) or Mantle Cell Lymphoma (CD5+, CD200-).',
+  T: 'T Cell Tube: Designed to identify and characterize T-lymphocyte (CD3+, CD2+, CD5+, CD7+, CD4+, CD8+, TCRγδ) and NK-cell (CD56+, CD16+, CD8+, CD2+, CD7+) populations. Useful for evaluating T-cell and NK-cell lymphoma, T-cell sub-populations (CD4/CD8 ratio), and lineage-specific gating.',
+  M1: 'Myeloid M1 Tube: Focuses on the assessment of myeloid progenitors, granulocytic maturation, and monocytic populations. Key markers include CD11b, CD13, CD14, CD16, CD64, CD34, CD45, HLA-DR, and CD7, useful in diagnosing Acute Myeloid Leukemia (AML) and myelodysplastic syndromes.',
+  M2: 'Myeloid M2 Tube: Designed to complement the Myeloid M1 tube, assessing myeloid and monocytic differentiation pathways. Includes markers CD117, CD123, CD13, CD33, CD34, CD38, CD15, HLA-DR, CD19, CD45. Highly useful for classifying AML sub-populations and checking for aberrant CD19 expression on myeloblasts.'
+};
+
+// Study Glossary Database
+const STUDY_GLOSSARY = {
+  // 1. Flow Cytometry & General terms
+  'Flow Cytometry': 'A technology that measures physical and chemical characteristics of cells or particles as they flow in a single-file fluid stream through a beam of light (usually a laser). Measured parameters include cell size, internal complexity, and fluorescence intensity.',
+  'Immunophenotyping': 'The analysis of heterogeneous populations of cells for the presence and level of specific cell-surface and intracellular proteins (antigens/markers) using monoclonal antibodies conjugated to fluorochromes.',
+  'Gating': 'The process of selecting a specific subset of events (cells) on a flow cytometry plot by drawing a boundary (gate) around them. Allows sequential analysis of target cell populations.',
+  'Back-gating': 'A validation technique where a gated cell population (e.g. CD45 dim blasts) is projected back onto previously drawn plots (e.g. FSC vs SSC) to verify its scatter properties and check for contamination from other cell types.',
+  'Fluorochrome': 'A fluorescent chemical compound that can re-emit light upon light excitation. Conjugated to antibodies to label specific proteins on or inside cells for detection.',
+  'Singlets': 'Single, isolated cell events. Flow cytometry requires single-cell analysis. Singlet gating excludes doublets or cell aggregates.',
+  'Doublet': 'Two cells stuck together that pass through the laser beam simultaneously. Doublets distort fluorescence and scatter measurements and must be excluded using FSC-A vs FSC-H gating.',
+  'Debris': 'Non-cellular particles, cell fragments, or platelets. Characterized by extremely low forward scatter (FSC) and side scatter (SSC) characteristics; gated out during analysis.',
+  'Forward Scatter (FSC)': 'Light diffracted by a cell along the path of the laser beam. The intensity of forward scatter is proportional to the size of the cell.',
+  'Side Scatter (SSC)': 'Light scattered by a cell at a 90-degree angle from the laser beam path. Proportional to the cell\'s internal complexity, granularity, and nuclear shape.',
+  'Lineage Fidelity': 'When leukemic cells express only markers specific to their cell lineage (e.g. B-lymphoblasts expressing B-cell markers only).',
+  'Lineage Infidelity (Aberrancy)': 'The expression of markers from an unrelated lineage on leukemic cells (e.g., myeloblasts expressing T-cell marker CD7, or B-cell marker CD19). Crucial for identifying clonal populations.',
+  'Clonality / Light Chain Restriction': 'Normal mature B-cell populations are polyclonal, expressing a mixture of Kappa and Lambda light chains (normal ratio ~1.4:1). A population expressing exclusively one light chain indicates a clonal expansion (monoclonal), characteristic of B-cell lymphoma.',
+
+  // 2. ClearLLab 10C Panels / Tubes
+  'B Cell Tube': 'A screening tube in the ClearLLab 10C panel designed to evaluate B-cell development, mature B-cell populations, and detect light chain restriction (Kappa/Lambda) to identify clonal B-cell neoplasms (e.g. CLL, Mantle Cell Lymphoma).',
+  'T Cell Tube': 'A screening tube in the ClearLLab 10C panel designed to evaluate T-lymphocyte subsets (CD3, CD4, CD8, CD2, CD5, CD7, TCRγδ) and NK cells (CD56, CD16). Used to diagnose T-cell and NK-cell lymphomas.',
+  'Myeloid M1 Tube': 'A ClearLLab panel tube focusing on maturing granulocytic, monocytic, and myeloid progenitor populations. Features markers CD11b, CD13, CD14, CD16, CD34, CD45, CD64, HLA-DR, and CD7.',
+  'Myeloid M2 Tube': 'A complementary ClearLLab panel tube assessing early myeloid lineage antigens, myeloblasts, and monocytes. Features markers CD117, CD123, CD13, CD33, CD34, CD38, CD15, HLA-DR, CD19, and CD45.',
+
+  // 3. Physical Parameters
+  'FSC_A': 'Forward Scatter Area: Represents cell size. Larger cells yield higher FSC-A. Gated to separate cell events from small cellular debris.',
+  'FSC_H': 'Forward Scatter Height: Combined with Forward Scatter Area (FSC-A) to perform doublet exclusion, as cell doublets show disproportionate area-to-height ratio.',
+  'SSC_A': 'Side Scatter Area: Represents internal complexity and granularity. Granulocytes (high granularity) show high SSC-A; lymphocytes (low granularity) show low SSC-A.',
+  'Time': 'Time Parameter: Monitors stability of fluidics during acquisition. Instabilities, clogs, or bubbles appear as gaps or spikes in event rate over time.',
+
+  // 4. Leukemias and Lymphomas
+  'Leukemia': 'A group of hematological cancers that usually begin in the bone marrow and result in high numbers of abnormal white blood cells (blasts or mature clonal cells). Divided into acute (rapidly progressive, blast-dominated) and chronic (slower, mature-cell-dominated) forms.',
+  'Acute Myeloid Leukemia (AML)': 'A cancer of the myeloid line of blood cells, characterized by the rapid growth of abnormal myeloblasts that accumulate in the bone marrow and interfere with normal blood cell production.',
+  'Acute B-Lymphoblastic Leukemia (Pre-B ALL)': 'A cancer of immature B-cell precursors (B-lymphoblasts). Highly positive for CD34, TdT, CD19, CD10, and cytCD79a.',
+  'Acute T-Lymphoblastic Leukemia (T-ALL)': 'An aggressive cancer of immature T-cell precursors (T-lymphoblasts), often presenting with mediastinal masses. Characterized by cytoplasmic CD3 and CD7 expression.',
+  'Chronic Lymphocytic Leukemia (CLL)': 'A mature B-cell neoplasm characterized by clonal accumulation of small, mature-appearing lymphocytes. Typically co-expresses CD5, CD19, CD20 (dim), CD23, and CD200.',
+  'Mantle Cell Lymphoma (MCL)': 'A mature B-cell neoplasm characterized by t(11;14) translocation (cyclin D1 overexpression). CD5 positive but CD200 negative, which distinguishes it from CLL.',
+  'Burkitt Lymphoma': 'A highly aggressive mature B-cell lymphoma characterized by t(8;14) MYC translocation. Lymphocytes express germinal center markers (CD10+) and monoclonal surface Ig, but are negative for immature markers (CD34-, TdT-).',
+  'Auer Rods': 'Clumped needles of azurophilic granular material found in the cytoplasm of myeloblasts in AML, confirming myeloid origin under a microscope.',
+  'Blast': 'An immature precursor cell (e.g. myeloblast, lymphoblast) that does not function properly. In acute leukemia, blasts are >=20% in bone marrow or blood.',
+
+  // 5. CD Markers and Antigenic Indicators
+  'CD2': 'CD2: Pan-T and NK-cell marker. Involved in T-cell activation and adhesion.',
+  'CD3': 'CD3: Pan-T-cell backbone marker. Part of the T-cell receptor (TCR) complex, specific for mature T-lymphocytes.',
+  'CD4': 'CD4: Marker for helper T-lymphocytes, and also expressed on monocytes/macrophages.',
+  'CD5': 'CD5: T-cell marker. Also aberrantly expressed on B-cells in CLL and Mantle Cell Lymphoma.',
+  'CD7': 'CD7: Early T-cell and NK-cell marker. Commonly aberrantly expressed on myeloblasts in AML.',
+  'CD8': 'CD8: Marker for cytotoxic T-lymphocytes and NK-cell sub-populations.',
+  'CD10': 'CD10 (CALLA): Common ALL Antigen. Expressed on B-cell progenitors, germinal center B-cells, and granulocytes.',
+  'CD11b': 'CD11b: Myeloid marker. Expressed on mature granulocytes, monocytes, and NK cells.',
+  'CD13': 'CD13: Myeloid lineage marker, expressed on myeloblasts, maturing granulocytes, and monocytes.',
+  'CD14': 'CD14: High-affinity LPS receptor. Specific marker for mature monocytes.',
+  'CD15': 'CD15: Granulocytic marker, acquired during maturing granulocytic stages.',
+  'CD16': 'CD16: Fc receptor expressed strongly on mature granulocytes and NK-cells.',
+  'CD19': 'CD19: Pan-B-cell backbone marker, expressed from earliest B-precursors until plasma cells.',
+  'CD20': 'CD20: Mature B-cell marker, expressed on mature B-cells (lost on plasma cells).',
+  'CD33': 'CD33: Pan-myeloid marker, strongly expressed on monocytes and myeloid progenitors.',
+  'CD34': 'CD34: Early hematopoietic stem cell/progenitor marker. Positive in acute leukemia blasts; absent on mature cells.',
+  'CD38': 'CD38: Activation marker. Expressed at high intensity on plasma cells and variably on progenitors.',
+  'CD45': 'CD45: Leukocyte Common Antigen (LCA). Expressed on all white blood cells; standard gating marker.',
+  'CD56': 'CD56 (NCAM): Primary marker for Natural Killer (NK) cells.',
+  'CD64': 'CD64: High-affinity IgG receptor. Specific marker for monocytes and promyelocytes.',
+  'CD117': 'CD117 (c-Kit): Stem cell factor receptor. Myeloid progenitor marker, crucial for AML diagnosis.',
+  'CD123': 'CD123 (IL-3Rα): Expressed on early progenitors, basophils, plasmacytoid dendritic cells, and AML blasts.',
+  'CD200': 'CD200: B-cell marker. Co-expressed in CLL (CD200+) but absent in MCL (CD200-).',
+  'Kappa': 'Kappa (κ): Immunoglobulin light chain. Expressed on a subset of mature B-cells.',
+  'Lambda': 'Lambda (λ): Immunoglobulin light chain. Expressed on a subset of mature B-cells.',
+  'HLA_DR': 'HLA-DR: MHC Class II molecule, expressed on antigen-presenting cells (monocytes, B-cells) and early progenitors.',
+  'TCR_gd': 'TCRγδ: Alternative T-cell receptor expressed on a minor subset of mature T-lymphocytes.'
+};
+
 
 // Gating color mapping based on precedence
 const GATE_COLORS = {
@@ -573,6 +665,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentCase === 'compare' && flowPlotAML) {
       flowPlotAML.setAxes(e.target.value, flowPlotAML.yAxis);
     }
+    buildGlossary();
   });
   
   document.getElementById('y-axis-select').addEventListener('change', (e) => {
@@ -580,6 +673,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentCase === 'compare' && flowPlotAML) {
       flowPlotAML.setAxes(flowPlotAML.xAxis, e.target.value);
     }
+    buildGlossary();
   });
   
   document.getElementById('scale-select').addEventListener('change', (e) => {
@@ -589,6 +683,10 @@ document.addEventListener('DOMContentLoaded', () => {
       flowPlotAML.scaleType = e.target.value;
       flowPlotAML.draw();
     }
+  });
+
+  document.getElementById('glossary-filter-select').addEventListener('change', () => {
+    buildGlossary();
   });
 
   // Tube selection
@@ -839,6 +937,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Build glossary
   buildGlossary();
+  buildOverallGlossary();
 
   // Build and initialize Plot Gallery
   buildGallerySidebar();
@@ -1071,6 +1170,7 @@ function setupAxesDropdowns(preserveSelection = true) {
       flowPlotAML.yAxis = selectedY;
     }
   }
+  buildGlossary();
 }
 
 // Dynamic synchronization of the hierarchy tree, stats table, and plot
@@ -1768,16 +1868,649 @@ function showToast(msg) {
 // Marker Glossary Builder
 function buildGlossary() {
   const container = document.getElementById('marker-glossary-container');
+  if (!container) return;
   container.innerHTML = '';
   
-  for (const [key, desc] of Object.entries(MARKER_GLOSSARY)) {
-    const item = document.createElement('div');
-    item.className = 'marker-item';
-    item.innerHTML = `
-      <div class="marker-name">${key}</div>
-      <div style="color: var(--text-secondary); margin-top: 2px; line-height: 1.3;">${desc}</div>
+  const filterSelect = document.getElementById('glossary-filter-select');
+  const mode = filterSelect ? filterSelect.value : 'adaptive';
+  
+  if (mode === 'adaptive') {
+    // Current Tube
+    const tubeConfig = TUBE_CONFIGS[currentTube];
+    const tubeDesc = TUBE_DESCRIPTIONS[currentTube] || 'No description available for this tube.';
+    
+    const tubeCard = document.createElement('div');
+    tubeCard.className = 'glossary-tube-card glossary-fade-in';
+    tubeCard.innerHTML = `
+      <div class="glossary-tube-title">${tubeConfig.name}</div>
+      <div class="glossary-tube-desc">${tubeDesc}</div>
     `;
-    container.appendChild(item);
+    container.appendChild(tubeCard);
+    
+    // Active Axes
+    const xAxisVal = flowPlot ? flowPlot.xAxis : tubeConfig.defaultX;
+    const yAxisVal = flowPlot ? flowPlot.yAxis : tubeConfig.defaultY;
+    
+    const activeSectionTitle = document.createElement('div');
+    activeSectionTitle.className = 'glossary-section-title glossary-fade-in';
+    activeSectionTitle.textContent = 'Active Plot Parameters';
+    container.appendChild(activeSectionTitle);
+    
+    // X Axis Item
+    if (xAxisVal && MARKER_GLOSSARY[xAxisVal]) {
+      const xItem = document.createElement('div');
+      xItem.className = 'glossary-active-marker x-axis glossary-fade-in';
+      xItem.innerHTML = `
+        <div class="marker-name">${xAxisVal}<span class="axis-badge x-badge">X-Axis</span></div>
+        <div style="color: var(--text-secondary); margin-top: 2px; line-height: 1.3;">${MARKER_GLOSSARY[xAxisVal]}</div>
+      `;
+      container.appendChild(xItem);
+    }
+    
+    // Y Axis Item
+    if (yAxisVal && MARKER_GLOSSARY[yAxisVal]) {
+      const yItem = document.createElement('div');
+      yItem.className = 'glossary-active-marker y-axis glossary-fade-in';
+      yItem.innerHTML = `
+        <div class="marker-name">${yAxisVal}<span class="axis-badge y-badge">Y-Axis</span></div>
+        <div style="color: var(--text-secondary); margin-top: 2px; line-height: 1.3;">${MARKER_GLOSSARY[yAxisVal]}</div>
+      `;
+      container.appendChild(yItem);
+    }
+    
+    // Other Markers in this Tube
+    const otherMarkers = tubeConfig.markers.filter(m => m !== xAxisVal && m !== yAxisVal);
+    if (otherMarkers.length > 0) {
+      const otherSectionTitle = document.createElement('div');
+      otherSectionTitle.className = 'glossary-section-title glossary-fade-in';
+      otherSectionTitle.textContent = `Other markers in ${tubeConfig.name}`;
+      container.appendChild(otherSectionTitle);
+      
+      otherMarkers.forEach(m => {
+        if (MARKER_GLOSSARY[m]) {
+          const item = document.createElement('div');
+          item.className = 'marker-item glossary-fade-in';
+          item.innerHTML = `
+            <div class="marker-name" style="color: var(--text-primary); font-size: 11.5px;">${m}</div>
+            <div style="color: var(--text-secondary); margin-top: 2px; line-height: 1.3;">${MARKER_GLOSSARY[m]}</div>
+          `;
+          container.appendChild(item);
+        }
+      });
+    }
+    
+  } else {
+    // Show All Mode
+    
+    // 1. ClearLLab 10C Tubes
+    const tubesTitle = document.createElement('div');
+    tubesTitle.className = 'glossary-section-title glossary-fade-in';
+    tubesTitle.textContent = 'ClearLLab 10C Tubes';
+    container.appendChild(tubesTitle);
+    
+    for (const [key, tubeConfig] of Object.entries(TUBE_CONFIGS)) {
+      const tubeCard = document.createElement('div');
+      tubeCard.className = 'glossary-tube-card glossary-fade-in';
+      const isActive = currentTube === key;
+      tubeCard.innerHTML = `
+        <div class="glossary-tube-title">${tubeConfig.name} ${isActive ? '<span class="axis-badge x-badge" style="margin-left:6px;">Viewing</span>' : ''}</div>
+        <div class="glossary-tube-desc">${TUBE_DESCRIPTIONS[key]}</div>
+      `;
+      container.appendChild(tubeCard);
+    }
+    
+    // 2. Physical / Scatter Parameters
+    const scatterTitle = document.createElement('div');
+    scatterTitle.className = 'glossary-section-title glossary-fade-in';
+    scatterTitle.textContent = 'Scatter & Time Parameters';
+    container.appendChild(scatterTitle);
+    
+    const physicalKeys = ['FSC_A', 'FSC_H', 'SSC_A', 'Time'];
+    physicalKeys.forEach(key => {
+      if (MARKER_GLOSSARY[key]) {
+        const item = document.createElement('div');
+        item.className = 'marker-item glossary-fade-in';
+        item.innerHTML = `
+          <div class="marker-name">${key}</div>
+          <div style="color: var(--text-secondary); margin-top: 2px; line-height: 1.3;">${MARKER_GLOSSARY[key]}</div>
+        `;
+        container.appendChild(item);
+      }
+    });
+    
+    // 3. Immunological Markers
+    const immunTitle = document.createElement('div');
+    immunTitle.className = 'glossary-section-title glossary-fade-in';
+    immunTitle.textContent = 'Immunological Markers (CD & Light Chains)';
+    container.appendChild(immunTitle);
+    
+    const markerKeys = Object.keys(MARKER_GLOSSARY)
+      .filter(k => !physicalKeys.includes(k))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+      
+    markerKeys.forEach(key => {
+      const item = document.createElement('div');
+      item.className = 'marker-item glossary-fade-in';
+      item.innerHTML = `
+        <div class="marker-name">${key}</div>
+        <div style="color: var(--text-secondary); margin-top: 2px; line-height: 1.3;">${MARKER_GLOSSARY[key]}</div>
+      `;
+      container.appendChild(item);
+    });
+  }
+}
+
+// Overall Reference Glossary Builder (Fullscreen View)
+function buildOverallGlossary() {
+  const grid = document.getElementById('fullscreen-glossary-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  
+  // Read search input value
+  const searchInput = document.getElementById('fullscreen-glossary-search');
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+  
+  // Read active filter category tab
+  const activeTab = document.querySelector('#fullscreen-glossary-filters .glossary-filter-tab.active');
+  const categoryFilter = activeTab ? activeTab.getAttribute('data-filter') : 'all';
+  
+  // Define comprehensive dataset from all sources
+  const dataset = [
+    // 1. Gating & Flow Cytometry Basics (general)
+    {
+      category: 'general',
+      term: 'Flow Cytometry',
+      desc: 'A biophysical technology that collects, amplifies, and digitizes light scatter and fluorescence emissions from cells passing in a single-file fluid stream through a laser beam to analyze cellular characteristics.',
+      details: 'Key parameters collected: Forward Scatter (FSC) representing cell size, Side Scatter (SSC) representing granularity, and fluorescence emissions representing specific antigen expression levels.'
+    },
+    {
+      category: 'general',
+      term: 'Immunophenotyping',
+      desc: 'The analysis of heterogeneous cell populations to identify specific cell-surface and intracellular proteins (antigens) using fluorochrome-conjugated monoclonal antibodies.',
+      details: 'Essential clinical tool for determining lineage (myeloid, B-cell, T-cell, etc.) and maturity of hematological neoplasms.'
+    },
+    {
+      category: 'general',
+      term: 'Gating',
+      desc: 'The process of selecting a specific subset of events (cells) on a flow cytometry plot by drawing a boundary (gate) around them. Allows sequential analysis of target cell populations.',
+      details: 'Used hierarchically to isolate cells, leukocytes, and eventually blasts or specific lineages from mature components.'
+    },
+    {
+      category: 'general',
+      term: 'Back-gating',
+      desc: 'A validation technique where a gated cell population (e.g., CD45 dim blasts) is projected back onto previously drawn plots (e.g., FSC vs. SSC) to verify its scatter properties and check for contamination.',
+      details: 'Ensures the gated population matches the expected physical morphology and does not overlap with mature cells.'
+    },
+    {
+      category: 'general',
+      term: 'Compensation',
+      desc: 'The mathematical correction of fluorescence spillover, compensating for instances where one fluorochrome\'s emission wavelength overlaps into the detector channel of another.',
+      details: 'Crucial in multicolor panels. Generate compensation matrices using single-stained capture beads or cell controls representing the brightest signals.'
+    },
+    {
+      category: 'general',
+      term: 'Fluorochrome',
+      desc: 'A fluorescent chemical compound that can re-emit light upon laser excitation. Conjugated to monoclonal antibodies to label target cellular antigens.',
+      details: 'Conjugations are selected by matching bright dyes (PE, APC) with dim antigens, and dimmer dyes (FITC, PacBlue) with bright antigens.'
+    },
+    {
+      category: 'general',
+      term: 'Fluorescence Minus One (FMO)',
+      desc: 'A panel validation control containing all antibody conjugates except one. Used to identify the threshold of positive expression for dim or continuously expressed markers.',
+      details: 'Mandatory in suspected APML (M3) panels to accurately resolve CD34 and HLA-DR gating boundaries.'
+    },
+    {
+      category: 'general',
+      term: 'Doublets / Aggregates',
+      desc: 'Events where two or more cells pass through the interrogation point simultaneously, leading to false-positive scatter and fluorescence signals.',
+      details: 'Excluded via singlet gating on FSC-A (Area) vs. FSC-H (Height) plots, where single cells line up strictly along the diagonal.'
+    },
+    {
+      category: 'general',
+      term: 'Debris / Dead Cells',
+      desc: 'Non-viable cellular material, cell fragments, or platelets showing extremely low Forward Scatter (FSC) characteristics.',
+      details: 'Gated out on FSC vs. SSC plots to prevent background staining and false gating of target leukocytes.'
+    },
+    {
+      category: 'general',
+      term: 'Lineage Fidelity',
+      desc: 'The normal pattern where maturing cells express only those markers specific to their physiological cell lineage (e.g., lymphoblasts expressing only lymphoid markers).',
+      details: 'Used to establish normal hematopoiesis. Deviations indicate myeloid or lymphoid neoplasms.'
+    },
+    {
+      category: 'general',
+      term: 'Lineage Infidelity (Aberrancy)',
+      desc: 'The atypical expression of markers from an unrelated lineage on clonal cells (e.g., CD7 or CD19 on myeloid blasts, or CD117 on T-ALL cells).',
+      details: 'Crucial for defining leukemia-associated immunophenotypes (LAIP) and tracking minimal residual disease (MRD).'
+    },
+    {
+      category: 'general',
+      term: 'Clonality / Light Chain Restriction',
+      desc: 'The restriction of immunoglobulin expression in B-cells to either Kappa (κ) or Lambda (λ) light chains, indicating monoclonal B-cell origin.',
+      details: 'Polyclonal B-cell populations show a normal κ:λ ratio of ~1.4:1. Restricted clonal expansions are characteristic of mature B-cell lymphomas.'
+    },
+    {
+      category: 'general',
+      term: 'Color Precedence Gating',
+      desc: 'A visualization technique where gating software applies colors to cell events based on a predefined hierarchy, helping analyze overlapping populations.',
+      details: 'Enables identification of blasts (purple), lymphocytes (red), monocytes (green), and granulocytes (blue) within mixed populations.'
+    },
+
+    // 2. ClearLLab Tubes (tubes)
+    {
+      category: 'tubes',
+      term: 'B Cell Tube',
+      desc: 'A screening tube in the ClearLLab 10C panel designed to evaluate B-cell development, mature B-cell populations, and detect B-lymphocyte clonality.',
+      details: 'Markers: CD19, CD20, Kappa, Lambda, CD10, CD5, CD200, CD34, CD38. Differentiates CLL (CD5+ CD200+) from Mantle Cell Lymphoma (CD5+ CD200-).'
+    },
+    {
+      category: 'tubes',
+      term: 'T Cell Tube',
+      desc: 'A screening tube in the ClearLLab 10C panel designed to evaluate T-lymphocyte subsets (CD3, CD4, CD8, CD2, CD5, CD7, TCRγδ) and NK cells (CD56, CD16).',
+      details: 'Useful for diagnosing T-cell and NK-cell lymphomas, evaluating T-cell sub-populations (CD4/CD8 ratio), and lineage-specific gating.'
+    },
+    {
+      category: 'tubes',
+      term: 'Myeloid M1 Tube',
+      desc: 'A ClearLLab panel tube focusing on maturing granulocytic, monocytic, and myeloid progenitor populations.',
+      details: 'Markers: CD11b, CD13, CD14, CD16, CD34, CD45, CD64, HLA-DR, and CD7. Used to detect granulocytic anomalies and myeloid blasts.'
+    },
+    {
+      category: 'tubes',
+      term: 'Myeloid M2 Tube',
+      desc: 'A complementary ClearLLab panel tube assessing early myeloid lineage antigens, myeloblasts, and monocytes.',
+      details: 'Markers: CD117, CD123, CD13, CD33, CD34, CD38, CD15, HLA-DR, CD19, and CD45. Highly useful for classifying AML sub-populations and aberrancies.'
+    },
+
+    // 3. Scatter Parameters (scatter)
+    {
+      category: 'scatter',
+      term: 'FSC-A (Forward Scatter Area)',
+      desc: 'Light diffracted by a cell along the path of the laser beam. Proportional to the cell\'s size.',
+      details: 'Used as the primary threshold parameter to separate single cells from cellular debris and platelets.'
+    },
+    {
+      category: 'scatter',
+      term: 'FSC-H (Forward Scatter Height)',
+      desc: 'The peak height of the forward scatter voltage pulse.',
+      details: 'Plotted against FSC-A (Area) to detect doublets, aggregates, and clumps of cells.'
+    },
+    {
+      category: 'scatter',
+      term: 'SSC-A (Side Scatter Area)',
+      desc: 'Light scattered by a cell at a 90-degree angle from the laser beam. Proportional to internal complexity, granularity, and nuclear shape.',
+      details: 'Differentiates lymphocytes (low SSC), monocytes (moderate SSC), and granulocytes (high SSC) in CD45 vs. SSC gating.'
+    },
+    {
+      category: 'scatter',
+      term: 'Time Parameter',
+      desc: 'Tracks event rate over time during sample acquisition.',
+      details: 'A flat line indicates stable fluidics. Interruptions, spikes, or gaps indicate pressure anomalies or clogs.'
+    },
+
+    // 4. Leukemias (leukaemia)
+    {
+      category: 'leukaemia',
+      term: 'Acute Myeloid Leukemia (AML)',
+      desc: 'A cancer of the myeloid blood cell line characterized by rapid growth of abnormal myeloblasts (>=20% in blood or marrow).',
+      details: 'Presents with bone marrow failure symptoms. Flow cytometry is essential for lineage confirmation (MPO+, CD117+, CD33+, CD13+).'
+    },
+    {
+      category: 'leukaemia',
+      term: 'AML-M0 (Minimal Differentiation)',
+      desc: 'FAB classification of myeloid leukemia with no morphological or cytochemical differentiation.',
+      details: 'Blasts are cytochemically MPO-negative, but express myeloid lineage markers (CD117, CD33, CD13) and stem markers (CD34, HLA-DR).'
+    },
+    {
+      category: 'leukaemia',
+      term: 'AML-M1 (Without Maturation)',
+      desc: 'FAB subtype showing early myeloblastic differentiation but no granulocytic maturation (CD15 negative).',
+      details: 'Blasts are positive for CD34, CD117, HLA-DR, MPO (intracellular), CD33, and CD13.'
+    },
+    {
+      category: 'leukaemia',
+      term: 'AML-M2 (With Maturation)',
+      desc: 'FAB subtype characterized by the presence of myeloblasts co-existing with maturing granulocytes (CD15+, CD11b+).',
+      details: 'Frequently associated with the t(8;21) translocation. Blasts commonly express aberrant CD19.'
+    },
+    {
+      category: 'leukaemia',
+      term: 'AML-M3 (APL - Acute Promyelocytic Leukemia)',
+      desc: 'A medical emergency characterized by t(15;17) PML-RARA fusion. Associated with severe DIC risk.',
+      details: 'Flow signature is characteristically CD34 negative, HLA-DR negative, CD11b negative, MPO strongly positive, and CD33 homogeneously bright.'
+    },
+    {
+      category: 'leukaemia',
+      term: 'AML-M4 (Acute Myelomonocytic Leukemia)',
+      desc: 'FAB subtype featuring a mixture of myeloblasts (CD34+) and monoblasts/monocytic cells (CD14+, CD64+, HLA-DR+++).',
+      details: 'Often associated with inv(16) or t(16;16) abnormalities. CD11b and CD14 are acquired on mature monocytes.'
+    },
+    {
+      category: 'leukaemia',
+      term: 'AML-M5 (Acute Monocytic Leukemia)',
+      desc: 'FAB subtype where monoblasts and promonocytes predominate, showing high side scatter and strong monocyte antigens.',
+      details: 'Signature: CD33+++, HLA-DR+++, CD14+, CD64+, CD11b+, CD34+/- (often negative on mature monoblasts), MPO weak/absent.'
+    },
+    {
+      category: 'leukaemia',
+      term: 'AML-M6 (Acute Erythroid Leukemia)',
+      desc: 'Rare FAB subtype characterized by erythroid progenitor proliferation.',
+      details: 'Blasts are positive for Glycophorin A and CD71 (transferrin receptor), and negative for standard myeloid markers.'
+    },
+    {
+      category: 'leukaemia',
+      term: 'AML-M7 (Acute Megakaryoblastic Leukemia)',
+      desc: 'FAB subtype defined by megakaryoblast proliferation.',
+      details: 'Blasts express CD41 (GP IIb/IIIa) and CD61 (GP IIIa). Often associated with bone marrow fibrosis.'
+    },
+    {
+      category: 'leukaemia',
+      term: 'Acute B-Lymphoblastic Leukemia (Pre-B ALL)',
+      desc: 'A clonal cancer of immature B-cell precursors (lymphoblasts).',
+      details: 'Highly positive for CD34, TdT, CD19, CD10, and cytoplasmic CD79a. Negative for mature surface light chains.'
+    },
+    {
+      category: 'leukaemia',
+      term: 'Acute T-Lymphoblastic Leukemia (T-ALL)',
+      desc: 'An aggressive precursor T-cell cancer, often presenting with high WBC count and a mediastinal mass.',
+      details: 'Blasts express TdT, cytoplasmic CD3, CD7, and show variable co-expression of CD2, CD5, CD4, CD8, and CD1a.'
+    },
+    {
+      category: 'leukaemia',
+      term: 'Burkitt Lymphoma / Leukemia',
+      desc: 'An aggressive mature B-cell neoplasm characterized by t(8;14) MYC translocation.',
+      details: 'Signature: CD19+, CD20+, CD10+, CD34- (negative), TdT- (negative), and monoclonal surface light chain restriction.'
+    },
+    {
+      category: 'leukaemia',
+      term: 'Chronic Lymphocytic Leukemia (CLL)',
+      desc: 'A mature B-cell leukemia defined by the accumulation of CD5+ CD19+ mature B-lymphocytes.',
+      details: 'Co-expresses CD5, CD19, CD23, CD200, and dim CD20. Positive for light chain restriction (usually dim Kappa or Lambda).'
+    },
+    {
+      category: 'leukaemia',
+      term: 'Mantle Cell Lymphoma (MCL)',
+      desc: 'A mature CD5+ CD19+ B-cell lymphoma characterized by t(11;14) yielding cyclin D1 overexpression.',
+      details: 'Differentiated from CLL by being CD200 negative, CD23 negative/dim, and CD20 bright.'
+    },
+    {
+      category: 'leukaemia',
+      term: 'Blasts',
+      desc: 'Immature hematopoietic precursor cells. In healthy marrow, blasts are <2-5%. In acute leukemia, blasts exceed 20%.',
+      details: 'Characterized by dim CD45 and low side scatter. Best resolved using CD34, CD117, or TdT.'
+    },
+    {
+      category: 'leukaemia',
+      term: 'Auer Rods',
+      desc: 'Needle-like cytoplasmic inclusions of fused primary granules found in myeloblasts.',
+      details: 'Confirms myeloid lineage morphologically. Characteristically associated with AML (M1-M4) and strongly MPO positive.'
+    },
+
+    // 5. CD Markers (markers)
+    {
+      category: 'markers',
+      term: 'CD2',
+      desc: 'Pan-T and NK-cell marker. Adhesion molecule involved in antigen-presenting cell interaction.',
+      details: 'Expressed on mature T-cells and NK-cells. Aberrantly expressed in monocytic AML (M4/M5) and APML (M3).'
+    },
+    {
+      category: 'markers',
+      term: 'CD3',
+      desc: 'Pan-T-cell lineage marker. Forms the T-cell receptor (TCR) complex.',
+      details: 'Specific for T-lymphocytes. Cytoplasmic CD3 is the first marker of T-cell commitment; surface CD3 marks maturity.'
+    },
+    {
+      category: 'markers',
+      term: 'CD4',
+      desc: 'MHC Class II co-receptor. Helper T-cell marker.',
+      details: 'Expressed on helper T lymphocytes, monocytes, macrophages, and plasmacytoid dendritic cells.'
+    },
+    {
+      category: 'markers',
+      term: 'CD5',
+      desc: 'T-cell marker. Modulator of TCR/BCR signaling.',
+      details: 'Expressed on all T-cells. Aberrantly co-expressed on B-cells in CLL and Mantle Cell Lymphoma.'
+    },
+    {
+      category: 'markers',
+      term: 'CD7',
+      desc: 'Early T-cell and NK-cell marker. Expressed on T-cell precursors, mature T-cells, and NK cells.',
+      details: 'Often aberrantly expressed on myeloblasts in AML (M0/M1/M2), indicating lineage infidelity.'
+    },
+    {
+      category: 'markers',
+      term: 'CD8',
+      desc: 'MHC Class I co-receptor. Cytotoxic T-cell marker.',
+      details: 'Expressed on cytotoxic T lymphocytes, NK cells, and subsets of gamma-delta T-cells.'
+    },
+    {
+      category: 'markers',
+      term: 'CD10',
+      desc: 'Common ALL Antigen (CALLA). Neutral endopeptidase.',
+      details: 'Expressed on early B-cell progenitors (hematogones), germinal center B-cells, follicular lymphomas, and granulocytes.'
+    },
+    {
+      category: 'markers',
+      term: 'CD11b',
+      desc: 'Myeloid adhesion molecule. Integrin alpha M subunit.',
+      details: 'Strongly expressed on neutrophils and monocytes. Acquired late in granulocyte maturation (promyelocyte to granulocyte).'
+    },
+    {
+      category: 'markers',
+      term: 'CD13',
+      desc: 'Myeloid marker. Aminopeptidase N.',
+      details: 'Expressed on myeloid progenitors, maturing granulocytes, and monocytes. Often dim/absent in abnormal myeloid blasts.'
+    },
+    {
+      category: 'markers',
+      term: 'CD14',
+      desc: 'LPS receptor. Monocytic backbone marker.',
+      details: 'Strongly expressed on mature monocytes. Absent on granulocytes and early blasts.'
+    },
+    {
+      category: 'markers',
+      term: 'CD15',
+      desc: 'Granulocytic adhesion molecule (Lewis X antigen).',
+      details: 'Strongly acquired during granulocytic maturation. Expressed on myelocytes, metamyelocytes, and granulocytes.'
+    },
+    {
+      category: 'markers',
+      term: 'CD16',
+      desc: 'FcγRIII receptor. Low-affinity IgG receptor.',
+      details: 'Expressed on mature granulocytes and NK-cells. CD16 levels drop in myelodysplastic syndromes (granulocyte dysplasia).'
+    },
+    {
+      category: 'markers',
+      term: 'CD19',
+      desc: 'Pan-B-cell marker. Modulates B-cell receptor signaling.',
+      details: 'Expressed throughout B-cell development. Lost on plasma cells. Aberrantly expressed in t(8;21) AML (FAB M2).'
+    },
+    {
+      category: 'markers',
+      term: 'CD20',
+      desc: 'Mature B-cell marker. Calcium channel.',
+      details: 'Expressed on B-cells from pre-B stage to mature B-cells (lost on plasma cells). Primary target for rituximab therapy.'
+    },
+    {
+      category: 'markers',
+      term: 'CD33',
+      desc: 'Pan-myeloid marker. Sialic acid-binding lectin.',
+      details: 'Strong on monocytes, moderate on maturing granulocytes and myeloblasts. Target for antibody-drug conjugates.'
+    },
+    {
+      category: 'markers',
+      term: 'CD34',
+      desc: 'Early hematopoietic stem/progenitor cell marker.',
+      details: 'Marks immature blasts in AML and ALL. Absent in APML (M3), mature leukemias, and mature monocytes.'
+    },
+    {
+      category: 'markers',
+      term: 'CD38',
+      desc: 'Activation glycoprotein. NAD+ glycohydrolase.',
+      details: 'Expressed widely on progenitors and activated cells. Extremely bright on plasma cells (myeloma marker).'
+    },
+    {
+      category: 'markers',
+      term: 'CD45',
+      desc: 'Leukocyte Common Antigen (LCA). Protein tyrosine phosphatase.',
+      details: 'Expressed on all WBCs. Plotted against SSC to differentiate lymphs (bright), monocytes (mod), and blasts (dim).'
+    },
+    {
+      category: 'markers',
+      term: 'CD56',
+      desc: 'NCAM (Neural Cell Adhesion Molecule). Primary marker for NK cells.',
+      details: 'Expressed on NK cells. Aberrantly expressed in AML and plasma cell myeloma (indicates adverse prognosis).'
+    },
+    {
+      category: 'markers',
+      term: 'CD64',
+      desc: 'High-affinity IgG receptor.',
+      details: 'Strongly expressed on monocytes and promyelocytes. Upregulated on granulocytes during systemic infection.'
+    },
+    {
+      category: 'markers',
+      term: 'CD117 (c-kit)',
+      desc: 'Stem cell factor receptor. Receptor tyrosine kinase.',
+      details: 'Expressed on early myeloid progenitors. Marker of myeloid blast commitment in AML. Absent on lymphoid blasts.'
+    },
+    {
+      category: 'markers',
+      term: 'CD123',
+      desc: 'IL-3 Receptor alpha chain.',
+      details: 'Expressed on plasmacytoid DCs, basophils, early myeloid progenitors, and aberrantly high on AML blasts.'
+    },
+    {
+      category: 'markers',
+      term: 'CD200',
+      desc: 'OX-2 membrane glycoprotein. Immuno-regulatory marker.',
+      details: 'Expressed on mature B-cells. Strongly positive in CLL but negative in Mantle Cell Lymphoma.'
+    },
+    {
+      category: 'markers',
+      term: 'Kappa (κ) Light Chain',
+      desc: 'Immunoglobulin light chain component expressed on B-cell surface receptors.',
+      details: 'Assessed alongside Lambda light chain. Normal B-cell pools show polyclonal κ and λ expression.'
+    },
+    {
+      category: 'markers',
+      term: 'Lambda (λ) Light Chain',
+      desc: 'Immunoglobulin light chain component expressed on B-cell surface receptors.',
+      details: 'Assessed alongside Kappa light chain to detect light chain restriction (monoclonality).'
+    },
+    {
+      category: 'markers',
+      term: 'HLA-DR',
+      desc: 'MHC Class II antigen. Antigen presentation molecule.',
+      details: 'Expressed on APCs, B-cells, and early progenitors. Characteristically negative in APML (AML-M3).'
+    },
+    {
+      category: 'markers',
+      term: 'TCRγδ',
+      desc: 'Alternative T-cell receptor (gamma-delta heterodimer).',
+      details: 'Expressed on a minor subset of mature T-lymphocytes, typically CD4- and CD8-.'
+    },
+    {
+      category: 'markers',
+      term: 'TdT',
+      desc: 'Terminal Deoxynucleotidyl Transferase. Template-independent DNA polymerase.',
+      details: 'Nuclear marker positive in lymphoblasts (ALL) and hematogones. Negative in mature B/T neoplasms and AML.'
+    },
+
+    // 6. Clinical SOPs (protocols)
+    {
+      category: 'protocols',
+      term: 'Surface Membrane Staining (SLW)',
+      desc: 'Standard staining protocol for surface markers (e.g. CD45, CD34, CD19) based on EuroFlow guidelines.',
+      details: '1. Add surface antibodies to cell suspension. 2. Incubate 15 min at RT in the dark. 3. Lysate RBCs with FACS Lysing Solution. 4. Wash cell pellet with PBS-BSA buffer. 5. Resuspend for acquisition.'
+    },
+    {
+      category: 'protocols',
+      term: 'Combined Surface & Intracellular',
+      desc: 'EuroFlow standardized protocol using Fix & Perm reagents to capture intracellular targets like myeloperoxidase (MPO) or cytoplasmic CD3/CD79a.',
+      details: '1. Stain cell surface antigens and wash. 2. Resuspend pellet in Reagent A (Fixative), incubate 15 min. 3. Wash. 4. Resuspend pellet in Reagent B (Permeabilizer) + intracellular antibodies, incubate 15 min. 5. Wash and resuspend.'
+    },
+    {
+      category: 'protocols',
+      term: 'Nuclear TdT Staining Protocol',
+      desc: 'SOP to stain nuclear Terminal Deoxynucleotidyl Transferase (TdT) in lymphoblast workups.',
+      details: 'Stained as a surface wash protocol using FACS Lysing Solution and TdT antibody directly, avoiding Fix&Perm reagents to preserve forward/side scatter properties of delicate lymphoid blasts.'
+    }
+  ];
+  
+  // Filter dataset by search input query
+  let filtered = dataset;
+  if (query) {
+    filtered = filtered.filter(item => 
+      item.term.toLowerCase().includes(query) || 
+      item.desc.toLowerCase().includes(query) ||
+      (item.details && item.details.toLowerCase().includes(query))
+    );
+  }
+  
+  // Filter dataset by active category
+  if (categoryFilter !== 'all') {
+    filtered = filtered.filter(item => item.category === categoryFilter);
+  }
+  
+  // Update counter label
+  const countLabel = document.getElementById('overall-glossary-count');
+  if (countLabel) {
+    countLabel.textContent = `Showing ${filtered.length} of ${dataset.length} terms`;
+  }
+  
+  // Sort alphabetically by term
+  filtered.sort((a, b) => a.term.localeCompare(b.term, undefined, { numeric: true, sensitivity: 'base' }));
+  
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div class="glossary-fade-in" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted); text-align: center; gap: 8px;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <div style="font-size: 13.5px; font-weight: 600; color: var(--text-secondary);">No matching terms found</div>
+        <div style="font-size: 11.5px;">Try refining your query or selecting a different category.</div>
+      </div>
+    `;
+    return;
+  }
+  
+  // Render cards
+  filtered.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'glossary-card glossary-fade-in';
+    
+    // Get category meta details
+    const meta = getCategoryMeta(item.category);
+    
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px;">
+        <h3 style="margin: 0; font-size: 14.5px; font-weight: 700; color: ${meta.color};">${item.term}</h3>
+        <span style="font-size: 8.5px; font-weight: 800; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: ${meta.bg}; color: ${meta.color}; border: 1.2px solid ${meta.border}; letter-spacing: 0.3px; white-space: nowrap;">
+          ${meta.label}
+        </span>
+      </div>
+      <p style="margin: 0; font-size: 12px; line-height: 1.45; color: var(--text-primary); font-weight: 400; flex: 1;">
+        ${item.desc}
+      </p>
+      ${item.details ? `
+        <div style="margin-top: 6px; border-top: 1px dashed rgba(255, 255, 255, 0.05); padding-top: 6px; font-size: 11px; line-height: 1.4; color: var(--text-secondary); font-weight: 400;">
+          ${item.details}
+        </div>
+      ` : ''}
+    `;
+    
+    grid.appendChild(card);
+  });
+}
+
+// Category Meta Helper for Card Styling
+function getCategoryMeta(cat) {
+  switch(cat) {
+    case 'general': return { label: 'Gating & Basics', color: 'var(--accent-blue)', bg: 'rgba(33, 150, 243, 0.12)', border: 'rgba(33, 150, 243, 0.2)' };
+    case 'tubes': return { label: 'ClearLLab Tubes', color: 'var(--accent-green)', bg: 'rgba(76, 175, 80, 0.12)', border: 'rgba(76, 175, 80, 0.2)' };
+    case 'scatter': return { label: 'Scatter Params', color: 'var(--accent-orange)', bg: 'rgba(255, 152, 0, 0.12)', border: 'rgba(255, 152, 0, 0.2)' };
+    case 'leukaemia': return { label: 'Leukemias', color: 'var(--accent-red)', bg: 'rgba(255, 42, 42, 0.12)', border: 'rgba(255, 42, 42, 0.2)' };
+    case 'markers': return { label: 'CD Markers', color: 'var(--accent-cyan)', bg: 'rgba(0, 229, 255, 0.12)', border: 'rgba(0, 229, 255, 0.2)' };
+    case 'protocols': return { label: 'SOP Protocols', color: 'var(--accent-purple)', bg: 'rgba(224, 64, 251, 0.12)', border: 'rgba(224, 64, 251, 0.2)' };
+    default: return { label: 'Reference', color: 'var(--text-secondary)', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' };
   }
 }
 
@@ -1948,6 +2681,68 @@ function initSidebar() {
   if (closeGatingBtn) closeGatingBtn.addEventListener('click', () => toggleSidebar(false));
   const closeSimBtn = document.getElementById('close-sidebar-btn-simulator');
   if (closeSimBtn) closeSimBtn.addEventListener('click', () => toggleSidebar(false));
+  const closeLeukaemiaBtn = document.getElementById('close-sidebar-btn-leukaemia');
+  if (closeLeukaemiaBtn) closeLeukaemiaBtn.addEventListener('click', () => toggleSidebar(false));
+  const closeOverallGlossaryBtn = document.getElementById('close-sidebar-btn-overall-glossary');
+  if (closeOverallGlossaryBtn) closeOverallGlossaryBtn.addEventListener('click', () => toggleSidebar(false));
+  const closeFullscreenGlossaryBtn = document.getElementById('close-fullscreen-glossary');
+  if (closeFullscreenGlossaryBtn) {
+    closeFullscreenGlossaryBtn.addEventListener('click', () => {
+      switchSidebarTab('gallery');
+    });
+  }
+
+  // Fullscreen Glossary Search
+  const fullscreenSearch = document.getElementById('fullscreen-glossary-search');
+  if (fullscreenSearch) {
+    fullscreenSearch.addEventListener('input', () => {
+      buildOverallGlossary();
+    });
+  }
+
+  // Fullscreen Glossary Filter Tabs
+  const filterTabs = document.querySelectorAll('#fullscreen-glossary-filters .glossary-filter-tab');
+  filterTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      filterTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      const filterVal = tab.getAttribute('data-filter');
+      
+      // Sync sidebar buttons
+      const sidebarBtns = document.querySelectorAll('.sidebar-glossary-nav-btn');
+      sidebarBtns.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-target') === filterVal) {
+          btn.classList.add('active');
+        }
+      });
+      
+      buildOverallGlossary();
+    });
+  });
+
+  // Sidebar Glossary Navigation Buttons
+  const sidebarNavBtns = document.querySelectorAll('.sidebar-glossary-nav-btn');
+  sidebarNavBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      sidebarNavBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      const targetVal = btn.getAttribute('data-target');
+      
+      // Sync fullscreen filter tabs
+      const fullTabs = document.querySelectorAll('#fullscreen-glossary-filters .glossary-filter-tab');
+      fullTabs.forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.getAttribute('data-filter') === targetVal) {
+          tab.classList.add('active');
+        }
+      });
+      
+      buildOverallGlossary();
+    });
+  });
   
   // Layout toggle button in leukaemia header
   const leukaemiaLayoutBtn = document.getElementById('leukaemia-layout-btn');
@@ -2017,18 +2812,17 @@ function switchSidebarTab(tabId) {
   const sidebar = document.getElementById('left-sidebar');
   const resizer = document.getElementById('sidebar-resizer');
   
-  if (!sidebarExpanded) {
-    sidebarExpanded = true;
-    if (sidebar) sidebar.classList.remove('collapsed');
-    if (resizer) resizer.style.display = 'block';
-  } else if (activeSidebarTab === tabId) {
-    // Clicking active tab collapses it
-    toggleSidebar(false);
-    return;
+  const isCollapsed = !sidebarExpanded || (sidebar && sidebar.classList.contains('collapsed'));
+  
+  // Clicking the active tab collapses it, EXCEPT for overall-glossary which is always fullscreen/collapsed
+  if (activeSidebarTab === tabId && tabId !== 'overall-glossary') {
+    if (!isCollapsed) {
+      toggleSidebar(false);
+      return;
+    }
   }
   
   activeSidebarTab = tabId;
-  localStorage.setItem('flow-sidebar-expanded', 'true');
   localStorage.setItem('flow-sidebar-active-tab', tabId);
   
   // Toggle active content divs
@@ -2038,39 +2832,68 @@ function switchSidebarTab(tabId) {
   const activeContent = document.getElementById(`sidebar-tab-${tabId}`);
   if (activeContent) activeContent.classList.add('active');
   
+  // Toggle main views for Simulator vs Glossary vs Plots
+  const simView = document.getElementById('cytometer-simulator-view');
+  const glossaryView = document.getElementById('overall-glossary-view');
+  const plotContainer = document.querySelector('.plot-container');
+  const rightPanel = document.getElementById('right-panel');
+  const toggleRightBtn = document.getElementById('toggle-right-panel-btn');
+  
+  if (tabId === 'overall-glossary') {
+    // For overall glossary, collapse the left sidebar panel completely
+    if (sidebar) sidebar.classList.add('collapsed');
+    if (resizer) resizer.style.display = 'none';
+    sidebarExpanded = false;
+    
+    if (simView) simView.style.display = 'none';
+    if (plotContainer) plotContainer.style.display = 'none';
+    if (rightPanel) rightPanel.style.display = 'none';
+    if (toggleRightBtn) toggleRightBtn.style.display = 'none';
+    if (glossaryView) glossaryView.style.display = 'flex';
+    
+    // Stop simulation when switching away
+    if (typeof flowCytometerSim !== 'undefined' && flowCytometerSim) {
+      flowCytometerSim.stopSimulation();
+    }
+    
+    buildOverallGlossary();
+  } else {
+    // Switch to target tab and ensure sidebar is expanded
+    sidebarExpanded = true;
+    localStorage.setItem('flow-sidebar-expanded', 'true');
+    if (sidebar) sidebar.classList.remove('collapsed');
+    if (resizer) resizer.style.display = 'block';
+    
+    if (tabId === 'simulator') {
+      if (plotContainer) plotContainer.style.display = 'none';
+      if (rightPanel) rightPanel.style.display = 'none';
+      if (toggleRightBtn) toggleRightBtn.style.display = 'none';
+      if (glossaryView) glossaryView.style.display = 'none';
+      
+      // Open simulator page
+      if (typeof openFlowSimulatorPage === 'function') {
+        openFlowSimulatorPage(currentCase);
+      }
+    } else {
+      if (simView) simView.style.display = 'none';
+      if (glossaryView) glossaryView.style.display = 'none';
+      if (plotContainer) plotContainer.style.display = '';
+      if (rightPanel) rightPanel.style.display = '';
+      if (toggleRightBtn) toggleRightBtn.style.display = '';
+      
+      // Stop simulation when switching away
+      if (typeof flowCytometerSim !== 'undefined' && flowCytometerSim) {
+        flowCytometerSim.stopSimulation();
+      }
+    }
+  }
+  
   updateTabButtons();
   updateLeukaemiaLayout();
   
   if (tabId === 'gallery') {
     highlightActiveGalleryItem();
     setTimeout(updateGalleryThumbnails, 50);
-  }
-  
-  // Toggle main views for Simulator vs Plots
-  const simView = document.getElementById('cytometer-simulator-view');
-  const plotContainer = document.querySelector('.plot-container');
-  const rightPanel = document.getElementById('right-panel');
-  const toggleRightBtn = document.getElementById('toggle-right-panel-btn');
-  
-  if (tabId === 'simulator') {
-    if (plotContainer) plotContainer.style.display = 'none';
-    if (rightPanel) rightPanel.style.display = 'none';
-    if (toggleRightBtn) toggleRightBtn.style.display = 'none';
-    
-    // Open simulator page
-    if (typeof openFlowSimulatorPage === 'function') {
-      openFlowSimulatorPage(currentCase);
-    }
-  } else {
-    if (simView) simView.style.display = 'none';
-    if (plotContainer) plotContainer.style.display = '';
-    if (rightPanel) rightPanel.style.display = '';
-    if (toggleRightBtn) toggleRightBtn.style.display = '';
-    
-    // Stop simulation when switching away
-    if (typeof flowCytometerSim !== 'undefined' && flowCytometerSim) {
-      flowCytometerSim.stopSimulation();
-    }
   }
 }
 
@@ -2081,6 +2904,11 @@ function toggleSidebar(show) {
   
   if (show === undefined) {
     show = !sidebarExpanded;
+  }
+  
+  if (activeSidebarTab === 'overall-glossary') {
+    switchSidebarTab('gallery');
+    return;
   }
   
   sidebarExpanded = show;
@@ -2119,7 +2947,7 @@ function updateTabButtons() {
   document.querySelectorAll('.vertical-tab-btn').forEach(btn => {
     btn.classList.remove('active');
     const tab = btn.getAttribute('data-tab');
-    if (sidebarExpanded && tab === activeSidebarTab) {
+    if ((sidebarExpanded || tab === 'overall-glossary') && tab === activeSidebarTab) {
       btn.classList.add('active');
     }
   });
@@ -2349,6 +3177,7 @@ function selectGalleryPlot(tube, figIdx) {
   
   setActiveParent(targetGateId);
   highlightActiveGalleryItem();
+  buildGlossary();
 }
 
 // Dynamically highlight matching figure item in the gallery sidebar
