@@ -28,6 +28,7 @@ let activeParentIdAML = 'root';
 let activePlot = 'normal'; // 'normal' or 'aml'
 let isFullscreenActive = false;
 let fullscreenTarget = null; // 'both', 'normal', 'aml', or null
+let activeAmlCaseId = 'aml';  // Selected AML case id (can be aml or any aml_m0..aml_m7)
 
 
 // Casebook Data & Vignettes
@@ -43,6 +44,54 @@ const CASES_INFO = {
     subtitle: 'Bone Marrow Aspirate & Blood Immunophenotyping',
     vignette: 'This 55-year-old male presents with circulating blasts on peripheral blood smear. A bone marrow aspirate sample is submitted for immunophenotyping. Smear shows sheets of primitive cells with high nuclear-to-cytoplasmic ratio and prominent nucleoli.',
     diagnosis: 'aml'
+  },
+  aml_m0: {
+    title: 'Case #18-M0: AML-M0 (Minimally Differentiated)',
+    subtitle: 'Bone Marrow Immunophenotyping',
+    vignette: 'This 42-year-old female presents with severe fatigue and pancytopenia. Bone marrow aspirate shows sheets of medium-sized blasts with round-to-oval nuclei and agranular cytoplasm. Cytochemical myeloperoxidase (MPO) staining is negative (<3% positive). Early myeloid lineage is established via flow cytometric expression of CD117 and CD33.',
+    diagnosis: 'aml_m0'
+  },
+  aml_m1: {
+    title: 'Case #18-M1: AML-M1 (Without Maturation)',
+    subtitle: 'Bone Marrow Immunophenotyping',
+    vignette: 'This 29-year-old male presents with fever, bleeding gums, and circulating blasts. Bone marrow aspirate shows >90% blasts with minimal granulocytic maturation. The blasts are cytochemically MPO positive, and flow cytometry demonstrates CD34+, CD117+, CD13+, and CD33+ expression with CD15 negativity.',
+    diagnosis: 'aml_m1'
+  },
+  aml_m2: {
+    title: 'Case #18-M2: AML-M2 (With Maturation)',
+    subtitle: 'Bone Marrow Immunophenotyping',
+    vignette: 'This 48-year-old female presents with bone pain and leukocytosis. Bone marrow aspirate shows primitive myeloblasts alongside maturing myeloid elements (promyelocytes, myelocytes, neutrophils). Cytogenetics reveal a t(8;21)(q22;q22) RUNX1-RUNX1T1 translocation, and flow cytometry shows aberrant CD19 expression on the CD34+ blasts.',
+    diagnosis: 'aml_m2'
+  },
+  aml_m3: {
+    title: 'Case #18-M3: AML-M3 (APL - Medical Emergency)',
+    subtitle: 'Peripheral Blood & Bone Marrow Immunophenotyping',
+    vignette: 'This 35-year-old male presents with extensive bruising, epistaxis, and severe coagulopathy (prolonged PT/APTT, low fibrinogen). Smear reveals promyelocytes with hypergranular cytoplasm and numerous Auer rods ("fagot cells"). Flow cytometry reveals a diagnostic immunophenotype that is characteristically CD34 negative, HLA-DR negative, and strongly/homogeneously CD33 bright. Start ATRA immediately!',
+    diagnosis: 'aml_m3'
+  },
+  aml_m4: {
+    title: 'Case #18-M4: AML-M4 (Acute Myelomonocytic)',
+    subtitle: 'Bone Marrow Immunophenotyping',
+    vignette: 'This 52-year-old male presents with gingival hypertrophy and lymphadenopathy. Bone marrow aspirate contains a mixture of myeloblasts and monoblasts (both lineages representing >20% of nucleated cells). Flow cytometry shows co-existing populations of CD34+/CD117+ myeloblasts and CD14+/CD64+/CD11b+ monocytic cells.',
+    diagnosis: 'aml_m4'
+  },
+  aml_m5: {
+    title: 'Case #18-M5: AML-M5 (Acute Monocytic)',
+    subtitle: 'Peripheral Blood & Marrow Immunophenotyping',
+    vignette: 'This 61-year-old female presents with hyperleukocytosis (WBC >100,000/µL), headache, and confusion due to leukostasis. Bone marrow aspirate shows >80% monoblasts and promonocytes. Flow cytometry shows a prominent CD45-moderate/SSC-intermediate cell gate expressing HLA-DR+++, CD33+++, CD64+, CD11b+, and CD14+/- with negative CD34 and CD117.',
+    diagnosis: 'aml_m5'
+  },
+  aml_m6: {
+    title: 'Case #18-M6: AML-M6 (Acute Erythroid)',
+    subtitle: 'Bone Marrow Aspirate Immunophenotyping',
+    vignette: 'This 68-year-old male with a history of MDS presents with worsening anemia and transfusion dependence. Bone marrow shows erythroid hyperplasia with >50% erythroid precursors showing severe dyserythropoiesis and >20% non-erythroid myeloblasts. Flow cytometry highlights a distinct CD45-negative/very dim, SSC-low, CD71+ erythroid population.',
+    diagnosis: 'aml_m6'
+  },
+  aml_m7: {
+    title: 'Case #18-M7: AML-M7 (Acute Megakaryoblastic)',
+    subtitle: 'Bone Marrow Aspirate & Core Biopsy',
+    vignette: 'This 24-month-old child with Down syndrome presents with organomegaly. Bone marrow aspirate yields a "dry tap" due to extensive reticulin fibrosis. Core biopsy shows sheets of megakaryoblasts, often with cytoplasmic blebs. Flow cytometry demonstrates CD34+, CD117+, HLA-DR negative/dim, and aberrant CD56 expression. Platelet glycoproteins CD41/CD61 are positive on immunohistochemistry.',
+    diagnosis: 'aml_m7'
   },
   compare: {
     title: 'Side-by-Side Comparison',
@@ -758,11 +807,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('flow-cell-clicked', (e) => {
     const { cell } = e.detail;
     let originCase = "Normal Case #1";
-    if (currentCase === 'aml') {
-      originCase = "AML Case #18";
+    if (currentCase === 'aml' || currentCase.startsWith('aml_m')) {
+      originCase = CASES_INFO[currentCase] ? CASES_INFO[currentCase].title : "AML Patient Case";
     } else if (currentCase === 'compare') {
       if (flowPlotAML && flowPlotAML.hoveredCell === cell) {
-        originCase = "AML Case #18";
+        originCase = CASES_INFO[activeAmlCaseId] ? CASES_INFO[activeAmlCaseId].title : "AML Patient Case";
       } else {
         originCase = "Normal Case #1";
       }
@@ -959,6 +1008,9 @@ function loadCase(caseId) {
     exitFullscreen();
   }
   currentCase = caseId;
+  if (caseId !== 'normal' && caseId !== 'compare') {
+    activeAmlCaseId = caseId;
+  }
   
   const plotsLayout = document.getElementById('plots-layout');
   const plotCardAml = document.getElementById('plot-card-aml');
@@ -980,13 +1032,20 @@ function loadCase(caseId) {
     
     // Load both datasets
     normalEvents = FlowData.generateNormalCase();
-    amlEvents = FlowData.generateAMLCase();
+    if (activeAmlCaseId === 'aml') {
+      amlEvents = FlowData.generateAMLCase();
+    } else {
+      amlEvents = FlowData.generateAMLSubtypeCase(activeAmlCaseId);
+    }
     caseEvents = normalEvents; // Fallback
     
     const info = CASES_INFO['compare'];
     document.getElementById('case-title').innerText = info.title;
     document.getElementById('case-subtitle').innerText = info.subtitle;
     document.getElementById('case-vignette').innerText = info.vignette;
+    
+    const amlInfo = CASES_INFO[activeAmlCaseId] || CASES_INFO['aml'];
+    document.getElementById('plot-title-aml').innerText = amlInfo.title;
     
     // Clean gates and pre-populate standard gates for both independently
     activeGates = [];
@@ -1027,19 +1086,49 @@ function loadCase(caseId) {
     document.getElementById('case-subtitle').innerText = info.subtitle;
     document.getElementById('case-vignette').innerText = info.vignette;
     
-    caseEvents = caseId === 'normal' ? FlowData.generateNormalCase() : FlowData.generateAMLCase();
+    if (caseId === 'normal') {
+      caseEvents = FlowData.generateNormalCase();
+    } else if (caseId === 'aml') {
+      caseEvents = FlowData.generateAMLCase();
+    } else {
+      caseEvents = FlowData.generateAMLSubtypeCase(caseId);
+    }
     
     activeGates = [];
     activeParentId = 'root';
     createDefaultGates(caseId);
     
     const tutorialBox = document.getElementById('tutorial-container');
-    if (!sandboxMode) {
-      tutorialBox.style.display = 'flex';
-      document.getElementById('toggle-tutorial-btn').style.display = 'none';
-    } else {
+    const toggleSandboxBtn = document.getElementById('toggle-sandbox-btn');
+    
+    if (caseId.startsWith('aml_m')) {
+      sandboxMode = true;
       tutorialBox.style.display = 'none';
-      document.getElementById('toggle-tutorial-btn').style.display = 'none';
+      if (toggleSandboxBtn) {
+        toggleSandboxBtn.style.display = 'none';
+      }
+      showToast(`Exploring ${info.title} in Sandbox Mode.`);
+    } else {
+      if (toggleSandboxBtn) {
+        toggleSandboxBtn.style.display = 'inline-block';
+      }
+      if (toggleSandboxBtn) {
+        if (sandboxMode) {
+          toggleSandboxBtn.innerText = 'Exit Sandbox';
+          toggleSandboxBtn.style.backgroundColor = 'var(--border-active)';
+          toggleSandboxBtn.style.color = 'var(--bg-main)';
+        } else {
+          toggleSandboxBtn.innerText = 'Sandbox Mode';
+          toggleSandboxBtn.style.backgroundColor = 'transparent';
+          toggleSandboxBtn.style.color = 'var(--text-secondary)';
+        }
+      }
+      
+      if (!sandboxMode) {
+        tutorialBox.style.display = 'flex';
+      } else {
+        tutorialBox.style.display = 'none';
+      }
     }
   }
 
@@ -1056,9 +1145,11 @@ function loadCase(caseId) {
   
   // Set case-specific tutorial steps
   if (caseId !== 'compare') {
-    TUTORIAL_STEPS = caseId === 'aml' ? AML_TUTORIAL_STEPS : NORMAL_TUTORIAL_STEPS;
+    TUTORIAL_STEPS = (caseId === 'aml' || caseId.startsWith('aml_m')) ? AML_TUTORIAL_STEPS : NORMAL_TUTORIAL_STEPS;
     currentTutorialStep = 0;
-    loadTutorialStep();
+    if (!caseId.startsWith('aml_m')) {
+      loadTutorialStep();
+    }
   }
   
   syncWorkspace();
@@ -1543,7 +1634,7 @@ function getSuggestionsForGate(gate) {
     addSug('Singlets', 'Single cell events.');
     description = 'Isolates viable leukocyte populations and excludes low-FSC cellular debris.';
   } else if (axesKey === 'CD45_SSC_A') {
-    const blastsCount = counts['AML_Blast'] || counts['NormalProgenitor'] || 0;
+    const blastsCount = (counts['AML_Blast'] || 0) + (counts['NormalProgenitor'] || 0) + Object.keys(counts).filter(k => k.startsWith('AML_Blast_')).reduce((sum, k) => sum + counts[k], 0);
     const lymphsCount = (counts['CD4_TCell'] || 0) + (counts['CD8_TCell'] || 0) + (counts['gd_TCell'] || 0) + (counts['BCell'] || 0) + (counts['NKCell'] || 0);
     const monoCount = counts['Monocyte'] || 0;
     const granCount = counts['Granulocyte'] || 0;
@@ -1588,7 +1679,9 @@ function getSuggestionsForGate(gate) {
       addSug('CD34+ CD117+ Blasts', 'Myeloblasts co-expressing early progenitor CD34 and myeloid precursor CD117.');
     }
     if (markers.includes('CD33') && markers.includes('CD13')) {
-      if (counts['AML_Blast'] > 0 && (counts['AML_Blast'] > totalInside * 0.4)) {
+      const hasSubtypeBlasts = Object.keys(counts).some(k => k === 'AML_Blast' || k.startsWith('AML_Blast_'));
+      const totalBlasts = (counts['AML_Blast'] || 0) + Object.keys(counts).filter(k => k.startsWith('AML_Blast_')).reduce((sum, k) => sum + counts[k], 0);
+      if (hasSubtypeBlasts && (totalBlasts > totalInside * 0.4)) {
         addSug('Aberrant Blasts', 'Myeloid blasts showing CD33 expression with aberrant loss of CD13.');
       } else {
         addSug('Normal Myeloid Progenitors', 'Normal myeloid progenitor subset co-expressing CD33 and CD13.');
@@ -2421,7 +2514,7 @@ function buildOverallGlossary() {
       category: 'protocols',
       term: 'Surface Membrane Staining (SLW)',
       desc: 'Standard staining protocol for surface markers (e.g. CD45, CD34, CD19) based on EuroFlow guidelines.',
-      details: '1. Add surface antibodies to cell suspension. 2. Incubate 15 min at RT in the dark. 3. Lysate RBCs with FACS Lysing Solution. 4. Wash cell pellet with PBS-BSA buffer. 5. Resuspend for acquisition.'
+      details: '1. Add surface antibodies to cell suspension. 2. Incubate 15 min at RT in the dark. 3. Lyse RBCs with FACS Lysing Solution. 4. Wash cell pellet with PBS-BSA buffer. 5. Resuspend for acquisition.'
     },
     {
       category: 'protocols',
@@ -2434,6 +2527,72 @@ function buildOverallGlossary() {
       term: 'Nuclear TdT Staining Protocol',
       desc: 'SOP to stain nuclear Terminal Deoxynucleotidyl Transferase (TdT) in lymphoblast workups.',
       details: 'Stained as a surface wash protocol using FACS Lysing Solution and TdT antibody directly, avoiding Fix&Perm reagents to preserve forward/side scatter properties of delicate lymphoid blasts.'
+    },
+    {
+      category: 'protocols',
+      term: 'Sample Washing & Reconstitution SOP',
+      desc: 'Standard washing protocol to remove soluble background proteins from peripheral blood and bone marrow prior to surface staining.',
+      details: '1. Dispense 0.5 mL BM or 1.0 mL PB into a 75x12mm tube. 2. Top up with PBS pH 7.0. 3. Centrifuge at 3000 rpm for 3 mins. 4. Aspirate supernatant. 5. Repeat wash 3 times (total 4 washes). Note: CSF/fluids washed only once. 6. Reconstitute in 1.5 mL 22% BSA (BM), 1.0 mL 22% BSA (PB), or 200 µL PBS (CSF/fluids).<br><a href="file:///Users/jermin/Library/Mobile Documents/com~apple~CloudDocs/Education/CPD/Immunophenotyping/SOP_Sample_Preparation_and_Flow_Analysis.md" target="_blank" style="color:var(--accent-cyan); text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">Open Full Sample Prep SOP (FFC-004)</a>'
+    },
+    {
+      category: 'protocols',
+      term: 'Hypercellular Sample Dilution SOP',
+      desc: 'Calibration procedure for high white-cell-count samples to maintain an optimal acquisition rate of 500-1500 events/second.',
+      details: '1. Run 100 µL washed/diluted sample on Navios (stop at 50,000 events) and measure acquisition time. 2. Calculate Rate = 50,000 / Acquisition Time. 3. If Rate > 1500, calculate Dilution Factor = Rate / 1000. (e.g., rate of 5000/sec = 1-in-5 dilution; dilute 500 µL washed sample with 2.0 mL BSA before staining).<br><a href="file:///Users/jermin/Library/Mobile Documents/com~apple~CloudDocs/Education/CPD/Immunophenotyping/SOP_Sample_Preparation_and_Flow_Analysis.md" target="_blank" style="color:var(--accent-cyan); text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">Open Full Sample Prep SOP (FFC-004)</a>'
+    },
+    {
+      category: 'protocols',
+      term: 'APL (AML-M3) Medical Emergency SOP',
+      desc: 'Maturation block at the promyelocyte stage presenting with severe DIC and clotting risk. Requires immediate ATRA treatment.',
+      details: '1. Morphology: bi-lobed nuclei, heavy granules, Auer rod bundles ("fagot cells"). 2. Flow markers: characteristically HLA-DR negative, CD18 negative, CD11b negative. CD34 and CD117 are weak or negative. Variant M3 often aberrantly expresses CD2. 3. Confirm via t(15;17) FISH. **Do not delay ATRA therapy for flow confirmation.**<br><a href="file:///Users/jermin/Library/Mobile Documents/com~apple~CloudDocs/Education/CPD/Immunophenotyping/SOP_Immunophenotypic_Interpretation_Guide.md" target="_blank" style="color:var(--accent-cyan); text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">Open Full Interpretation SOP (FFC-MP2-9)</a>'
+    },
+    {
+      category: 'protocols',
+      term: 'Myeloperoxidase (MPO) Verification SOP',
+      desc: 'Dual-modality assessment of myeloperoxidase using cytochemistry slide staining and intracellular flow cytometry.',
+      details: '1. Slide Cytochemistry: Stains brown, requires >=3% positive blasts under oil immersion. distorts morphology. 2. Flow MPO: Required if slide MPO is negative but myeloid lineage is suspected (e.g. primitive AML-M0). Flow MPO is reported quantitatively as a percentage of positive cells.<br><a href="file:///Users/jermin/Library/Mobile Documents/com~apple~CloudDocs/Education/CPD/Immunophenotyping/SOP_Immunophenotypic_Interpretation_Guide.md" target="_blank" style="color:var(--accent-cyan); text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">Open Full Interpretation SOP (FFC-MP2-9)</a>'
+    },
+    {
+      category: 'protocols',
+      term: 'Dual Esterase Classification SOP',
+      desc: 'Slide staining using Chloroacetate (Pink = myeloid) and Alpha-Napthyl (Black = monocytic) to differentiate AML subtypes.',
+      details: 'Based on Alpha-Napthyl monocytic staining: 1. <20% monocytic cells = AML-M2 (with maturation). 2. 20-80% monocytic cells = AML-M4 (acute myelomonocytic). 3. >80% monocytic cells = AML-M5 (acute monocytic). CD14 is not reliable on monocytic blasts due to antigen shedding.<br><a href="file:///Users/jermin/Library/Mobile Documents/com~apple~CloudDocs/Education/CPD/Immunophenotyping/SOP_Immunophenotypic_Interpretation_Guide.md" target="_blank" style="color:var(--accent-cyan); text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">Open Full Interpretation SOP (FFC-MP2-9)</a>'
+    },
+    {
+      category: 'protocols',
+      term: 'MDS Transformation Gating SOP',
+      desc: 'Flow cytometric tracking of myelodysplastic syndrome (MDS) transforming into acute myeloid leukaemia.',
+      details: 'MDS subtypes (RA, RARS, RAEB1, RAEB2, RAEB-T, CMML) are graded by marrow morphology, not flow. However, flow is used to track transformation. Aberrant expression of CD7 and CD56 on myeloblasts indicates poor prognosis. CD56 positivity on <5% blasts is a strong predictor of future transformation.<br><a href="file:///Users/jermin/Library/Mobile Documents/com~apple~CloudDocs/Education/CPD/Immunophenotyping/SOP_Immunophenotypic_Interpretation_Guide.md" target="_blank" style="color:var(--accent-cyan); text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">Open Full Interpretation SOP (FFC-MP2-9)</a>'
+    },
+    {
+      category: 'protocols',
+      term: 'B-CLL vs Mantle Cell Lymphoma (MCL) SOP',
+      desc: 'Immunophenotypic differentiation of clonal mature CD5+ B-lymphocytes.',
+      details: '1. B-CLL: CD19+, CD5+, CD23+, FMC7- negative, CD20/CD22 weak, surface Kappa/Lambda negative or weak (intracellular restriction). Smudge cells common. 2. MCL: CD19+, CD5+, CD23- negative, FMC7+ positive, CD20/CD22 bright, and surface Kappa/Lambda strongly restricted. Histology confirms Cyclin D-1 positive.<br><a href="file:///Users/jermin/Library/Mobile Documents/com~apple~CloudDocs/Education/CPD/Immunophenotyping/SOP_Immunophenotypic_Interpretation_Guide.md" target="_blank" style="color:var(--accent-cyan); text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">Open Full Interpretation SOP (FFC-MP2-9)</a>'
+    },
+    {
+      category: 'protocols',
+      term: 'B-PLL Diagnostic Criteria SOP',
+      desc: 'Gating and threshold criteria for B-Prolymphocytic Leukaemia.',
+      details: '1. Clinical: Extreme lymphocytosis (WBC > 100 x 10^9/L). 2. Morphology: Mature prolymphocytes with prominent nucleoli must be >55% of blood lymphocytes. 3. Phenotype: CD19+, CD5+, CD23+, CD20/CD22 strong, and surface light chains strongly restricted (similar to MCL, but distinguished by prolymphocyte count and WBC).<br><a href="file:///Users/jermin/Library/Mobile Documents/com~apple~CloudDocs/Education/CPD/Immunophenotyping/SOP_Immunophenotypic_Interpretation_Guide.md" target="_blank" style="color:var(--accent-cyan); text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">Open Full Interpretation SOP (FFC-MP2-9)</a>'
+    },
+    {
+      category: 'protocols',
+      term: 'Hairy Cell Leukaemia (HCL) vs SLVL SOP',
+      desc: 'Differentiating CD103+ mature splenic B-cell lymphomas.',
+      details: '1. HCL: Pancytopenia, dry marrow tap, hairy cytoplasmic projections. Phenotype: CD19+, CD20+, CD22+, CD103+, and CD25+ positive (indicates cell activation). 2. SLVL: Bipolar collect of cytoplasm ("flying saucer"). Phenotype: CD19+, CD20+, CD22+, CD103+, CD25- negative, and CD43+ positive.<br><a href="file:///Users/jermin/Library/Mobile Documents/com~apple~CloudDocs/Education/CPD/Immunophenotyping/SOP_Immunophenotypic_Interpretation_Guide.md" target="_blank" style="color:var(--accent-cyan); text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">Open Full Interpretation SOP (FFC-MP2-9)</a>'
+    },
+    {
+      category: 'protocols',
+      term: 'Urgent Out-of-Hours (OOH) SLA Rota',
+      desc: 'SOP governing weekend and holiday call-out procedures for the SIHMDS flow lab.',
+      details: '1. Rota covers Saturdays, Sundays, and Bank Holidays (9am-3pm). 2. Limited to bone marrow samples from new, undiagnosed acute leukaemias (no chronic, MRD, or fluids). 3. Process all 5 acute tubes. 4. Track and dispatch cytogenetics (Level 6) and molecular (Level 5, urgent yellow sticker).<br><a href="file:///Users/jermin/Library/Mobile Documents/com~apple~CloudDocs/Education/CPD/Immunophenotyping/SOP_Sample_Preparation_and_Flow_Analysis.md" target="_blank" style="color:var(--accent-cyan); text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">Open Full Sample Prep SOP (FFC-004)</a>'
+    },
+    {
+      category: 'protocols',
+      term: 'Navios Operational Gating & Safety warnings',
+      desc: 'Critical controls for running tubes on the Beckman Coulter Navios cytometer.',
+      details: '1. Gating: Exclude doublets via FSC-Peak vs FSC-Integral singlet gate. Plot CD45 vs SS on single cells to isolate blasts (dim CD45, low/mid SS). 2. Non-specific binding: Check CD19 vs CD3 (EVMO gate) for dual-positives. 3. Safety: If **Drip Level Warning** sounds, stop analysis immediately to avoid aborting the tube.<br><a href="file:///Users/jermin/Library/Mobile Documents/com~apple~CloudDocs/Education/CPD/Immunophenotyping/SOP_Sample_Preparation_and_Flow_Analysis.md" target="_blank" style="color:var(--accent-cyan); text-decoration:underline; font-weight:600; display:inline-block; margin-top:6px;">Open Full Sample Prep SOP (FFC-004)</a>'
     }
   ];
   
@@ -3472,6 +3631,168 @@ const CELL_DETAILS = {
   }
 };
 
+// data.js labels AML events with FAB subtypes (AML_Blast_M0 … AML_Blast_M7).
+// Without entries for those, the explorer fell through to the Debris record and
+// showed every subtype blast as "Non-Cellular Debris". Phenotypes below follow
+// the subtype table in leukaemia-reference.js.
+(() => {
+  const m = (label, expression, color, info) => ({ label, expression, color, info });
+  const CD45_BLAST = m('CD45 (Leukocyte Common Antigen)', 'Dim', '#f8fafc',
+    'Dim expression places these cells in the "blast gate" on a CD45 vs SSC plot.');
+
+  const subtypes = {
+    AML_Blast_M0: {
+      name: 'AML-M0 Myeloblast',
+      lineage: 'AML with Minimal Differentiation',
+      desc: 'Undifferentiated myeloblasts showing no morphological myeloid maturation and cytochemically negative myeloperoxidase. Diagnosis rests on flow cytometry demonstrating myeloid antigens, frequently with aberrant lymphoid marker expression.',
+      markers: {
+        CD45: CD45_BLAST,
+        CD34: m('CD34 Sialomucin', 'Bright', '#ff9800', 'Stem/progenitor glycoprotein, consistently expressed in M0.'),
+        CD117: m('CD117 (c-kit Receptor)', 'Bright', '#ff2a2a', 'Stem cell factor receptor confirming myeloid precursor origin.'),
+        CD13: m('CD13 (Aminopeptidase N)', 'Bright', '#2196f3', 'Pan-myeloid metalloprotease, positive despite the absence of maturation.'),
+        CD33: m('CD33 (Siglec-3)', 'Moderate', '#00e5ff', 'Variable (+/-) in M0.'),
+        HLA_DR: m('HLA-DR (MHC Class II)', 'Bright', '#4caf50', 'Expressed on undifferentiated myeloblasts.'),
+        CD7: m('CD7 Glycoprotein', 'Dim', '#2196f3', 'Aberrant lymphoid antigen commonly co-expressed in M0.')
+      }
+    },
+    AML_Blast_M1: {
+      name: 'AML-M1 Myeloblast',
+      lineage: 'AML without Maturation',
+      desc: 'Myeloblasts with minimal maturation. Distinguished from M0 by myeloperoxidase positivity on flow cytometry or cytochemistry, while remaining CD34+, CD117+ and HLA-DR+.',
+      markers: {
+        CD45: CD45_BLAST,
+        CD34: m('CD34 Sialomucin', 'Bright', '#ff9800', 'Progenitor marker retained in M1.'),
+        CD117: m('CD117 (c-kit Receptor)', 'Bright', '#ff2a2a', 'Myeloid precursor receptor tyrosine kinase.'),
+        CD13: m('CD13 (Aminopeptidase N)', 'Bright', '#2196f3', 'Pan-myeloid marker.'),
+        CD33: m('CD33 (Siglec-3)', 'Bright', '#00e5ff', 'Myeloid sialic acid-binding lectin.'),
+        HLA_DR: m('HLA-DR (MHC Class II)', 'Bright', '#4caf50', 'Positive in M1, in contrast to M3.'),
+        CD38: m('CD38 Ectoenzyme', 'Bright', '#e040fb', 'Widely expressed on immature leukaemic blasts.')
+      }
+    },
+    AML_Blast_M2: {
+      name: 'AML-M2 Myeloblast',
+      lineage: 'AML with Maturation',
+      desc: 'Myeloblastic leukaemia showing maturation beyond the promyelocyte stage, frequently carrying t(8;21) RUNX1-RUNX1T1. Auer rods are common and aberrant CD19 or CD56 co-expression is characteristic of the t(8;21) subtype.',
+      markers: {
+        CD45: CD45_BLAST,
+        CD34: m('CD34 Sialomucin', 'Bright', '#ff9800', 'Positive; often co-expressed with maturation markers.'),
+        CD117: m('CD117 (c-kit Receptor)', 'Bright', '#ff2a2a', 'Myeloid precursor marker.'),
+        CD13: m('CD13 (Aminopeptidase N)', 'Bright', '#2196f3', 'Pan-myeloid metalloprotease.'),
+        CD33: m('CD33 (Siglec-3)', 'Bright', '#00e5ff', 'Myeloid lectin.'),
+        HLA_DR: m('HLA-DR (MHC Class II)', 'Bright', '#4caf50', 'Typically positive.'),
+        CD15: m('CD15 (Lewis X Carbohydrate)', 'Moderate', '#ff9800', 'Reflects granulocytic maturation in this subtype.'),
+        CD19: m('CD19 Co-Receptor', 'Dim', '#e040fb', 'Aberrant B-lineage antigen classically associated with t(8;21).')
+      }
+    },
+    AML_Blast_M2_Maturing: {
+      name: 'AML-M2 Maturing Myeloid Cell',
+      lineage: 'AML with Maturation / Maturing Compartment',
+      desc: 'The maturing granulocytic compartment seen alongside blasts in M2. These cells acquire CD15 and CD11b while progressively losing CD34 and CD117, producing the characteristic maturation "tail" on the CD45 vs SSC plot.',
+      markers: {
+        CD45: m('CD45 (Leukocyte Common Antigen)', 'Moderate', '#f8fafc', 'Brighter than the blast compartment as maturation proceeds.'),
+        CD13: m('CD13 (Aminopeptidase N)', 'Bright', '#2196f3', 'Retained through granulocytic maturation.'),
+        CD33: m('CD33 (Siglec-3)', 'Moderate', '#00e5ff', 'Downregulated relative to blasts.'),
+        CD15: m('CD15 (Lewis X Carbohydrate)', 'Bright', '#ff9800', 'Acquired with granulocytic maturation.'),
+        CD11b: m('CD11b (Mac-1)', 'Moderate', '#e040fb', 'Appears at later maturation stages.'),
+        CD117: m('CD117 (c-kit Receptor)', 'Dim', '#ff2a2a', 'Progressively lost as cells mature.')
+      }
+    },
+    AML_Blast_M3: {
+      name: 'AML-M3 Abnormal Promyelocyte (APL)',
+      lineage: 'Acute Promyelocytic Leukaemia',
+      desc: 'Hypergranular abnormal promyelocytes carrying t(15;17) PML-RARA. The classic flow signature is CD34-negative and HLA-DR-negative with intense CD33 and CD13, high side scatter from dense granulation, and bundles of Auer rods ("faggot cells"). Presents with severe DIC and is a haematological emergency.',
+      markers: {
+        CD45: CD45_BLAST,
+        CD33: m('CD33 (Siglec-3)', 'Very Bright', '#00e5ff', 'Intensely expressed — a hallmark of APL and the target of gemtuzumab ozogamicin.'),
+        CD13: m('CD13 (Aminopeptidase N)', 'Bright', '#2196f3', 'Strongly positive, often with heterogeneous intensity.'),
+        CD117: m('CD117 (c-kit Receptor)', 'Moderate', '#ff2a2a', 'Variable in APL, unlike the uniform brightness of other subtypes.'),
+        CD64: m('CD64 (FcγRI)', 'Moderate', '#ff9800', 'Frequently expressed on abnormal promyelocytes.'),
+        CD56: m('CD56 (NCAM)', 'Dim', '#e040fb', 'Aberrant expression; associated with poorer prognosis in APL.')
+      }
+    },
+    AML_Blast_M4_Blast: {
+      name: 'AML-M4 Myeloblast Component',
+      lineage: 'Acute Myelomonocytic Leukaemia / Blast Compartment',
+      desc: 'The myeloblastic component of acute myelomonocytic leukaemia, which contains both myeloid and monocytic populations. Frequently associated with inv(16) or t(16;16) CBFB-MYH11.',
+      markers: {
+        CD45: CD45_BLAST,
+        CD34: m('CD34 Sialomucin', 'Bright', '#ff9800', 'Positive in the blast compartment.'),
+        CD117: m('CD117 (c-kit Receptor)', 'Moderate', '#ff2a2a', 'Variable (+/-) in M4.'),
+        CD13: m('CD13 (Aminopeptidase N)', 'Bright', '#2196f3', 'Pan-myeloid marker.'),
+        CD33: m('CD33 (Siglec-3)', 'Bright', '#00e5ff', 'Myeloid lectin.'),
+        HLA_DR: m('HLA-DR (MHC Class II)', 'Bright', '#4caf50', 'Positive.'),
+        CD11b: m('CD11b (Mac-1)', 'Moderate', '#e040fb', 'Bridges toward the monocytic compartment.')
+      }
+    },
+    AML_Blast_M4_Mono: {
+      name: 'AML-M4 Monocytic Component',
+      lineage: 'Acute Myelomonocytic Leukaemia / Monocytic Compartment',
+      desc: 'The monocytic component of M4, comprising monoblasts and promonocytes. Expression of CD14 and CD64 alongside myeloid markers distinguishes it from the blast compartment and gives M4 its two-population appearance.',
+      markers: {
+        CD45: m('CD45 (Leukocyte Common Antigen)', 'Moderate', '#f8fafc', 'Brighter than the blast compartment.'),
+        CD64: m('CD64 (FcγRI)', 'Bright', '#ff9800', 'High-affinity IgG Fc receptor marking monocytic differentiation.'),
+        CD14: m('CD14 LPS Receptor', 'Moderate', '#4caf50', 'Acquired with monocytic maturation; often partial in leukaemic cells.'),
+        CD33: m('CD33 (Siglec-3)', 'Bright', '#00e5ff', 'Strongly expressed on monocytic cells.'),
+        CD13: m('CD13 (Aminopeptidase N)', 'Bright', '#2196f3', 'Pan-myeloid marker.'),
+        CD11b: m('CD11b (Mac-1)', 'Bright', '#e040fb', 'Monocytic adhesion integrin.'),
+        HLA_DR: m('HLA-DR (MHC Class II)', 'Bright', '#ff2a2a', 'Brightly expressed on monocytic cells.')
+      }
+    },
+    AML_Blast_M5: {
+      name: 'AML-M5 Monoblast',
+      lineage: 'Acute Monoblastic / Monocytic Leukaemia',
+      desc: 'Leukaemia in which over 80% of leukaemic cells are monocytic. Large monoblasts with abundant cytoplasm and folded nuclei. CD34 and CD117 are often negative while HLA-DR and CD33 are extremely bright. Associated with KMT2A (MLL) rearrangement, including t(9;11).',
+      markers: {
+        CD45: m('CD45 (Leukocyte Common Antigen)', 'Moderate', '#f8fafc', 'Intermediate — monocytic cells sit above the blast gate.'),
+        CD33: m('CD33 (Siglec-3)', 'Very Bright', '#00e5ff', 'Extremely bright in monoblastic leukaemia.'),
+        CD64: m('CD64 (FcγRI)', 'Bright', '#ff9800', 'Marks monocytic commitment.'),
+        CD14: m('CD14 LPS Receptor', 'Moderate', '#4caf50', 'Often partial or dim on immature monoblasts.'),
+        CD13: m('CD13 (Aminopeptidase N)', 'Bright', '#2196f3', 'Pan-myeloid marker.'),
+        CD11b: m('CD11b (Mac-1)', 'Bright', '#e040fb', 'Monocytic adhesion integrin.'),
+        HLA_DR: m('HLA-DR (MHC Class II)', 'Very Bright', '#ff2a2a', 'Characteristically very bright in M5.')
+      }
+    },
+    AML_Blast_M6_Blast: {
+      name: 'AML-M6 Myeloblast Component',
+      lineage: 'Acute Erythroid Leukaemia / Blast Compartment',
+      desc: 'The myeloblast population accompanying the expanded erythroid compartment in acute erythroid leukaemia.',
+      markers: {
+        CD45: CD45_BLAST,
+        CD34: m('CD34 Sialomucin', 'Bright', '#ff9800', 'Progenitor marker on the myeloblast component.'),
+        CD117: m('CD117 (c-kit Receptor)', 'Bright', '#ff2a2a', 'Expressed on both myeloid and early erythroid precursors.'),
+        CD13: m('CD13 (Aminopeptidase N)', 'Bright', '#2196f3', 'Pan-myeloid marker.'),
+        CD33: m('CD33 (Siglec-3)', 'Bright', '#00e5ff', 'Myeloid lectin.'),
+        HLA_DR: m('HLA-DR (MHC Class II)', 'Bright', '#4caf50', 'Positive on the myeloblast component.')
+      }
+    },
+    AML_Blast_M6_Erythroid: {
+      name: 'AML-M6 Erythroid Precursor',
+      lineage: 'Acute Erythroid Leukaemia / Erythroid Compartment',
+      desc: 'Dysplastic, often multinucleated erythroid precursors making up more than 50% of marrow nucleated cells. They are characteristically CD45-negative to very dim with low forward scatter, and express CD71 brightly with Glycophorin A appearing at more mature stages.',
+      markers: {
+        CD45: m('CD45 (Leukocyte Common Antigen)', 'Extremely Dim', '#f8fafc', 'Negative to very dim — erythroid precursors fall below the leukocyte gate.'),
+        CD117: m('CD117 (c-kit Receptor)', 'Moderate', '#ff2a2a', 'Expressed on early erythroid precursors, lost with maturation.'),
+        CD38: m('CD38 Ectoenzyme', 'Bright', '#e040fb', 'Broadly expressed across erythroid maturation.')
+      }
+    },
+    AML_Blast_M7: {
+      name: 'AML-M7 Megakaryoblast',
+      lineage: 'Acute Megakaryoblastic Leukaemia',
+      desc: 'Leukaemia of megakaryocytic lineage, associated with marrow fibrosis and osteosclerosis — which frequently causes a dry tap on aspiration and makes flow cytometry on peripheral blood especially valuable. Megakaryoblasts show cytoplasmic projections and blebs, and express the platelet glycoproteins CD41 and CD61.',
+      markers: {
+        CD45: CD45_BLAST,
+        CD41: m('CD41 (Glycoprotein IIb)', 'Bright', '#ff9800', 'Platelet glycoprotein IIb; with CD61 forms the fibrinogen receptor and defines megakaryocytic lineage.'),
+        CD61: m('CD61 (Glycoprotein IIIa)', 'Bright', '#e040fb', 'Platelet glycoprotein IIIa. Beware surface platelet adherence causing false positivity.'),
+        CD117: m('CD117 (c-kit Receptor)', 'Moderate', '#ff2a2a', 'Frequently expressed on megakaryoblasts.'),
+        CD33: m('CD33 (Siglec-3)', 'Moderate', '#00e5ff', 'Variable myeloid antigen expression.'),
+        CD34: m('CD34 Sialomucin', 'Dim', '#2196f3', 'Variable; may be negative in M7.')
+      }
+    }
+  };
+
+  Object.assign(CELL_DETAILS, subtypes);
+})();
+
 const MARKER_FLUOROCHROMES = {
   CD45: { antibody: "Anti-CD45 Monoclonal", fluorochrome: "KRO (Krome Orange)", laser: "violet", laserName: "Violet Laser (405nm)", emissionColor: "#f97316", emissionWavelength: "545 nm" },
   CD3: { antibody: "Anti-CD3 Monoclonal", fluorochrome: "PB (Pacific Blue)", laser: "violet", laserName: "Violet Laser (405nm)", emissionColor: "#60a5fa", emissionWavelength: "450 nm" },
@@ -3496,6 +3817,9 @@ const MARKER_FLUOROCHROMES = {
   CD34: { antibody: "Anti-CD34 Monoclonal", fluorochrome: "APC (Allophycocyanin)", laser: "red", laserName: "Red Laser (633nm)", emissionColor: "#dc2626", emissionWavelength: "660 nm" },
   CD117: { antibody: "Anti-CD117 Monoclonal", fluorochrome: "ECD (PE-Texas Red)", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#f43f5e", emissionWavelength: "615 nm" },
   CD38: { antibody: "Anti-CD38 Monoclonal", fluorochrome: "APC-A700", laser: "red", laserName: "Red Laser (633nm)", emissionColor: "#991b1b", emissionWavelength: "720 nm" },
+  CD15: { antibody: "Anti-CD15 Monoclonal", fluorochrome: "FITC (Fluorescein)", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#22c55e", emissionWavelength: "525 nm" },
+  CD41: { antibody: "Anti-CD41 Monoclonal", fluorochrome: "PE (Phycoerythrin)", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#f59e0b", emissionWavelength: "578 nm" },
+  CD61: { antibody: "Anti-CD61 Monoclonal", fluorochrome: "PC5.5 (PE-Cy5.5)", laser: "blue", laserName: "Blue Laser (488nm)", emissionColor: "#a21caf", emissionWavelength: "695 nm" },
 };
 
 // Simulator State
@@ -3556,7 +3880,7 @@ const FlowSoundSynth = {
       freqStart = 880;
       freqEnd = 1200;
       duration = 0.08;
-    } else if (cellType === 'AML_Blast') {
+    } else if (cellType === 'AML_Blast' || (typeof cellType === 'string' && cellType.startsWith('AML_Blast_'))) {
       // Leukemic Blast: rising frequency sweep
       freqStart = 380;
       freqEnd = 980;
@@ -3690,9 +4014,14 @@ function openCell3DExplorer(cell, originCase) {
   } else if (cell.type === 'Monocyte') {
     lineX = 'CD45';
     lineY = 'CD14';
-  } else if (cell.type === 'AML_Blast') {
-    lineX = 'CD34';
-    lineY = 'CD117';
+  } else if (cell.type === 'AML_Blast' || (typeof cell.type === 'string' && cell.type.startsWith('AML_Blast_'))) {
+    if (cell.type === 'AML_Blast_M5' || cell.type === 'AML_Blast_M4_Mono') {
+      lineX = 'CD64';
+      lineY = 'CD14';
+    } else {
+      lineX = 'CD34';
+      lineY = 'CD117';
+    }
   } else if (cell.type === 'NormalProgenitor') {
     lineX = 'CD45';
     lineY = 'CD34';
@@ -3725,7 +4054,9 @@ function init3DCellExplorer(cellType) {
   const loader = document.getElementById('explorer-loading');
   const legend = document.getElementById('explorer-3d-legend');
   const details = CELL_DETAILS[cellType] || CELL_DETAILS.Debris;
-  
+
+  disposeExplorerRenderers();
+
   // Reset simulator state and zoom when entering new cell
   currentInterrogatedCellType = cellType;
   resetSimulatorStates();
@@ -3736,6 +4067,15 @@ function init3DCellExplorer(cellType) {
   document.getElementById('explorer-cell-name').innerText = details.name;
   document.getElementById('explorer-cell-lineage').innerText = details.lineage;
   document.getElementById('explorer-cell-desc').innerText = details.desc;
+
+  // Surface the morphology the 3D model is actually depicting, so the nuclear
+  // shape and granule load on screen can be tied back to what it means.
+  const morphEl = document.getElementById('explorer-cell-morph');
+  if (morphEl) {
+    const note = cellMorphologyProfile(cellType).morphNote;
+    morphEl.innerText = note ? `Morphology: ${note}` : '';
+    morphEl.style.display = note ? 'block' : 'none';
+  }
   
   // Clear container (except loader and simulator panels)
   const existingCanvas = container.querySelector(':scope > canvas');
@@ -3831,7 +4171,7 @@ function init3DCellExplorer(cellType) {
     loader.style.display = 'none';
     if (typeof THREE !== 'undefined') {
       try {
-        initThreeJSRenderer(container, details);
+        initThreeJSRenderer(container, details, cellType);
       } catch (err) {
         console.error("ThreeJS failed, falling back to 2D Canvas 3D renderer", err);
         initCanvas3DRenderer(container, details);
@@ -3844,7 +4184,13 @@ function init3DCellExplorer(cellType) {
 
 function cleanup3DCellExplorer() {
   hideExplorerPlotsPanel();
-  
+  disposeExplorerRenderers();
+}
+
+// Tears down whichever renderer is live. Called both on exit and before
+// building a new cell, so a second cell never leaves the first one's
+// animation loop running in the background.
+function disposeExplorerRenderers() {
   if (threeJSData) {
     if (threeJSData.cleanup) threeJSData.cleanup();
     if (threeJSData.resizeHandler) window.removeEventListener('resize', threeJSData.resizeHandler);
@@ -3865,16 +4211,18 @@ function highlight3DMarker(key, highlight) {
     threeJSData.markerMeshes[key].forEach(group => {
       group.children.forEach(child => {
         if (child.material) {
+          const mat = child.material;
+          // Remember each part's own resting glow — the stalk, anchor and head
+          // are lit differently, so a single hard-coded restore value dims them.
+          if (mat.emissive && mat.userData.baseEmissive === undefined) {
+            mat.userData.baseEmissive = mat.emissiveIntensity;
+          }
           if (highlight) {
             child.scale.set(1.5, 1.5, 1.5);
-            if (child.material.emissive) {
-              child.material.emissiveIntensity = 0.8;
-            }
+            if (mat.emissive) mat.emissiveIntensity = 0.8;
           } else {
             child.scale.set(1, 1, 1);
-            if (child.material.emissive) {
-              child.material.emissiveIntensity = 0.1;
-            }
+            if (mat.emissive) mat.emissiveIntensity = mat.userData.baseEmissive;
           }
         }
       });
@@ -3897,299 +4245,1159 @@ function highlight3DMarker(key, highlight) {
   }
 }
 
-function initThreeJSRenderer(container, details) {
+// ==========================================================================
+// 3D Visual Helpers — organic geometry, glow textures, cell morphology
+// ==========================================================================
+
+// Cheap deterministic pseudo-noise. Continuous in all three axes, so any two
+// vertices sharing a position get an identical displacement (no seams/cracks).
+function organicNoise3(x, y, z) {
+  return (
+    Math.sin(x * 2.1 + y * 1.3) * Math.sin(y * 1.7 + z * 2.3) * Math.sin(z * 1.9 + x * 1.1) * 0.62 +
+    Math.sin(x * 4.3 - z * 3.1) * Math.sin(y * 3.7 + x * 2.9) * 0.28
+  );
+}
+
+// Radius of the displaced surface along a (normalised) direction — lets us sit
+// receptors flush on the bumpy membrane instead of on a perfect sphere.
+function organicSurfaceRadius(dir, R, amp, freq, seed) {
+  const n = organicNoise3(dir.x * freq + seed, dir.y * freq + seed * 1.7, dir.z * freq + seed * 2.3);
+  return R * (1 + amp * n);
+}
+
+function applyOrganicDisplacement(geometry, amp, freq, seed) {
+  const pos = geometry.attributes.position;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const len = v.length();
+    if (len < 1e-6) continue;
+    v.multiplyScalar(1 / len);
+    const n = organicNoise3(v.x * freq + seed, v.y * freq + seed * 1.7, v.z * freq + seed * 2.3);
+    v.multiplyScalar(len * (1 + amp * n));
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  pos.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// Presses a smooth concavity into one side of a sphere — the monocyte's
+// reniform (kidney-shaped) nucleus.
+function applyIndentation(geometry, dir, depth, width) {
+  const pos = geometry.attributes.position;
+  const v = new THREE.Vector3();
+  const d = dir.clone().normalize();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const len = v.length();
+    if (len < 1e-6) continue;
+    const t = Math.max(0, v.dot(d) / len);
+    const f = 1 - depth * Math.pow(t, width);
+    pos.setXYZ(i, v.x * f, v.y * f, v.z * f);
+  }
+  pos.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function makeRadialGlowTexture() {
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  grad.addColorStop(0.0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.18, 'rgba(255,255,255,0.75)');
+  grad.addColorStop(0.45, 'rgba(255,255,255,0.22)');
+  grad.addColorStop(1.0, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, size, size);
+  return new THREE.CanvasTexture(c);
+}
+
+// Vertical soft bands used (additively) to make the sample core look like it is
+// actually flowing rather than sitting still.
+function makeStreamTexture() {
+  const c = document.createElement('canvas');
+  c.width = 8;
+  c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#000000';
+  g.fillRect(0, 0, 8, 256);
+  for (let y = 0; y < 256; y++) {
+    const band = Math.pow(0.5 + 0.5 * Math.sin((y / 256) * Math.PI * 8), 2.2);
+    const v = 0.18 + 0.82 * band;
+    g.fillStyle = `rgb(${Math.round(90 * v)},${Math.round(210 * v)},${Math.round(255 * v)})`;
+    g.fillRect(0, y, 8, 1);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = THREE.RepeatWrapping;
+  t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+function makeLabelSprite(text, color, scale) {
+  const fs = 40;
+  const font = `700 ${fs}px "Segoe UI", system-ui, -apple-system, sans-serif`;
+  const measure = document.createElement('canvas').getContext('2d');
+  measure.font = font;
+  const w = Math.ceil(measure.measureText(text).width) + 24;
+  const h = fs + 20;
+
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const g = c.getContext('2d');
+  g.font = font;
+  g.textBaseline = 'middle';
+  g.shadowColor = 'rgba(0,0,0,0.9)';
+  g.shadowBlur = 8;
+  g.fillStyle = color;
+  g.fillText(text, 12, h / 2);
+
+  const tex = new THREE.CanvasTexture(c);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: tex, transparent: true, depthTest: false, depthWrite: false, opacity: 0.85
+  }));
+  const s = scale || 0.0075;
+  sprite.scale.set(w * s, h * s, 1);
+  sprite.renderOrder = 60;
+  sprite.userData.texture = tex;
+  return sprite;
+}
+
+// View-dependent rim light. This is what turns a flat sphere into something
+// that reads as a translucent, volumetric cell.
+function makeFresnelMaterial(colorHex, power, intensity, side) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: { value: new THREE.Color(colorHex) },
+      uPower: { value: power },
+      uIntensity: { value: intensity }
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vView;
+      void main() {
+        vNormal = normalize(normalMatrix * normal);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vView = -mv.xyz;
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uColor;
+      uniform float uPower;
+      uniform float uIntensity;
+      varying vec3 vNormal;
+      varying vec3 vView;
+      void main() {
+        float f = pow(1.0 - abs(dot(normalize(vNormal), normalize(vView))), uPower);
+        gl_FragColor = vec4(uColor * f * uIntensity, f * uIntensity);
+      }
+    `,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: side || THREE.FrontSide
+  });
+}
+
+// --------------------------------------------------------------------------
+// Cell morphology. Nuclear shape, N:C ratio, granule load and size are the
+// features a morphologist actually reads down a microscope, and they map
+// directly onto FSC (size) and SSC (granularity) on the scatter plot.
+// --------------------------------------------------------------------------
+function cellMorphologyProfile(cellType) {
+  const sizeMult = cellTypeSizeMultiplier(cellType);
+  const granMult = cellTypeGranularityMultiplier(cellType);
+
+  const p = {
+    radius: 1.6 + 3.2 * sizeMult,
+    membraneAmp: 0.055,
+    membraneFreq: 2.4,
+    cytoColor: 0x38bdf8,
+    rimColor: 0x67e8f9,
+    nucleus: { shape: 'round', ratio: 0.62, color: 0x6d28d9, lobes: 1, nucleoli: 0 },
+    granules: { count: Math.round(18 + granMult * 90), size: 0.042 + granMult * 0.032, color: 0xa78bfa, accent: 0xf9a8d4 },
+    auerRods: 0,
+    blebs: 0,
+    bodies: [{ offset: new THREE.Vector3(0, 0, 0), scale: 1 }],
+    morphNote: ''
+  };
+
+  switch (cellType) {
+    case 'CD4_TCell':
+    case 'CD8_TCell':
+    case 'gd_TCell':
+      p.nucleus = { shape: 'round', ratio: 0.82, color: 0x4c1d95, lobes: 1, nucleoli: 0 };
+      p.granules = { count: 6, size: 0.05, color: 0xa78bfa, accent: 0xc4b5fd };
+      p.cytoColor = 0x22d3ee;
+      p.morphNote = 'Scant cytoplasm, high N:C ratio, dense clumped chromatin';
+      break;
+    case 'BCell':
+      p.nucleus = { shape: 'round', ratio: 0.80, color: 0x4c1d95, lobes: 1, nucleoli: 0 };
+      p.granules = { count: 5, size: 0.05, color: 0xa78bfa, accent: 0xc4b5fd };
+      p.cytoColor = 0x38bdf8;
+      p.morphNote = 'Small agranular lymphocyte with a thin rim of cytoplasm';
+      break;
+    case 'NKCell':
+      p.nucleus = { shape: 'kidney', ratio: 0.74, color: 0x4c1d95, lobes: 1, nucleoli: 0 };
+      p.granules = { count: 16, size: 0.105, color: 0xc084fc, accent: 0xf0abfc };
+      p.cytoColor = 0x2dd4bf;
+      p.morphNote = 'Large granular lymphocyte — prominent azurophilic granules';
+      break;
+    case 'Monocyte':
+      p.nucleus = { shape: 'kidney', ratio: 0.64, color: 0x5b5fd6, lobes: 1, nucleoli: 0 };
+      p.granules = { count: 52, size: 0.046, color: 0xc084fc, accent: 0xa5b4fc };
+      p.cytoColor = 0x60a5fa;
+      p.membraneAmp = 0.09;
+      p.blebs = 3;
+      p.morphNote = 'Reniform (kidney-shaped) nucleus, abundant grey-blue cytoplasm';
+      break;
+    case 'Granulocyte':
+      p.nucleus = { shape: 'lobed', ratio: 0.34, color: 0x5b21b6, lobes: 3, nucleoli: 0 };
+      p.granules = { count: 165, size: 0.066, color: 0xfda4af, accent: 0xc084fc };
+      p.cytoColor = 0x7dd3fc;
+      p.morphNote = 'Trilobed nucleus, cytoplasm packed with granules — very high SSC';
+      break;
+    case 'NormalProgenitor':
+      p.nucleus = { shape: 'round', ratio: 0.80, color: 0x6127c9, lobes: 1, nucleoli: 1 };
+      p.granules = { count: 10, size: 0.05, color: 0xa78bfa, accent: 0xc4b5fd };
+      p.cytoColor = 0x38bdf8;
+      p.morphNote = 'High N:C ratio, fine open chromatin, single nucleolus';
+      break;
+    case 'AML_Blast':
+    case 'AML_Blast_M0':
+    case 'AML_Blast_M1':
+    case 'AML_Blast_M4_Blast':
+    case 'AML_Blast_M6_Blast':
+      p.nucleus = { shape: 'round', ratio: 0.80, color: 0x6127c9, lobes: 1, nucleoli: 2 };
+      p.granules = { count: 9, size: 0.05, color: 0xa78bfa, accent: 0xc4b5fd };
+      p.cytoColor = 0x818cf8;
+      p.membraneAmp = 0.085;
+      p.morphNote = 'Agranular blast — high N:C ratio, fine chromatin, prominent nucleoli';
+      break;
+    case 'AML_Blast_M2':
+    case 'AML_Blast_M2_Maturing':
+      p.nucleus = { shape: 'round', ratio: 0.74, color: 0x6127c9, lobes: 1, nucleoli: 2 };
+      p.granules = { count: 46, size: 0.056, color: 0xc084fc, accent: 0xf9a8d4 };
+      p.auerRods = 1;
+      p.cytoColor = 0x818cf8;
+      p.morphNote = 'Myeloblast with granules and a single Auer rod';
+      break;
+    case 'AML_Blast_M3':
+      p.nucleus = { shape: 'bilobed', ratio: 0.42, color: 0x6d28d9, lobes: 2, nucleoli: 0 };
+      p.granules = { count: 175, size: 0.062, color: 0xf472b6, accent: 0xc084fc };
+      p.auerRods = 6;
+      p.cytoColor = 0xa78bfa;
+      p.morphNote = 'Hypergranular promyelocyte, bilobed nucleus, Auer rod bundles (faggot cell)';
+      break;
+    case 'AML_Blast_M4_Mono':
+    case 'AML_Blast_M5':
+      p.nucleus = { shape: 'folded', ratio: 0.66, color: 0x5b5fd6, lobes: 1, nucleoli: 1 };
+      p.granules = { count: 30, size: 0.046, color: 0xc084fc, accent: 0xa5b4fc };
+      p.cytoColor = 0x60a5fa;
+      p.membraneAmp = 0.10;
+      p.morphNote = 'Monoblastic — folded/convoluted nucleus, abundant cytoplasm';
+      break;
+    case 'AML_Blast_M6_Erythroid':
+      p.nucleus = { shape: 'round', ratio: 0.76, color: 0x312e81, lobes: 1, nucleoli: 1 };
+      p.granules = { count: 4, size: 0.042, color: 0xa78bfa, accent: 0xc4b5fd };
+      p.cytoColor = 0xf87171;
+      p.morphNote = 'Erythroid precursor — small, round dense nucleus, agranular';
+      break;
+    case 'AML_Blast_M7':
+      p.nucleus = { shape: 'round', ratio: 0.70, color: 0x6127c9, lobes: 1, nucleoli: 1 };
+      p.granules = { count: 18, size: 0.046, color: 0xa78bfa, accent: 0xc4b5fd };
+      p.blebs = 6;
+      p.membraneAmp = 0.13;
+      p.cytoColor = 0x93c5fd;
+      p.morphNote = 'Megakaryoblast — characteristic cytoplasmic blebs and protrusions';
+      break;
+    case 'Debris':
+      p.nucleus = { shape: 'none', ratio: 0, color: 0x000000, lobes: 0, nucleoli: 0 };
+      p.granules = { count: 8, size: 0.058, color: 0x64748b, accent: 0x94a3b8 };
+      p.membraneAmp = 0.34;
+      p.membraneFreq = 3.6;
+      p.cytoColor = 0x64748b;
+      p.rimColor = 0x94a3b8;
+      p.morphNote = 'Anucleate fragment — irregular outline, very low FSC';
+      break;
+    case 'Doublets':
+      p.nucleus = { shape: 'round', ratio: 0.70, color: 0x5b21b6, lobes: 1, nucleoli: 0 };
+      p.granules = { count: 26, size: 0.052, color: 0xa78bfa, accent: 0xc4b5fd };
+      p.bodies = [
+        { offset: new THREE.Vector3(-0.66, -0.10, 0), scale: 0.86 },
+        { offset: new THREE.Vector3(0.62, 0.16, 0.08), scale: 0.80 }
+      ];
+      p.morphNote = 'Two cells traversing the beam together — a coincidence artefact';
+      break;
+  }
+
+  return p;
+}
+
+// --------------------------------------------------------------------------
+// Flow cell geometry. Wide sheath chamber -> taper -> narrow quartz cuvette
+// where the beams cross -> waste. Everything else (particles, core stream,
+// cell path) is derived from this one profile so it all stays consistent.
+// --------------------------------------------------------------------------
+const FLOW = {
+  yTop: 8.6,
+  ySit: 5.6,
+  yTaperTop: 4.6,
+  yCuvetteTop: 2.9,
+  yCuvetteBot: -3.4,
+  yBot: -7.8,
+  rWide: 3.0,
+  rCuvette: 1.45,
+  rWaste: 2.0,
+  laserY: { violet: 2.2, blue: 0, red: -2.2 },
+  laserProgress: { violet: 0.31, blue: 0.50, red: 0.68 }
+};
+
+function chamberRadiusAt(y) {
+  if (y >= FLOW.yTaperTop) return FLOW.rWide;
+  if (y >= FLOW.yCuvetteTop) {
+    const t = (FLOW.yTaperTop - y) / (FLOW.yTaperTop - FLOW.yCuvetteTop);
+    const s = t * t * (3 - 2 * t);
+    return FLOW.rWide + (FLOW.rCuvette - FLOW.rWide) * s;
+  }
+  if (y >= FLOW.yCuvetteBot) return FLOW.rCuvette;
+  const t = Math.min(1, (FLOW.yCuvetteBot - y) / (FLOW.yCuvetteBot - FLOW.yBot));
+  const s = t * t * (3 - 2 * t);
+  return FLOW.rCuvette + (FLOW.rWaste - FLOW.rCuvette) * s;
+}
+
+// Cell height as a function of injection progress. Keyframed so the cell sits
+// exactly on each beam at the progress values the pulse maths already uses,
+// and so the segment speeds increase monotonically — the stream accelerates as
+// the chamber narrows, which is the point of hydrodynamic focusing.
+const CELL_PATH_KEYS = [
+  { p: 0.00, y: FLOW.ySit - 0.2 },
+  { p: FLOW.laserProgress.violet, y: FLOW.laserY.violet },
+  { p: FLOW.laserProgress.blue, y: FLOW.laserY.blue },
+  { p: FLOW.laserProgress.red, y: FLOW.laserY.red },
+  { p: 1.00, y: FLOW.yBot + 1.1 }
+];
+
+function cellPathY(p) {
+  const k = CELL_PATH_KEYS;
+  if (p <= k[0].p) return k[0].y;
+  for (let i = 1; i < k.length; i++) {
+    if (p <= k[i].p) {
+      const t = (p - k[i - 1].p) / (k[i].p - k[i - 1].p);
+      return k[i - 1].y + (k[i].y - k[i - 1].y) * t;
+    }
+  }
+  return k[k.length - 1].y;
+}
+
+function initThreeJSRenderer(container, details, cellType) {
   const width = container.clientWidth;
   const height = container.clientHeight;
-  
+  const profile = cellMorphologyProfile(cellType);
+  const disposables = [];
+
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-  camera.position.z = 15;
-  
+  scene.fog = new THREE.FogExp2(0x020617, 0.014);
+
+  const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 400);
+
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(width, height);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  // three r128 has no automatic colour management, so leaving the output in
+  // linear encoding is what keeps the authored CD marker hexes matching the
+  // legend swatches. sRGB output here would gamma-brighten everything to pastel.
+  renderer.toneMapping = THREE.NoToneMapping;
   container.appendChild(renderer.domElement);
-  
-  // Lights
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-  scene.add(ambientLight);
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  dirLight.position.set(5, 5, 5);
-  scene.add(dirLight);
-  const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.4);
-  dirLight2.position.set(-5, -5, -5);
-  scene.add(dirLight2);
-  
-  // Cell Group
+
+  const glowTex = makeRadialGlowTexture();
+  const streamTex = makeStreamTexture();
+  disposables.push(glowTex, streamTex);
+
+  // ---- Lighting: key / fill / rim, so the cell reads as a solid volume -----
+  scene.add(new THREE.AmbientLight(0x93c5fd, 0.22));
+  scene.add(new THREE.HemisphereLight(0x60a5fa, 0x020617, 0.35));
+
+  const keyLight = new THREE.DirectionalLight(0xffffff, 0.95);
+  keyLight.position.set(6, 8, 9);
+  scene.add(keyLight);
+
+  const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.35);
+  fillLight.position.set(-8, -3, 5);
+  scene.add(fillLight);
+
+  const rimLight = new THREE.DirectionalLight(0xa855f7, 0.7);
+  rimLight.position.set(-4, 3, -10);
+  scene.add(rimLight);
+
+  const bounceLight = new THREE.PointLight(0x22d3ee, 0.35, 30);
+  bounceLight.position.set(0, -6, 4);
+  scene.add(bounceLight);
+
+  // =========================================================================
+  // The cell
+  // =========================================================================
   const cellGroup = new THREE.Group();
   scene.add(cellGroup);
-  
-  // Core Cell Body (Wireframe Icosahedron)
-  const geometry = new THREE.IcosahedronGeometry(4, 2);
-  const material = new THREE.MeshBasicMaterial({
-    color: 0x334155,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.35
-  });
-  const cellMesh = new THREE.Mesh(geometry, material);
-  cellGroup.add(cellMesh);
-  
-  // Nucleus Sphere
-  const nucGeom = new THREE.SphereGeometry(1.8, 16, 16);
-  const nucMat = new THREE.MeshBasicMaterial({
-    color: 0x0f172a,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.2
-  });
-  const nucleusMesh = new THREE.Mesh(nucGeom, nucMat);
-  cellGroup.add(nucleusMesh);
-  
-  // CD Markers / Receptors
-  const markerMeshes = {};
-  const antibodyMeshes = {};
-  const fluorochromeMeshes = {};
-  const markersList = Object.entries(details.markers);
-  let totalReceptors = 0;
-  
-  markersList.forEach(([key, marker]) => {
-    let count = 8;
-    if (marker.expression === 'Very Bright') count = 24;
-    else if (marker.expression === 'Bright') count = 16;
-    else if (marker.expression === 'Moderate') count = 10;
-    else if (marker.expression === 'Dim') count = 4;
-    
-    markerMeshes[key] = [];
-    antibodyMeshes[key] = [];
-    fluorochromeMeshes[key] = [];
-    
-    // Create receptor geometry (stalk + head)
-    const rodGeom = new THREE.CylinderGeometry(0.04, 0.04, 0.8, 8);
-    rodGeom.translate(0, 0.4, 0); // shift pivot to base
-    
-    const headGeom = new THREE.SphereGeometry(0.12, 8, 8);
-    headGeom.translate(0, 0.8, 0); // put at top of rod
-    
-    const receptorGeom = new THREE.Group();
-    
-    const rodMat = new THREE.MeshBasicMaterial({ color: marker.color });
-    const rodMesh = new THREE.Mesh(rodGeom, rodMat);
-    receptorGeom.add(rodMesh);
-    
-    const headMat = new THREE.MeshPhongMaterial({ color: marker.color, emissive: marker.color, emissiveIntensity: 0.1 });
-    const headMesh = new THREE.Mesh(headGeom, headMat);
-    receptorGeom.add(headMesh);
 
-    // Y-shaped antibody group
-    const abData = MARKER_FLUOROCHROMES[key];
-    let abGroup = null;
-    
-    if (abData) {
-      abGroup = new THREE.Group();
-      abGroup.name = "antibodyGroup";
-      abGroup.visible = isConjugationActive;
-      
-      const abMat = new THREE.MeshPhongMaterial({ color: 0x8892b0, transparent: true, opacity: 0.8 });
-      
-      // Stem
-      const stemGeom = new THREE.CylinderGeometry(0.02, 0.02, 0.25, 6);
-      stemGeom.translate(0, 0.125, 0);
-      const stemMesh = new THREE.Mesh(stemGeom, abMat);
-      abGroup.add(stemMesh);
-      
-      // Left arm
-      const lArmGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.2, 6);
-      lArmGeom.translate(0, 0.1, 0);
-      const lArmMesh = new THREE.Mesh(lArmGeom, abMat);
-      lArmMesh.position.set(0, 0.25, 0);
-      lArmMesh.rotation.z = Math.PI / 4;
-      abGroup.add(lArmMesh);
-      
-      // Right arm
-      const rArmGeom = new THREE.CylinderGeometry(0.015, 0.015, 0.2, 6);
-      rArmGeom.translate(0, 0.1, 0);
-      const rArmMesh = new THREE.Mesh(rArmGeom, abMat);
-      rArmMesh.position.set(0, 0.25, 0);
-      rArmMesh.rotation.z = -Math.PI / 4;
-      abGroup.add(rArmMesh);
-      
-      // Fluorochrome spheres
-      const fMat = new THREE.MeshPhongMaterial({
-        color: abData.emissionColor,
-        emissive: abData.emissionColor,
-        emissiveIntensity: 0.15,
-        transparent: true,
-        opacity: 0.95
-      });
-      const fGeom = new THREE.SphereGeometry(0.065, 8, 8);
-      
-      const lf = new THREE.Mesh(fGeom, fMat);
-      lf.name = "fluorochrome";
-      lf.position.set(-0.14, 0.38, 0);
-      abGroup.add(lf);
-      
-      const rf = new THREE.Mesh(fGeom, fMat);
-      rf.name = "fluorochrome";
-      rf.position.set(0.14, 0.38, 0);
-      abGroup.add(rf);
-      
-      abGroup.position.y = 0.8;
-      receptorGeom.add(abGroup);
+  const R = profile.radius;
+  const membraneMeshes = [];
+  const granuleGroups = [];
+
+  profile.bodies.forEach((body, bodyIndex) => {
+    const bodyGroup = new THREE.Group();
+    bodyGroup.position.copy(body.offset.clone().multiplyScalar(R));
+    bodyGroup.scale.setScalar(body.scale);
+    cellGroup.add(bodyGroup);
+
+    const seed = bodyIndex * 7.31;
+    const amp = profile.membraneAmp;
+    const freq = profile.membraneFreq;
+
+    // Cytoplasm — a translucent filled volume so the cell has interior.
+    const cytoGeom = applyOrganicDisplacement(new THREE.SphereGeometry(R * 0.985, 64, 48), amp, freq, seed);
+    const cytoMat = new THREE.MeshStandardMaterial({
+      color: profile.cytoColor,
+      roughness: 0.6,
+      metalness: 0.0,
+      transparent: true,
+      opacity: 0.10,
+      depthWrite: false,
+      side: THREE.BackSide
+    });
+    const cytoMesh = new THREE.Mesh(cytoGeom, cytoMat);
+    cytoMesh.renderOrder = 4;
+    bodyGroup.add(cytoMesh);
+
+    // Lipid bilayer — glossy shell picking up the key light. Kept thin so the
+    // nucleus and granules stay readable through it.
+    const memGeom = applyOrganicDisplacement(new THREE.SphereGeometry(R, 72, 54), amp, freq, seed);
+    const memMat = new THREE.MeshPhongMaterial({
+      color: profile.cytoColor,
+      emissive: profile.cytoColor,
+      emissiveIntensity: 0.04,
+      specular: 0xdbeafe,
+      shininess: 90,
+      transparent: true,
+      opacity: 0.13,
+      depthWrite: false,
+      side: THREE.FrontSide
+    });
+    const memMesh = new THREE.Mesh(memGeom, memMat);
+    memMesh.renderOrder = 5;
+    bodyGroup.add(memMesh);
+    membraneMeshes.push(memMesh);
+
+    // Fresnel rim — the edge glow that sells the volume.
+    const rimGeom = applyOrganicDisplacement(new THREE.SphereGeometry(R * 1.004, 64, 48), amp, freq, seed);
+    const rimMat = makeFresnelMaterial(profile.rimColor, 3.2, 0.62, THREE.FrontSide);
+    const rimMesh = new THREE.Mesh(rimGeom, rimMat);
+    rimMesh.renderOrder = 6;
+    bodyGroup.add(rimMesh);
+
+    // Outer halo, drawn from the inside so it hugs the silhouette.
+    const haloGeom = new THREE.SphereGeometry(R * 1.13, 40, 30);
+    const haloMat = makeFresnelMaterial(profile.rimColor, 4.2, 0.24, THREE.BackSide);
+    const haloMesh = new THREE.Mesh(haloGeom, haloMat);
+    haloMesh.renderOrder = 3;
+    bodyGroup.add(haloMesh);
+
+    // Faint geodesic overlay — keeps the original schematic feel and makes
+    // rotation legible.
+    const wireGeom = applyOrganicDisplacement(new THREE.IcosahedronGeometry(R * 1.008, 3), amp, freq, seed);
+    const wireMat = new THREE.MeshBasicMaterial({
+      color: 0x93c5fd, wireframe: true, transparent: true, opacity: 0.055, depthWrite: false
+    });
+    const wireMesh = new THREE.Mesh(wireGeom, wireMat);
+    wireMesh.renderOrder = 7;
+    bodyGroup.add(wireMesh);
+
+    // ---- Nucleus -----------------------------------------------------------
+    const nuc = profile.nucleus;
+    const nucGroup = new THREE.Group();
+    nucGroup.renderOrder = 1;
+    bodyGroup.add(nucGroup);
+
+    const nucMat = new THREE.MeshStandardMaterial({
+      color: nuc.color,
+      roughness: 0.85,
+      metalness: 0.0,
+      emissive: nuc.color,
+      emissiveIntensity: 0.045
+    });
+    // A tight rim on the nuclear envelope separates it from the cytoplasm.
+    const nucRimMat = makeFresnelMaterial(0xc4b5fd, 3.0, 0.5, THREE.FrontSide);
+
+    const addLobe = (radius, position, kind) => {
+      let g = new THREE.SphereGeometry(radius, 40, 30);
+      if (kind === 'kidney') {
+        applyIndentation(g, new THREE.Vector3(0.85, -0.3, 0.4), 0.52, 2.2);
+        applyOrganicDisplacement(g, 0.05, 3.0, 1.3);
+      } else if (kind === 'folded') {
+        applyOrganicDisplacement(g, 0.19, 3.6, 2.9);
+      } else {
+        applyOrganicDisplacement(g, 0.07, 2.8, 0.7);
+      }
+      const m = new THREE.Mesh(g, nucMat);
+      m.position.copy(position);
+      nucGroup.add(m);
+
+      const cm = new THREE.Mesh(g, nucRimMat);
+      cm.position.copy(position);
+      cm.scale.setScalar(1.015);
+      cm.renderOrder = 2;
+      nucGroup.add(cm);
+      return m;
+    };
+
+    if (nuc.shape === 'lobed') {
+      // Segmented neutrophil nucleus: lobes on an arc, joined by chromatin filaments.
+      const lobeR = R * nuc.ratio;
+      const centres = [];
+      for (let i = 0; i < nuc.lobes; i++) {
+        const a = (i / Math.max(1, nuc.lobes - 1)) * Math.PI * 1.15 - Math.PI * 0.575;
+        const pos = new THREE.Vector3(Math.cos(a) * R * 0.40, Math.sin(a) * R * 0.34, Math.sin(a * 1.7) * R * 0.16);
+        centres.push(pos);
+        addLobe(lobeR * (0.88 + 0.12 * Math.sin(i * 2.1)), pos, 'round');
+      }
+      for (let i = 1; i < centres.length; i++) {
+        const a = centres[i - 1];
+        const b = centres[i];
+        const len = a.distanceTo(b);
+        const fil = new THREE.Mesh(new THREE.CylinderGeometry(lobeR * 0.20, lobeR * 0.20, len, 8), nucMat);
+        fil.position.copy(a.clone().add(b).multiplyScalar(0.5));
+        fil.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+        nucGroup.add(fil);
+      }
+    } else if (nuc.shape === 'bilobed') {
+      const lobeR = R * nuc.ratio;
+      const a = new THREE.Vector3(-R * 0.26, R * 0.16, 0);
+      const b = new THREE.Vector3(R * 0.26, -R * 0.16, R * 0.06);
+      addLobe(lobeR, a, 'round');
+      addLobe(lobeR * 0.92, b, 'round');
+      const len = a.distanceTo(b);
+      const fil = new THREE.Mesh(new THREE.CylinderGeometry(lobeR * 0.30, lobeR * 0.30, len, 8), nucMat);
+      fil.position.copy(a.clone().add(b).multiplyScalar(0.5));
+      fil.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+      nucGroup.add(fil);
+    } else if (nuc.shape !== 'none') {
+      addLobe(R * nuc.ratio, new THREE.Vector3(0, 0, 0), nuc.shape);
     }
-    
-    // Distribute receptors on the sphere using Fibonacci spiral
-    for (let i = 0; i < count; i++) {
-      const index = totalReceptors + i;
-      totalReceptors++;
-      
-      const phi = Math.acos(-1 + (2 * index) / 150);
-      const theta = Math.sqrt(150 * Math.PI) * phi;
-      
-      const x = 4 * Math.sin(phi) * Math.cos(theta);
-      const y = 4 * Math.sin(phi) * Math.sin(theta);
-      const z = 4 * Math.cos(phi);
-      
-      const receptorInstance = receptorGeom.clone();
-      receptorInstance.position.set(x, y, z);
-      
-      const targetVec = new THREE.Vector3(x, y, z).normalize();
-      receptorInstance.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), targetVec);
-      
-      cellGroup.add(receptorInstance);
-      markerMeshes[key].push(receptorInstance);
 
-      if (abGroup) {
-        const clonedAb = receptorInstance.children.find(c => c.name === "antibodyGroup");
-        if (clonedAb) {
-          antibodyMeshes[key].push(clonedAb);
-          const clonedFluors = clonedAb.children.filter(c => c.name === "fluorochrome");
-          fluorochromeMeshes[key].push(...clonedFluors);
+    // Nucleoli — the hallmark of an immature blast.
+    if (nuc.nucleoli > 0) {
+      const noMat = new THREE.MeshStandardMaterial({
+        color: 0xc7d2fe, roughness: 0.4, emissive: 0x818cf8, emissiveIntensity: 0.55
+      });
+      for (let i = 0; i < nuc.nucleoli; i++) {
+        const a = (i / nuc.nucleoli) * Math.PI * 2 + 0.6;
+        const nm = new THREE.Mesh(new THREE.SphereGeometry(R * nuc.ratio * 0.28, 16, 12), noMat);
+        nm.position.set(Math.cos(a) * R * nuc.ratio * 0.45, Math.sin(a) * R * nuc.ratio * 0.35, R * nuc.ratio * 0.25);
+        nucGroup.add(nm);
+      }
+    }
+
+    // ---- Granules — this is the SSC signal made visible ---------------------
+    const nucR = nuc.shape === 'none' ? 0 : R * nuc.ratio * (nuc.shape === 'lobed' || nuc.shape === 'bilobed' ? 1.55 : 1.0);
+    const gCount = profile.granules.count;
+    const granuleGroup = new THREE.Group();
+    granuleGroup.renderOrder = 2;
+    bodyGroup.add(granuleGroup);
+    granuleGroups.push(granuleGroup);
+
+    if (gCount > 0) {
+      const shells = [
+        { mat: new THREE.MeshStandardMaterial({ color: profile.granules.color, roughness: 0.32, metalness: 0.2, emissive: profile.granules.color, emissiveIntensity: 0.16 }), n: Math.ceil(gCount * 0.6) },
+        { mat: new THREE.MeshStandardMaterial({ color: profile.granules.accent, roughness: 0.38, metalness: 0.15, emissive: profile.granules.accent, emissiveIntensity: 0.11 }), n: Math.floor(gCount * 0.4) }
+      ];
+      const gGeom = new THREE.IcosahedronGeometry(1, 1);
+      const dummy = new THREE.Object3D();
+      let gi = 0;
+      shells.forEach(shell => {
+        if (shell.n <= 0) return;
+        const inst = new THREE.InstancedMesh(gGeom, shell.mat, shell.n);
+        for (let i = 0; i < shell.n; i++) {
+          // Golden-angle direction + banded radius keeps them in the cytoplasm
+          // shell between nucleus and membrane rather than clumping.
+          const t = (gi + 0.5) / gCount;
+          const yy = 1 - t * 2;
+          const rr = Math.sqrt(Math.max(0, 1 - yy * yy));
+          const th = 2.399963 * gi + bodyIndex * 1.7;
+          const dir = new THREE.Vector3(Math.cos(th) * rr, yy, Math.sin(th) * rr);
+          const jitter = 0.5 + 0.5 * Math.sin(gi * 12.9898) * Math.cos(gi * 78.233);
+          const lo = Math.max(nucR * 1.12, R * 0.18);
+          const hi = R * 0.88;
+          const rad = lo >= hi ? R * 0.6 : lo + (hi - lo) * (0.15 + 0.85 * jitter);
+          dummy.position.copy(dir.multiplyScalar(rad));
+          dummy.rotation.set(gi * 1.3, gi * 2.1, gi * 0.7);
+          const s = profile.granules.size * R * (0.75 + 0.5 * jitter);
+          dummy.scale.setScalar(s);
+          dummy.updateMatrix();
+          inst.setMatrixAt(i, dummy.matrix);
+          gi++;
         }
+        inst.instanceMatrix.needsUpdate = true;
+        granuleGroup.add(inst);
+      });
+    }
+
+    // ---- Auer rods (M2 single rod, M3 faggot bundle) -----------------------
+    if (profile.auerRods > 0) {
+      const auerMat = new THREE.MeshStandardMaterial({
+        color: 0xfb7185, roughness: 0.25, metalness: 0.3, emissive: 0xf43f5e, emissiveIntensity: 0.5
+      });
+      const auerGeom = new THREE.CylinderGeometry(R * 0.035, R * 0.02, R * 0.62, 6);
+      for (let i = 0; i < profile.auerRods; i++) {
+        const rod = new THREE.Mesh(auerGeom, auerMat);
+        const a = i * 0.55 + 1.2;
+        rod.position.set(Math.cos(a) * R * 0.52, R * (0.34 - i * 0.09), Math.sin(a) * R * 0.42);
+        rod.rotation.set(0.9 + i * 0.12, a, 0.5 - i * 0.08);
+        granuleGroup.add(rod);
+      }
+    }
+
+    // ---- Cytoplasmic blebs (megakaryoblast / monocyte pseudopods) ----------
+    if (profile.blebs > 0) {
+      const blebMat = memMat.clone();
+      blebMat.opacity = 0.3;
+      for (let i = 0; i < profile.blebs; i++) {
+        const a = i * 2.399963;
+        const yy = 1 - ((i + 0.5) / profile.blebs) * 2;
+        const rr = Math.sqrt(Math.max(0, 1 - yy * yy));
+        const dir = new THREE.Vector3(Math.cos(a) * rr, yy, Math.sin(a) * rr);
+        const bs = R * (0.20 + 0.12 * ((i % 3) / 2));
+        const bleb = new THREE.Mesh(new THREE.SphereGeometry(bs, 20, 16), blebMat);
+        bleb.position.copy(dir.multiplyScalar(organicSurfaceRadius(dir, R, amp, freq, seed) * 0.94));
+        bleb.renderOrder = 5;
+        bodyGroup.add(bleb);
       }
     }
   });
 
-  // Simulator Nozzle, flow chamber, streamlines, and scatter lines
-  const nozzleGeom = new THREE.CylinderGeometry(0.15, 0.4, 1.5, 12);
-  nozzleGeom.translate(0, 6, 0);
-  const metalMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
-  const nozzleMesh = new THREE.Mesh(nozzleGeom, metalMat);
+  // =========================================================================
+  // CD markers / receptors, anchored to the displaced membrane
+  // =========================================================================
+  const markerMeshes = {};
+  const antibodyMeshes = {};
+  const fluorochromeMeshes = {};
+  const markersList = Object.entries(details.markers);
+
+  const expressionCount = (expr) => {
+    if (expr === 'Very Bright') return 24;
+    if (expr === 'Bright') return 16;
+    if (expr === 'Moderate') return 10;
+    if (expr === 'Dim') return 4;
+    return 8;
+  };
+
+  // Interleave the markers so each CD is spread over the whole surface instead
+  // of forming a band.
+  const counts = {};
+  let totalReceptors = 0;
+  markersList.forEach(([key, marker]) => {
+    counts[key] = expressionCount(marker.expression);
+    totalReceptors += counts[key];
+    markerMeshes[key] = [];
+    antibodyMeshes[key] = [];
+    fluorochromeMeshes[key] = [];
+  });
+
+  const slots = [];
+  const maxCount = Math.max(0, ...Object.values(counts));
+  for (let round = 0; round < maxCount; round++) {
+    markersList.forEach(([key]) => {
+      if (counts[key] > round) slots.push(key);
+    });
+  }
+
+  const receptorPrototypes = {};
+  markersList.forEach(([key, marker]) => {
+    const proto = new THREE.Group();
+
+    const anchorGeom = new THREE.SphereGeometry(0.15, 10, 6);
+    anchorGeom.scale(1, 0.42, 1);
+    const anchorMat = new THREE.MeshStandardMaterial({
+      color: marker.color, roughness: 0.55, metalness: 0.2, emissive: marker.color, emissiveIntensity: 0.1
+    });
+    proto.add(new THREE.Mesh(anchorGeom, anchorMat));
+
+    const stalkGeom = new THREE.CylinderGeometry(0.032, 0.055, 0.62, 7);
+    stalkGeom.translate(0, 0.31, 0);
+    const stalkMat = new THREE.MeshStandardMaterial({
+      color: marker.color, roughness: 0.42, metalness: 0.15, emissive: marker.color, emissiveIntensity: 0.1
+    });
+    proto.add(new THREE.Mesh(stalkGeom, stalkMat));
+
+    const headGeom = new THREE.SphereGeometry(0.118, 14, 10);
+    headGeom.translate(0, 0.665, 0);
+    const headMat = new THREE.MeshStandardMaterial({
+      color: marker.color, roughness: 0.18, metalness: 0.3, emissive: marker.color, emissiveIntensity: 0.32
+    });
+    proto.add(new THREE.Mesh(headGeom, headMat));
+
+    const abData = MARKER_FLUOROCHROMES[key];
+    if (abData) {
+      const abGroup = new THREE.Group();
+      abGroup.name = 'antibodyGroup';
+      abGroup.visible = isConjugationActive;
+
+      const abMat = new THREE.MeshStandardMaterial({
+        color: 0xcbd5e1, roughness: 0.3, metalness: 0.45, transparent: true, opacity: 0.9
+      });
+
+      const stemGeom = new THREE.CylinderGeometry(0.024, 0.024, 0.26, 6);
+      stemGeom.translate(0, 0.13, 0);
+      abGroup.add(new THREE.Mesh(stemGeom, abMat));
+
+      [1, -1].forEach(sign => {
+        const armGeom = new THREE.CylinderGeometry(0.018, 0.018, 0.22, 6);
+        armGeom.translate(0, 0.11, 0);
+        const arm = new THREE.Mesh(armGeom, abMat);
+        arm.position.set(0, 0.26, 0);
+        arm.rotation.z = sign * Math.PI / 4;
+        abGroup.add(arm);
+      });
+
+      const fMat = new THREE.MeshStandardMaterial({
+        color: abData.emissionColor,
+        emissive: abData.emissionColor,
+        emissiveIntensity: 0.35,
+        roughness: 0.15,
+        metalness: 0.1
+      });
+      const fGeom = new THREE.SphereGeometry(0.085, 12, 10);
+      [-0.155, 0.155].forEach(x => {
+        const f = new THREE.Mesh(fGeom, fMat);
+        f.name = 'fluorochrome';
+        f.position.set(x, 0.40, 0);
+        abGroup.add(f);
+      });
+
+      abGroup.position.y = 0.66;
+      proto.add(abGroup);
+    }
+
+    receptorPrototypes[key] = proto;
+  });
+
+  const bodyCentres = profile.bodies.map(b => ({
+    offset: b.offset.clone().multiplyScalar(R),
+    scale: b.scale
+  }));
+
+  slots.forEach((key, i) => {
+    const yy = totalReceptors > 1 ? 1 - (i / (totalReceptors - 1)) * 2 : 0;
+    const rr = Math.sqrt(Math.max(0, 1 - yy * yy));
+    const th = 2.399963 * i;
+    const dir = new THREE.Vector3(Math.cos(th) * rr, yy, Math.sin(th) * rr).normalize();
+
+    const body = bodyCentres[i % bodyCentres.length];
+    const bodySeed = (i % bodyCentres.length) * 7.31;
+    const surfaceR = organicSurfaceRadius(dir, R, profile.membraneAmp, profile.membraneFreq, bodySeed);
+
+    const inst = receptorPrototypes[key].clone();
+    inst.scale.setScalar(body.scale);
+    inst.position.copy(dir.clone().multiplyScalar(surfaceR * 0.96 * body.scale)).add(body.offset);
+    inst.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    inst.renderOrder = 2;
+    inst.userData.baseDir = dir.clone();
+    inst.userData.phase = i * 0.7;
+
+    cellGroup.add(inst);
+    markerMeshes[key].push(inst);
+
+    const ab = inst.children.find(c => c.name === 'antibodyGroup');
+    if (ab) {
+      antibodyMeshes[key].push(ab);
+      fluorochromeMeshes[key].push(...ab.children.filter(c => c.name === 'fluorochrome'));
+    }
+  });
+
+  // =========================================================================
+  // Fluidics: sample injection, sheath chamber, quartz cuvette, waste
+  // =========================================================================
+  const fluidicsGroup = new THREE.Group();
+  fluidicsGroup.visible = isFluidicsActive;
+  scene.add(fluidicsGroup);
+
+  // -- Sample injection tube (the "nozzle") ---------------------------------
+  const nozzleMesh = new THREE.Group();
   nozzleMesh.visible = isFluidicsActive;
   scene.add(nozzleMesh);
 
-  const glassGeom = new THREE.CylinderGeometry(1.6, 1.6, 11, 16, 1, true);
-  const glassMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.08, wireframe: true });
-  const glassMesh = new THREE.Mesh(glassGeom, glassMat);
+  const steelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.28 });
+  const sitBody = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 2.6, 20), steelMat);
+  sitBody.position.y = FLOW.ySit + 1.9;
+  nozzleMesh.add(sitBody);
+
+  const sitTip = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.22, 0.9, 20), steelMat);
+  sitTip.position.y = FLOW.ySit + 0.15;
+  nozzleMesh.add(sitTip);
+
+  const sitCollar = new THREE.Mesh(new THREE.TorusGeometry(0.30, 0.06, 10, 24), steelMat);
+  sitCollar.rotation.x = Math.PI / 2;
+  sitCollar.position.y = FLOW.ySit + 0.65;
+  nozzleMesh.add(sitCollar);
+
+  const sitLabel = makeLabelSprite('Sample injection tube', '#e2e8f0', 0.0032);
+  sitLabel.position.set(2.6, FLOW.ySit + 2.5, 0);
+  nozzleMesh.add(sitLabel);
+
+  // -- Flow chamber: tapering sheath body + square quartz cuvette -----------
+  const glassMesh = new THREE.Group();
   glassMesh.visible = isFluidicsActive;
   scene.add(glassMesh);
 
+  const profilePoints = [];
+  const steps = 72;
+  for (let i = 0; i <= steps; i++) {
+    const y = FLOW.yBot + (FLOW.yTop - FLOW.yBot) * (i / steps);
+    profilePoints.push(new THREE.Vector2(chamberRadiusAt(y), y));
+  }
+
+  const chamberGeom = new THREE.LatheGeometry(profilePoints, 48);
+  const chamberMat = new THREE.MeshPhongMaterial({
+    color: 0x7dd3fc,
+    transparent: true,
+    opacity: 0.075,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    shininess: 90,
+    specular: 0x93c5fd
+  });
+  const chamberMesh = new THREE.Mesh(chamberGeom, chamberMat);
+  chamberMesh.renderOrder = 20;
+  glassMesh.add(chamberMesh);
+
+  const chamberRim = new THREE.Mesh(chamberGeom, makeFresnelMaterial(0x38bdf8, 2.2, 0.5, THREE.DoubleSide));
+  chamberRim.renderOrder = 21;
+  glassMesh.add(chamberRim);
+
+  // Profile ribs, so the taper is legible from any angle.
+  const ribMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.28 });
+  for (let a = 0; a < 8; a++) {
+    const ang = (a / 8) * Math.PI * 2;
+    const pts = profilePoints.map(p => new THREE.Vector3(Math.cos(ang) * p.x, p.y, Math.sin(ang) * p.x));
+    glassMesh.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), ribMat));
+  }
+
+  // The interrogation point on a real instrument is a square quartz flow cell.
+  const cuvetteH = FLOW.yCuvetteTop - FLOW.yCuvetteBot;
+  const cuvetteGeom = new THREE.BoxGeometry(3.05, cuvetteH, 3.05);
+  const cuvetteMesh = new THREE.Mesh(cuvetteGeom, new THREE.MeshPhongMaterial({
+    color: 0xbae6fd, transparent: true, opacity: 0.07, side: THREE.DoubleSide,
+    depthWrite: false, shininess: 100, specular: 0xffffff
+  }));
+  cuvetteMesh.position.y = (FLOW.yCuvetteTop + FLOW.yCuvetteBot) / 2;
+  cuvetteMesh.renderOrder = 22;
+  glassMesh.add(cuvetteMesh);
+
+  const cuvetteEdges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(cuvetteGeom),
+    new THREE.LineBasicMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.5 })
+  );
+  cuvetteEdges.position.copy(cuvetteMesh.position);
+  glassMesh.add(cuvetteEdges);
+
+  const cuvetteLabel = makeLabelSprite('Quartz flow cell', '#67e8f9', 0.0032);
+  cuvetteLabel.position.set(-2.5, FLOW.yCuvetteTop + 0.3, 1.4);
+  glassMesh.add(cuvetteLabel);
+
+  const focusLabel = makeLabelSprite('Hydrodynamic focusing', '#7dd3fc', 0.0032);
+  focusLabel.position.set(3.0, FLOW.yTaperTop - 0.5, 0);
+  glassMesh.add(focusLabel);
+
+  // -- Sheath fluid particles ----------------------------------------------
   const linesGroup = new THREE.Group();
   linesGroup.visible = isFluidicsActive;
   scene.add(linesGroup);
-  
-  const lineCount = 8;
-  const lineSpeed = 0.15;
-  const linesData = [];
-  
-  for (let i = 0; i < lineCount; i++) {
-    const angle = (i / lineCount) * Math.PI * 2;
-    const r = 1.0 + Math.random() * 0.4;
-    const lGeom = new THREE.CylinderGeometry(0.01, 0.01, 2.5, 4);
-    const lMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.25 });
-    const lMesh = new THREE.Mesh(lGeom, lMat);
-    const yVal = -5 + Math.random() * 10;
-    const xVal = Math.cos(angle) * r;
-    const zVal = Math.sin(angle) * r;
-    lMesh.position.set(xVal, yVal, zVal);
-    linesGroup.add(lMesh);
-    linesData.push({ mesh: lMesh, speed: lineSpeed + Math.random() * 0.05, r });
-  }
 
-  // Scatter rays
+  const SHEATH_N = 520;
+  const sheathPositions = new Float32Array(SHEATH_N * 3);
+  const sheathState = [];
+  for (let i = 0; i < SHEATH_N; i++) {
+    sheathState.push({
+      angle: Math.random() * Math.PI * 2,
+      rFrac: 0.28 + Math.random() * 0.70,
+      y: FLOW.yBot + Math.random() * (FLOW.yTop - FLOW.yBot),
+      speed: 0.055 + Math.random() * 0.035,
+      spin: (Math.random() < 0.5 ? -1 : 1) * (0.006 + Math.random() * 0.012)
+    });
+  }
+  const sheathGeom = new THREE.BufferGeometry();
+  sheathGeom.setAttribute('position', new THREE.BufferAttribute(sheathPositions, 3));
+  const sheathMat = new THREE.PointsMaterial({
+    size: 0.19,
+    map: glowTex,
+    color: 0x7dd3fc,
+    transparent: true,
+    opacity: 0.55,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    sizeAttenuation: true
+  });
+  const sheathPoints = new THREE.Points(sheathGeom, sheathMat);
+  sheathPoints.renderOrder = 18;
+  linesGroup.add(sheathPoints);
+
+  const sheathLabel = makeLabelSprite('Sheath fluid', '#38bdf8', 0.0032);
+  sheathLabel.position.set(-3.1, FLOW.yTaperTop + 1.6, 0);
+  linesGroup.add(sheathLabel);
+
+  // Sheath inlets feeding the chamber from the sides.
+  [-1, 1].forEach(sign => {
+    const inlet = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 2.2, 12), steelMat);
+    inlet.position.set(sign * 2.6, FLOW.yTop - 1.0, 0);
+    inlet.rotation.z = sign * Math.PI / 3.2;
+    linesGroup.add(inlet);
+  });
+
+  // -- Sample core stream (narrows through the taper) -----------------------
+  const corePoints = [];
+  for (let i = 0; i <= steps; i++) {
+    const y = FLOW.ySit - 0.1 + (FLOW.yBot - FLOW.ySit + 0.1) * (i / steps);
+    corePoints.push(new THREE.Vector2(Math.max(0.35, chamberRadiusAt(y) * 0.62), y));
+  }
+  corePoints.reverse();
+  const coreGeom = new THREE.LatheGeometry(corePoints, 32);
+  const coreMat = new THREE.MeshBasicMaterial({
+    map: streamTex,
+    color: 0x22d3ee,
+    transparent: true,
+    opacity: 0.42,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
+  streamTex.repeat.set(1, 4);
+  const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+  coreMesh.renderOrder = 19;
+  linesGroup.add(coreMesh);
+
+  const coreLabel = makeLabelSprite('Sample core stream', '#22d3ee', 0.0032);
+  coreLabel.position.set(2.4, 3.9, 0);
+  linesGroup.add(coreLabel);
+
+  // =========================================================================
+  // Optics: laser sources, beams, detectors
+  // =========================================================================
+  const laserBeams = {};
+  const laserGlows = {};
+  const laserConfig = {
+    violet: { color: 0xa855f7, y: FLOW.laserY.violet, label: '405 nm violet' },
+    blue: { color: 0x3b82f6, y: FLOW.laserY.blue, label: '488 nm blue' },
+    red: { color: 0xef4444, y: FLOW.laserY.red, label: '633 nm red' }
+  };
+
+  Object.entries(laserConfig).forEach(([laserKey, config]) => {
+    const beamGeom = new THREE.CylinderGeometry(0.15, 0.15, 24, 14, 1, true);
+    beamGeom.rotateZ(Math.PI / 2);
+    const beamMat = new THREE.MeshBasicMaterial({
+      color: config.color,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    const beam = new THREE.Mesh(beamGeom, beamMat);
+    // Real interrogation beams are focused to a flat ellipse: wide across the
+    // stream, thin along the direction of flow.
+    beam.scale.set(1, 0.30, 1.7);
+    beam.position.set(-2, config.y, 0);
+    beam.renderOrder = 24;
+    scene.add(beam);
+    laserBeams[laserKey] = beam;
+
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTex, color: config.color, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false
+    }));
+    glow.scale.set(2.0, 1.0, 1);
+    glow.position.set(0, config.y, 0);
+    glow.renderOrder = 30;
+    scene.add(glow);
+    laserGlows[laserKey] = glow;
+
+    // Source housing + focusing lens.
+    const housing = new THREE.Group();
+    housing.position.set(-9.4, config.y, 0);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.7, 0.7), new THREE.MeshStandardMaterial({
+      color: 0x1e293b, metalness: 0.7, roughness: 0.4
+    }));
+    housing.add(body);
+    const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.22, 20), new THREE.MeshStandardMaterial({
+      color: config.color, emissive: config.color, emissiveIntensity: 0.7, roughness: 0.15, metalness: 0.3
+    }));
+    lens.rotation.z = Math.PI / 2;
+    lens.position.x = 0.95;
+    housing.add(lens);
+    const lbl = makeLabelSprite(config.label, '#' + new THREE.Color(config.color).getHexString(), 0.0030);
+    lbl.position.set(-0.1, 0.72, 0);
+    housing.add(lbl);
+    housing.visible = isFluidicsActive;
+    fluidicsGroup.add(housing);
+  });
+
+  const detectorMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.65, roughness: 0.45 });
+
+  // Forward scatter sits in line with the beam behind an obscuration bar.
+  const fscDetector = new THREE.Group();
+  fscDetector.position.set(8.8, 0, 0);
+  const fscBody = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.1, 2.1), detectorMat);
+  fscDetector.add(fscBody);
+  const fscFace = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.8), new THREE.MeshBasicMaterial({
+    color: 0x0ea5e9, transparent: true, opacity: 0.25, side: THREE.DoubleSide
+  }));
+  fscFace.rotation.y = -Math.PI / 2;
+  fscFace.position.x = -0.47;
+  fscDetector.add(fscFace);
+  const fscLabel = makeLabelSprite('FSC detector (size)', '#7dd3fc', 0.0032);
+  fscLabel.position.set(0, 1.6, 0);
+  fscDetector.add(fscLabel);
+  fluidicsGroup.add(fscDetector);
+
+  const obscurationBar = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.5, 2.2), new THREE.MeshStandardMaterial({
+    color: 0x0f172a, metalness: 0.4, roughness: 0.7
+  }));
+  obscurationBar.position.set(6.4, 0, 0);
+  fluidicsGroup.add(obscurationBar);
+  const obscurationLabel = makeLabelSprite('Obscuration bar', '#94a3b8', 0.0028);
+  obscurationLabel.position.set(6.4, 0.85, 0);
+  fluidicsGroup.add(obscurationLabel);
+
+  // Side scatter and fluorescence are collected at 90 degrees to the beam.
+  const sscDetector = new THREE.Group();
+  sscDetector.position.set(0, 0, -8.4);
+  const sscBody = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.1, 0.9), detectorMat);
+  sscDetector.add(sscBody);
+  const sscFace = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.9), new THREE.MeshBasicMaterial({
+    color: 0x22d3ee, transparent: true, opacity: 0.25, side: THREE.DoubleSide
+  }));
+  sscFace.position.z = 0.47;
+  sscDetector.add(sscFace);
+  const sscLabel = makeLabelSprite('SSC + fluorescence (90°)', '#22d3ee', 0.0032);
+  sscLabel.position.set(0, 1.6, 0);
+  sscDetector.add(sscLabel);
+  fluidicsGroup.add(sscDetector);
+
+  // =========================================================================
+  // Scatter + fluorescence emission from the interrogated cell
+  // =========================================================================
   const scatterGroup = new THREE.Group();
+  scatterGroup.visible = false;
   scene.add(scatterGroup);
-  
-  const scatterMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
-  const fscGeom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(12, 0, 0)]);
-  const sscGeom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 10, 0)]);
-  const fscLine = new THREE.Line(fscGeom, scatterMat);
-  const sscLine = new THREE.Line(sscGeom, scatterMat.clone());
+
+  // FSC: a narrow forward cone continuing along the beam axis.
+  const fscConeGeom = new THREE.ConeGeometry(1, 8, 26, 1, true);
+  fscConeGeom.rotateZ(-Math.PI / 2);
+  fscConeGeom.translate(4, 0, 0);
+  const fscConeMat = new THREE.MeshBasicMaterial({
+    color: 0xbae6fd, transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
+    depthWrite: false, side: THREE.DoubleSide
+  });
+  const fscLine = new THREE.Mesh(fscConeGeom, fscConeMat);
   scatterGroup.add(fscLine);
+
+  // SSC: a radial starburst, biased toward the 90-degree collection optics.
+  const sscLine = new THREE.Group();
+  const sscRayMat = new THREE.MeshBasicMaterial({
+    color: 0xe0f2fe, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false
+  });
+  const sscRayGeom = new THREE.CylinderGeometry(0.012, 0.055, 3.0, 5);
+  sscRayGeom.translate(0, 2.4, 0);
+  for (let i = 0; i < 26; i++) {
+    const ray = new THREE.Mesh(sscRayGeom, sscRayMat);
+    const t = (i + 0.5) / 26;
+    const yy = 1 - t * 2;
+    const rr = Math.sqrt(Math.max(0, 1 - yy * yy));
+    const th = 2.399963 * i;
+    const dir = new THREE.Vector3(Math.cos(th) * rr * 0.85, yy * 0.55, -(Math.abs(Math.sin(th) * rr) + 0.35)).normalize();
+    ray.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    sscLine.add(ray);
+  }
   scatterGroup.add(sscLine);
-  
+
+  const sscGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTex, color: 0xffffff, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false
+  }));
+  sscGlow.scale.set(3.2, 3.2, 1);
+  scatterGroup.add(sscGlow);
+
+  // Fluorescence emission travelling to the 90-degree detector.
+  const emissionBeamMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
+    depthWrite: false, side: THREE.DoubleSide
+  });
+  const emissionBeamGeom = new THREE.CylinderGeometry(0.9, 0.05, 8.0, 18, 1, true);
+  emissionBeamGeom.rotateX(-Math.PI / 2);
+  emissionBeamGeom.translate(0, 0, -4.0);
+  const emissionBeam = new THREE.Mesh(emissionBeamGeom, emissionBeamMat);
+  scatterGroup.add(emissionBeam);
+
+  const cellFlash = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTex, color: 0xffffff, transparent: true, opacity: 0,
+    blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false
+  }));
+  cellFlash.scale.set(4.0, 4.0, 1);
+  scene.add(cellFlash);
+
   let hasBeepedViolet = false;
   let hasBeepedBlue = false;
   let hasBeepedRed = false;
 
-  // Simulator Lasers
-  const laserBeams = {};
-  const laserConfig = {
-    violet: { color: 0xa855f7, y: 1.8 },
-    blue: { color: 0x3b82f6, y: 0 },
-    red: { color: 0xef4444, y: -1.8 }
-  };
-  
-  Object.entries(laserConfig).forEach(([laserKey, config]) => {
-    const laserGeom = new THREE.CylinderGeometry(0.18, 0.18, 30, 8);
-    laserGeom.rotateZ(Math.PI / 2);
-    
-    const laserMat = new THREE.MeshBasicMaterial({
-      color: config.color,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false
-    });
-    
-    const laserMesh = new THREE.Mesh(laserGeom, laserMat);
-    laserMesh.position.set(0, config.y, 0);
-    scene.add(laserMesh);
-    laserBeams[laserKey] = laserMesh;
-  });
-  
-  // Interaction states
+  // =========================================================================
+  // Interaction — drag orbits the camera, wheel zooms
+  // =========================================================================
   let isDragging = false;
   let prevMousePos = { x: 0, y: 0 };
   let autoRotate = true;
   let autoRotateTimer = null;
-  
+  let camYaw = 0.62;
+  let camPitch = 0.14;
+
   const onMouseDown = (e) => {
     isDragging = true;
     prevMousePos = { x: e.clientX, y: e.clientY };
     autoRotate = false;
     if (autoRotateTimer) clearTimeout(autoRotateTimer);
   };
-  
+
   const onMouseMove = (e) => {
     if (!isDragging) return;
     const deltaX = e.clientX - prevMousePos.x;
     const deltaY = e.clientY - prevMousePos.y;
-    
-    cellGroup.rotation.y += deltaX * 0.007;
-    cellGroup.rotation.x += deltaY * 0.007;
-    
+    camYaw -= deltaX * 0.007;
+    camPitch = THREE.MathUtils.clamp(camPitch + deltaY * 0.005, -1.15, 1.15);
     prevMousePos = { x: e.clientX, y: e.clientY };
   };
-  
+
   const onMouseUp = () => {
     isDragging = false;
-    autoRotateTimer = setTimeout(() => {
-      autoRotate = true;
-    }, 3000);
+    autoRotateTimer = setTimeout(() => { autoRotate = true; }, 3000);
   };
-  
+
   const onWheel = (e) => {
     e.preventDefault();
     zoomFactor -= e.deltaY * 0.002;
     zoomFactor = Math.max(0.4, Math.min(2.5, zoomFactor));
     updateZoomUI();
   };
-  
+
   renderer.domElement.addEventListener('mousedown', onMouseDown);
   renderer.domElement.addEventListener('mousemove', onMouseMove);
   window.addEventListener('mouseup', onMouseUp);
   renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
-  
+
+  const camTarget = new THREE.Vector3(0, 0, 0);
+  camera.position.set(0, 2, 14);
+
   threeJSData = {
     renderer,
     scene,
@@ -4204,6 +5412,7 @@ function initThreeJSRenderer(container, details) {
     linesGroup,
     fscLine,
     sscLine,
+    profile,
     animationFrameId: null,
     autoRotate: () => autoRotate,
     cleanup: () => {
@@ -4218,185 +5427,304 @@ function initThreeJSRenderer(container, details) {
       scene.traverse(obj => {
         if (obj.geometry) obj.geometry.dispose();
         if (obj.material) {
-          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
-          else obj.material.dispose();
+          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+          mats.forEach(m => {
+            if (m.map && m.map.dispose) m.map.dispose();
+            m.dispose();
+          });
         }
       });
+      disposables.forEach(d => d && d.dispose && d.dispose());
       renderer.dispose();
     }
   };
-  
+
+  const sizeF = cellTypeSizeMultiplier(cellType);
+  const granF = cellTypeGranularityMultiplier(cellType);
+  // Keep every cell comfortably in frame regardless of its modelled radius.
+  const frameScale = 3.15 / R;
+
+  let viewOffsetActive = null;
+  const applyViewOffset = () => {
+    const panel = document.getElementById('simulator-panel');
+    const panelShown = panel && panel.style.display !== 'none';
+    const shift = (isFluidicsActive && panelShown) ? 0.15 : 0;
+    if (shift === viewOffsetActive) return;
+    viewOffsetActive = shift;
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    if (shift === 0) camera.clearViewOffset();
+    else camera.setViewOffset(w, h, w * shift, 0, w, h);
+  };
+
   const animate = () => {
     threeJSData.animationFrameId = requestAnimationFrame(animate);
-    
-    // Camera transition
-    const baseZ = isFluidicsActive ? 17 : 12;
-    const targetZ = baseZ / zoomFactor;
-    if (isFluidicsActive) {
-      camera.position.x += (0 - camera.position.x) * 0.06;
-      camera.position.y += (1.0 - camera.position.y) * 0.06;
-      camera.position.z += (targetZ - camera.position.z) * 0.06;
-    } else {
-      camera.position.x += (0 - camera.position.x) * 0.06;
-      camera.position.y += (0 - camera.position.y) * 0.06;
-      camera.position.z += (targetZ - camera.position.z) * 0.06;
-    }
-    camera.lookAt(0, isFluidicsActive ? 0.5 : 0, 0);
-    
-    // Toggle nozzle, flow cell visibility
+    const time = Date.now() * 0.001;
+
+    // ---- Camera ------------------------------------------------------------
+    camTarget.y += ((isFluidicsActive ? -0.2 : 0) - camTarget.y) * 0.08;
+    const dist = (isFluidicsActive ? 26.5 : 13.5) / zoomFactor;
+    const cp = Math.cos(camPitch);
+    const desired = new THREE.Vector3(
+      camTarget.x + dist * cp * Math.sin(camYaw),
+      camTarget.y + dist * Math.sin(camPitch),
+      camTarget.z + dist * cp * Math.cos(camYaw)
+    );
+    camera.position.lerp(desired, 0.09);
+    camera.lookAt(camTarget);
+
+    // The simulator panel floats over the right of the canvas, so bias the
+    // frustum to keep the whole optical bench in the clear area beside it.
+    applyViewOffset();
+
+    // ---- Fluidics visibility -----------------------------------------------
     nozzleMesh.visible = isFluidicsActive;
     glassMesh.visible = isFluidicsActive;
     linesGroup.visible = isFluidicsActive;
-    
-    // Animate streamlines
-    if (isFluidicsActive) {
-      linesData.forEach(l => {
-        l.mesh.position.y -= l.speed;
-        if (l.mesh.position.y < -5.5) {
-          l.mesh.position.y = 5.5;
-        }
-      });
-    }
-    
-    // Cell motion and rotation
-    if (isFluidicsActive) {
-      if (isInjecting) {
-        // travel from y = 5.2 (nozzle mouth) to y = -5.5 (waste)
-        cellGroup.position.y = 5.2 - 10.7 * injectionProgress;
-        
-        // Squeezing: squeeze cell off-center initially and align at center by progress = 0.5
-        const focusFactor = Math.max(0, 1 - (injectionProgress * 2));
-        cellGroup.position.x = 0.6 * focusFactor;
-        cellGroup.position.z = 0.6 * focusFactor;
-        
-        // Spin slowly
-        cellGroup.rotation.y += 0.02;
-        cellGroup.rotation.x = 0;
-        
-        // Pulse calculation
-        const cellType = currentInterrogatedCellType;
-        const size = cellTypeSizeMultiplier(cellType);
-        
-        let hasVioletConjugate = 0;
-        let hasBlueConjugate = 0;
-        let hasRedConjugate = 0;
-        
-        if (isConjugationActive) {
-          Object.entries(details.markers).forEach(([key, m]) => {
-            const abData = MARKER_FLUOROCHROMES[key];
-            if (abData) {
-              const exprVal = m.expression === 'Very Bright' ? 1.0 : (m.expression === 'Bright' ? 0.8 : (m.expression === 'Moderate' ? 0.5 : 0.2));
-              if (abData.laser === 'violet') hasVioletConjugate = Math.max(hasVioletConjugate, exprVal);
-              if (abData.laser === 'blue') hasBlueConjugate = Math.max(hasBlueConjugate, exprVal);
-              if (abData.laser === 'red') hasRedConjugate = Math.max(hasRedConjugate, exprVal);
-            }
-          });
-        }
-        
-        const vPulse = activeLasers.violet ? (0.15 * size + (hasVioletConjugate * 0.75)) * Math.exp(-Math.pow((injectionProgress - 0.31)/0.04, 2)) : 0;
-        const bPulse = activeLasers.blue ? (0.15 * size + (hasBlueConjugate * 0.75)) * Math.exp(-Math.pow((injectionProgress - 0.50)/0.04, 2)) : 0;
-        const rPulse = activeLasers.red ? (0.15 * size + (hasRedConjugate * 0.75)) * Math.exp(-Math.pow((injectionProgress - 0.68)/0.04, 2)) : 0;
-        
-        const totalPulse = Math.min(1.0, vPulse + bPulse + rPulse);
-        updateOscilloscope(totalPulse);
-        
-        // Trigger scatter rays at laser points
-        const isNearLaser = totalPulse > 0.08;
-        if (isNearLaser) {
-          fscLine.material.opacity = totalPulse * 0.8;
-          sscLine.material.opacity = totalPulse * 0.6;
-          fscLine.position.y = cellGroup.position.y;
-          sscLine.position.y = cellGroup.position.y;
-        } else {
-          fscLine.material.opacity = 0;
-          sscLine.material.opacity = 0;
-        }
-        
-        // Trigger audio playbacks
-        if (injectionProgress >= 0.31 && injectionProgress < 0.35 && !hasBeepedViolet) {
-          hasBeepedViolet = true;
-          if (activeLasers.violet) FlowSoundSynth.playCellBeep(cellType);
-        }
-        if (injectionProgress >= 0.50 && injectionProgress < 0.54 && !hasBeepedBlue) {
-          hasBeepedBlue = true;
-          if (activeLasers.blue) FlowSoundSynth.playCellBeep(cellType);
-        }
-        if (injectionProgress >= 0.68 && injectionProgress < 0.72 && !hasBeepedRed) {
-          hasBeepedRed = true;
-          if (activeLasers.red) FlowSoundSynth.playCellBeep(cellType);
-        }
-        
-        // Progress step
-        injectionProgress += 0.0065;
-        if (injectionProgress >= 1.0) {
-          isInjecting = false;
-          injectionProgress = 0;
-          hasBeepedViolet = false;
-          hasBeepedBlue = false;
-          hasBeepedRed = false;
-          drawOscilloscopeCompleted();
-          plotInterrogatedCellEvent();
-        }
-      } else {
-        cellGroup.position.set(0, 5.2, 0); // ready position below nozzle
-        if (autoRotate) {
-          cellGroup.rotation.y += 0.004;
-          cellGroup.rotation.x += 0.001;
-        }
-        fscLine.material.opacity = 0;
-        sscLine.material.opacity = 0;
-      }
-    } else {
-      // Normal Inspect Mode
-      cellGroup.position.set(0, 0, 0);
-      if (autoRotate) {
-        cellGroup.rotation.y += 0.004;
-        cellGroup.rotation.x += 0.001;
-      }
-      fscLine.material.opacity = 0;
-      sscLine.material.opacity = 0;
-    }
-    
-    const time = Date.now() * 0.001;
-    const cellScale = (isFluidicsActive ? 0.6 : 1) * (1 + 0.015 * Math.sin(time * 2));
-    cellMesh.scale.set(cellScale, cellScale, cellScale);
-    
-    // Update laser beam opacity
-    Object.entries(laserBeams).forEach(([laserKey, beam]) => {
-      const targetOpacity = activeLasers[laserKey] ? 0.35 + 0.05 * Math.sin(Date.now() * 0.01) : 0;
-      beam.material.opacity += (targetOpacity - beam.material.opacity) * 0.15;
-    });
+    fluidicsGroup.visible = isFluidicsActive;
 
-    // Animate fluorochrome pulsing when excited
-    markersList.forEach(([key, marker]) => {
-      const abData = MARKER_FLUOROCHROMES[key];
-      if (abData && fluorochromeMeshes[key]) {
-        const isExcited = isConjugationActive && activeLasers[abData.laser];
-        fluorochromeMeshes[key].forEach((f, idx) => {
-          if (isExcited) {
-            const offset = idx * 0.2;
-            const pulse = 0.5 + 0.5 * Math.sin(time * 6 + offset);
-            f.material.emissiveIntensity = 0.6 + 0.8 * pulse;
-            const fScale = 1.0 + 0.3 * pulse;
-            f.scale.set(fScale, fScale, fScale);
-          } else {
-            f.material.emissiveIntensity = 0.15;
-            f.scale.set(1, 1, 1);
-          }
+    // ---- Sheath fluid: converges and accelerates through the taper ---------
+    if (isFluidicsActive) {
+      const pos = sheathGeom.attributes.position;
+      for (let i = 0; i < SHEATH_N; i++) {
+        const s = sheathState[i];
+        const r = chamberRadiusAt(s.y);
+        // Mass continuity: as the bore narrows the fluid speeds up and the
+        // swirl tightens.
+        const accel = Math.min(4.2, Math.pow(FLOW.rWide / r, 1.35));
+        s.y -= s.speed * accel;
+        s.angle += s.spin * accel;
+        if (s.y < FLOW.yBot) {
+          s.y = FLOW.yTop;
+          s.angle = Math.random() * Math.PI * 2;
+          s.rFrac = 0.28 + Math.random() * 0.70;
+        }
+        const rr = chamberRadiusAt(s.y) * s.rFrac;
+        pos.setXYZ(i, Math.cos(s.angle) * rr, s.y, Math.sin(s.angle) * rr);
+      }
+      pos.needsUpdate = true;
+      streamTex.offset.y = (streamTex.offset.y + 0.028) % 1;
+      coreMat.opacity = 0.30 + 0.10 * Math.sin(time * 3);
+    }
+
+    // ---- Cell transport ----------------------------------------------------
+    let scatterEnvelope = 0;
+    let firingLaser = null;
+
+    if (isFluidicsActive && isInjecting) {
+      const p = injectionProgress;
+      cellGroup.position.y = cellPathY(p);
+
+      // Hydrodynamic focusing: the cell enters off-axis, spirals inward and is
+      // centred well before it reaches the first beam.
+      const focus = Math.max(0, 1 - p / 0.26);
+      const focusEase = focus * focus;
+      const spiral = p * 26;
+      cellGroup.position.x = Math.cos(spiral) * 1.35 * focusEase;
+      cellGroup.position.z = Math.sin(spiral) * 1.35 * focusEase;
+
+      // Cells tumble in the wide chamber and are aligned by the time they are
+      // interrogated — which is exactly why focusing improves CV.
+      cellGroup.rotation.y += 0.004 + 0.055 * focusEase;
+      cellGroup.rotation.x += 0.035 * focusEase;
+      cellGroup.rotation.z = cellGroup.rotation.z * (1 - 0.06);
+
+      const conjugate = { violet: 0, blue: 0, red: 0 };
+      if (isConjugationActive) {
+        markersList.forEach(([key, m]) => {
+          const abData = MARKER_FLUOROCHROMES[key];
+          if (!abData) return;
+          const exprVal = m.expression === 'Very Bright' ? 1.0
+            : (m.expression === 'Bright' ? 0.8 : (m.expression === 'Moderate' ? 0.5 : 0.2));
+          conjugate[abData.laser] = Math.max(conjugate[abData.laser], exprVal);
         });
       }
+
+      const envelope = (centre) => Math.exp(-Math.pow((p - centre) / 0.04, 2));
+      const eV = envelope(FLOW.laserProgress.violet);
+      const eB = envelope(FLOW.laserProgress.blue);
+      const eR = envelope(FLOW.laserProgress.red);
+
+      const vPulse = activeLasers.violet ? (0.15 * sizeF + conjugate.violet * 0.75) * eV : 0;
+      const bPulse = activeLasers.blue ? (0.15 * sizeF + conjugate.blue * 0.75) * eB : 0;
+      const rPulse = activeLasers.red ? (0.15 * sizeF + conjugate.red * 0.75) * eR : 0;
+
+      const totalPulse = Math.min(1.0, vPulse + bPulse + rPulse);
+      updateOscilloscope(totalPulse);
+
+      // Scatter happens whenever a beam illuminates the cell, whether or not
+      // any antibody is bound — fluorescence needs the conjugate.
+      const envelopes = [
+        { key: 'violet', e: activeLasers.violet ? eV : 0 },
+        { key: 'blue', e: activeLasers.blue ? eB : 0 },
+        { key: 'red', e: activeLasers.red ? eR : 0 }
+      ];
+      envelopes.forEach(x => {
+        if (x.e > scatterEnvelope) {
+          scatterEnvelope = x.e;
+          firingLaser = x.key;
+        }
+      });
+
+      // ---- Scatter + emission visuals -------------------------------------
+      scatterGroup.visible = scatterEnvelope > 0.01;
+      scatterGroup.position.set(cellGroup.position.x, cellGroup.position.y, cellGroup.position.z);
+
+      if (scatterGroup.visible) {
+        const beamColour = laserConfig[firingLaser || 'blue'].color;
+        fscConeMat.color.set(beamColour);
+        sscRayMat.color.set(beamColour);
+        sscGlow.material.color.set(beamColour);
+
+        const fscMag = scatterEnvelope * (0.28 + sizeF);
+        fscConeMat.opacity = Math.min(0.42, fscMag * 0.5);
+        const coneWidth = 0.35 + sizeF * 0.9;
+        fscLine.scale.set(1, coneWidth, coneWidth);
+
+        const sscMag = scatterEnvelope * (0.10 + granF * 1.05);
+        sscRayMat.opacity = Math.min(0.5, sscMag * 0.45);
+        const rayScale = 0.45 + granF * 1.25;
+        sscLine.scale.setScalar(rayScale * (0.85 + 0.15 * Math.sin(time * 22)));
+        sscGlow.material.opacity = Math.min(0.38, sscMag * 0.32);
+        sscGlow.scale.setScalar(1.5 + granF * 2.2);
+
+        const emissionColour = (() => {
+          if (!isConjugationActive || !firingLaser) return null;
+          let best = null;
+          let bestVal = 0;
+          markersList.forEach(([key, m]) => {
+            const abData = MARKER_FLUOROCHROMES[key];
+            if (!abData || abData.laser !== firingLaser) return;
+            const exprVal = m.expression === 'Very Bright' ? 1.0
+              : (m.expression === 'Bright' ? 0.8 : (m.expression === 'Moderate' ? 0.5 : 0.2));
+            if (exprVal > bestVal) { bestVal = exprVal; best = abData.emissionColor; }
+          });
+          return best ? { colour: best, strength: bestVal } : null;
+        })();
+
+        if (emissionColour) {
+          emissionBeamMat.color.set(emissionColour.colour);
+          emissionBeamMat.opacity = Math.min(0.34, scatterEnvelope * emissionColour.strength * 0.38);
+          cellFlash.material.color.set(emissionColour.colour);
+        } else {
+          emissionBeamMat.opacity = 0;
+          cellFlash.material.color.set(laserConfig[firingLaser || 'blue'].color);
+        }
+
+        cellFlash.position.copy(cellGroup.position);
+        cellFlash.material.opacity = Math.min(0.26, scatterEnvelope * 0.22);
+        cellFlash.scale.setScalar(1.3 + sizeF * 1.2);
+      } else {
+        cellFlash.material.opacity = 0;
+        emissionBeamMat.opacity = 0;
+      }
+
+      // ---- Audio -----------------------------------------------------------
+      if (p >= FLOW.laserProgress.violet && p < FLOW.laserProgress.violet + 0.04 && !hasBeepedViolet) {
+        hasBeepedViolet = true;
+        if (activeLasers.violet) FlowSoundSynth.playCellBeep(cellType);
+      }
+      if (p >= FLOW.laserProgress.blue && p < FLOW.laserProgress.blue + 0.04 && !hasBeepedBlue) {
+        hasBeepedBlue = true;
+        if (activeLasers.blue) FlowSoundSynth.playCellBeep(cellType);
+      }
+      if (p >= FLOW.laserProgress.red && p < FLOW.laserProgress.red + 0.04 && !hasBeepedRed) {
+        hasBeepedRed = true;
+        if (activeLasers.red) FlowSoundSynth.playCellBeep(cellType);
+      }
+
+      injectionProgress += 0.0065;
+      if (injectionProgress >= 1.0) {
+        isInjecting = false;
+        injectionProgress = 0;
+        hasBeepedViolet = false;
+        hasBeepedBlue = false;
+        hasBeepedRed = false;
+        scatterGroup.visible = false;
+        cellFlash.material.opacity = 0;
+        drawOscilloscopeCompleted();
+        plotInterrogatedCellEvent();
+      }
+    } else {
+      scatterGroup.visible = false;
+      cellFlash.material.opacity = 0;
+      if (isFluidicsActive) {
+        cellGroup.position.set(0, FLOW.ySit - 0.35, 0);
+        cellGroup.rotation.y += 0.006;
+        cellGroup.rotation.x += 0.003;
+      } else {
+        cellGroup.position.set(0, 0, 0);
+        if (autoRotate) {
+          cellGroup.rotation.y += 0.0035;
+          cellGroup.rotation.x += 0.0009;
+        }
+      }
+    }
+
+    // ---- Cell scale and membrane life --------------------------------------
+    const breathe = 1 + 0.014 * Math.sin(time * 1.9);
+    const modeScale = isFluidicsActive ? 0.27 : 1.0;
+    const target = frameScale * modeScale * breathe;
+    cellGroup.scale.lerp(new THREE.Vector3(target, target, target), 0.12);
+
+    membraneMeshes.forEach((m, i) => {
+      m.scale.set(
+        1 + 0.013 * Math.sin(time * 1.6 + i),
+        1 + 0.013 * Math.sin(time * 1.9 + 2.1 + i),
+        1 + 0.013 * Math.sin(time * 1.3 + 4.2 + i)
+      );
     });
-    
+
+    // Cytoplasmic streaming.
+    granuleGroups.forEach(g => {
+      g.rotation.y += 0.0013;
+      g.rotation.x += 0.0007;
+    });
+
+    // ---- Laser beams --------------------------------------------------------
+    Object.entries(laserBeams).forEach(([laserKey, beam]) => {
+      const on = isFluidicsActive && activeLasers[laserKey];
+      const targetOpacity = on ? 0.16 + 0.035 * Math.sin(time * 11) : 0;
+      beam.material.opacity += (targetOpacity - beam.material.opacity) * 0.15;
+      beam.visible = beam.material.opacity > 0.002;
+
+      const glow = laserGlows[laserKey];
+      const hit = (firingLaser === laserKey) ? scatterEnvelope : 0;
+      const glowTarget = on ? 0.14 + 0.26 * hit : 0;
+      glow.material.opacity += (glowTarget - glow.material.opacity) * 0.2;
+      glow.visible = glow.material.opacity > 0.002;
+      glow.scale.set(1.25 + hit * 1.0, 0.5 + hit * 0.55, 1);
+    });
+
+    // ---- Fluorochrome excitation -------------------------------------------
+    markersList.forEach(([key]) => {
+      const abData = MARKER_FLUOROCHROMES[key];
+      if (!abData || !fluorochromeMeshes[key]) return;
+      const isExcited = isConjugationActive && activeLasers[abData.laser];
+      fluorochromeMeshes[key].forEach((f, idx) => {
+        if (isExcited) {
+          const pulse = 0.5 + 0.5 * Math.sin(time * 6 + idx * 0.2);
+          f.material.emissiveIntensity = 0.7 + 1.1 * pulse;
+          const fScale = 1.0 + 0.32 * pulse;
+          f.scale.set(fScale, fScale, fScale);
+        } else {
+          f.material.emissiveIntensity = 0.35;
+          f.scale.set(1, 1, 1);
+        }
+      });
+    });
+
     renderer.render(scene, camera);
   };
-  
+
   animate();
-  
+
   const onResize = () => {
     if (!threeJSData) return;
     const w = container.clientWidth;
     const h = container.clientHeight;
     camera.aspect = w / h;
+    viewOffsetActive = null; // force the frustum bias to be recomputed at the new size
     camera.updateProjectionMatrix();
     renderer.setSize(w, h);
   };
@@ -5065,7 +6393,18 @@ function cellTypeSizeMultiplier(cellType) {
   switch (cellType) {
     case 'Monocyte': return 0.8;
     case 'Granulocyte': return 0.7;
-    case 'AML_Blast': return 0.65;
+    case 'AML_Blast':
+    case 'AML_Blast_M0':
+    case 'AML_Blast_M1':
+    case 'AML_Blast_M2':
+    case 'AML_Blast_M4_Blast':
+    case 'AML_Blast_M6_Blast': return 0.65;
+    case 'AML_Blast_M2_Maturing': return 0.7;
+    case 'AML_Blast_M3': return 0.75;
+    case 'AML_Blast_M4_Mono': return 0.8;
+    case 'AML_Blast_M5': return 0.85;
+    case 'AML_Blast_M6_Erythroid': return 0.35;
+    case 'AML_Blast_M7': return 0.7;
     case 'CD4_TCell':
     case 'CD8_TCell':
     case 'gd_TCell':
@@ -5082,7 +6421,18 @@ function cellTypeGranularityMultiplier(cellType) {
   switch (cellType) {
     case 'Granulocyte': return 0.9;
     case 'Monocyte': return 0.5;
-    case 'AML_Blast': return 0.45;
+    case 'AML_Blast':
+    case 'AML_Blast_M0':
+    case 'AML_Blast_M1':
+    case 'AML_Blast_M2':
+    case 'AML_Blast_M4_Blast':
+    case 'AML_Blast_M6_Blast': return 0.45;
+    case 'AML_Blast_M2_Maturing': return 0.6;
+    case 'AML_Blast_M3': return 0.85;
+    case 'AML_Blast_M4_Mono':
+    case 'AML_Blast_M5': return 0.5;
+    case 'AML_Blast_M6_Erythroid': return 0.15;
+    case 'AML_Blast_M7': return 0.4;
     case 'Doublets': return 0.6;
     case 'NormalProgenitor': return 0.3;
     case 'CD4_TCell':

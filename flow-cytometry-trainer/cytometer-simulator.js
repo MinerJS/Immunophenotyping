@@ -518,6 +518,17 @@ const populationCentroids = {
   'Monocyte': { FSC_A: 620, SSC_A: 450, CD45: 720, FSC_H_ratio: 0.97, CD14: 850, CD64: 880, CD33: 860, CD13: 780, CD11b: 840, HLA_DR: 820, CD4: 450 },
   'Granulocyte': { FSC_A: 720, SSC_A: 820, CD45: 580, FSC_H_ratio: 0.96, CD16: 880, CD13: 820, CD10: 780, CD11b: 850, CD15: 850 },
   'AML_Blast': { FSC_A: 450, SSC_A: 220, CD45: 410, FSC_H_ratio: 0.98, CD34: 840, CD117: 780, CD38: 760, CD123: 560, HLA_DR: 650, CD33: 830, CD13: 110, CD7: 760 },
+  'AML_Blast_M0': { FSC_A: 450, SSC_A: 220, CD45: 410, FSC_H_ratio: 0.98, CD34: 840, CD117: 780, CD38: 760, HLA_DR: 750, CD33: 450, CD13: 400, CD7: 700, CD56: 650 },
+  'AML_Blast_M1': { FSC_A: 460, SSC_A: 220, CD45: 410, FSC_H_ratio: 0.98, CD34: 840, CD117: 800, CD38: 760, HLA_DR: 780, CD33: 830, CD13: 750, CD7: 650 },
+  'AML_Blast_M2': { FSC_A: 450, SSC_A: 220, CD45: 410, FSC_H_ratio: 0.98, CD34: 840, CD117: 780, CD38: 760, HLA_DR: 700, CD33: 750, CD13: 650, CD19: 720, CD56: 600 },
+  'AML_Blast_M2_Maturing': { FSC_A: 650, SSC_A: 450, CD45: 520, FSC_H_ratio: 0.98, CD15: 750, CD11b: 680, CD16: 450, CD13: 750, CD33: 700, CD38: 700 },
+  'AML_Blast_M3': { FSC_A: 680, SSC_A: 680, CD45: 420, FSC_H_ratio: 0.98, CD34: 80, CD117: 320, CD38: 680, HLA_DR: 80, CD33: 950, CD13: 650, CD64: 720, CD2: 620 },
+  'AML_Blast_M4_Blast': { FSC_A: 450, SSC_A: 220, CD45: 410, FSC_H_ratio: 0.98, CD34: 840, CD117: 780, CD38: 760, HLA_DR: 700, CD33: 750, CD13: 680 },
+  'AML_Blast_M4_Mono': { FSC_A: 640, SSC_A: 350, CD45: 650, FSC_H_ratio: 0.98, CD34: 120, CD117: 100, CD38: 800, HLA_DR: 850, CD33: 900, CD13: 720, CD11b: 780, CD14: 750, CD64: 850, CD4: 450 },
+  'AML_Blast_M5': { FSC_A: 680, SSC_A: 340, CD45: 580, FSC_H_ratio: 0.98, CD34: 120, CD117: 80, CD38: 820, HLA_DR: 900, CD33: 940, CD13: 600, CD11b: 720, CD14: 300, CD64: 880, CD4: 480, CD15: 450, CD56: 720 },
+  'AML_Blast_M6_Erythroid': { FSC_A: 280, SSC_A: 130, CD45: 60, FSC_H_ratio: 0.98, CD117: 550, CD38: 800 },
+  'AML_Blast_M6_Blast': { FSC_A: 450, SSC_A: 220, CD45: 410, FSC_H_ratio: 0.98, CD34: 840, CD117: 780, CD38: 760, HLA_DR: 750, CD13: 650, CD33: 700 },
+  'AML_Blast_M7': { FSC_A: 500, SSC_A: 240, CD45: 410, FSC_H_ratio: 0.98, CD34: 550, CD117: 620, CD38: 750, HLA_DR: 120, CD13: 420, CD33: 480, CD56: 740 },
   'NormalProgenitor': { FSC_A: 400, SSC_A: 220, CD45: 420, FSC_H_ratio: 0.98 }
 };
 
@@ -777,8 +788,12 @@ class FlowCytometerSimulator {
     }
     
     // Generate case synthetic events using definitions in data.js
-    if (this.activeCase === 'aml') {
+    if (this.activeCase === 'normal') {
+      this.eventsList = generateNormalCase();
+    } else if (this.activeCase === 'aml') {
       this.eventsList = generateAMLCase();
+    } else if (this.activeCase.startsWith('aml_m')) {
+      this.eventsList = generateAMLSubtypeCase(this.activeCase);
     } else {
       this.eventsList = generateNormalCase();
     }
@@ -1889,7 +1904,9 @@ function openFlowSimulatorPage(originCase) {
   // Align select case matching originCase
   let selectCaseValue = 'normal';
   if (originCase) {
-    if (originCase.toLowerCase().includes('aml') || originCase === 'aml') {
+    if (originCase.startsWith('aml_m')) {
+      selectCaseValue = originCase;
+    } else if (originCase.toLowerCase().includes('aml') || originCase === 'aml') {
       selectCaseValue = 'aml';
     } else if (originCase.toLowerCase().includes('compare') || originCase === 'compare') {
       selectCaseValue = 'normal';

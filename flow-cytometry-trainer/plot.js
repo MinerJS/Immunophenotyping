@@ -847,7 +847,7 @@ class FlowPlot {
       else if (this.xAxis === 'FSC_A') cx = 600 + Math.random() * 60;
       
       if (this.yAxis === 'SSC_A') cy = 760 + Math.random() * 80;
-    } else if (cellType === 'AML_Blast') {
+    } else if (cellType === 'AML_Blast' || (typeof cellType === 'string' && cellType.startsWith('AML_Blast_'))) {
       if (this.xAxis === 'CD45') cx = 460 + Math.random() * 50;
       else if (this.xAxis === 'FSC_A') cx = 480 + Math.random() * 50;
       else if (this.xAxis === 'CD34') cx = 680 + Math.random() * 60;
@@ -1580,7 +1580,7 @@ class FlowPlot {
       else if (xAxis === 'FSC_A') cx = 630;
       
       if (yAxis === 'SSC_A') cy = 800;
-    } else if (cellType === 'AML_Blast') {
+    } else if (cellType === 'AML_Blast' || (typeof cellType === 'string' && cellType.startsWith('AML_Blast_'))) {
       if (xAxis === 'CD45') cx = 485;
       else if (xAxis === 'FSC_A') cx = 505;
       else if (xAxis === 'CD34') cx = 710;
@@ -1625,7 +1625,7 @@ class FlowPlot {
     else if (this.highlightedCellType === 'NKCell') color = '#ff2a2a'; // red
     else if (this.highlightedCellType === 'Monocyte') color = '#4caf50'; // green
     else if (this.highlightedCellType === 'Granulocyte') color = '#2196f3'; // blue
-    else if (this.highlightedCellType === 'AML_Blast') color = '#9c27b0'; // purple
+    else if (this.highlightedCellType === 'AML_Blast' || (typeof this.highlightedCellType === 'string' && this.highlightedCellType.startsWith('AML_Blast_'))) color = '#9c27b0'; // purple
     
     this.ctx.save();
     
