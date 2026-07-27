@@ -4112,8 +4112,12 @@ function init3DCellExplorer(cellType) {
     
     // Add hover event to highlight marker in 3D and show conjugate details
     btn.addEventListener('mouseenter', () => {
+      // Dim first: applying focus resets every marker's glow to its resting
+      // value, which would wipe out the highlight if it ran second.
+      explorerHoverFocus = key;
+      refreshExplorerFocus();
       highlight3DMarker(key, true);
-      
+
       const abData = MARKER_FLUOROCHROMES[key];
       if (abData) {
         document.getElementById('conjugate-target').innerText = key;
@@ -4143,17 +4147,22 @@ function init3DCellExplorer(cellType) {
     });
     btn.addEventListener('mouseleave', () => {
       highlight3DMarker(key, false);
-      
+
       document.getElementById('explorer-conjugate-card').style.display = 'none';
-      
+
       if (savedLasers) {
         activeLasers = { ...savedLasers };
         savedLasers = null;
-        
+
         document.getElementById('laser-violet-btn').classList.toggle('active', activeLasers.violet);
         document.getElementById('laser-blue-btn').classList.toggle('active', activeLasers.blue);
         document.getElementById('laser-red-btn').classList.toggle('active', activeLasers.red);
       }
+
+      // Fall back to whatever the lasers alone justify — which is usually
+      // "nothing dimmed", but keeps the laser spotlight if one is latched on.
+      explorerHoverFocus = null;
+      refreshExplorerFocus();
     });
     
     // Legend overlay item
@@ -4191,6 +4200,9 @@ function cleanup3DCellExplorer() {
 // building a new cell, so a second cell never leaves the first one's
 // animation loop running in the background.
 function disposeExplorerRenderers() {
+  // Stale focus would otherwise dim the next cell the moment it is built.
+  explorerHoverFocus = null;
+
   if (threeJSData) {
     if (threeJSData.cleanup) threeJSData.cleanup();
     if (threeJSData.resizeHandler) window.removeEventListener('resize', threeJSData.resizeHandler);
@@ -4207,33 +4219,21 @@ function disposeExplorerRenderers() {
 
 function highlight3DMarker(key, highlight) {
   // ThreeJS Mode
-  if (threeJSData && threeJSData.markerMeshes[key]) {
-    threeJSData.markerMeshes[key].forEach(group => {
-      group.children.forEach(child => {
-        if (child.material) {
-          const mat = child.material;
-          // Remember each part's own resting glow — the stalk, anchor and head
-          // are lit differently, so a single hard-coded restore value dims them.
-          if (mat.emissive && mat.userData.baseEmissive === undefined) {
-            mat.userData.baseEmissive = mat.emissiveIntensity;
-          }
-          if (highlight) {
-            child.scale.set(1.5, 1.5, 1.5);
-            if (mat.emissive) mat.emissiveIntensity = 0.8;
-          } else {
-            child.scale.set(1, 1, 1);
-            if (mat.emissive) mat.emissiveIntensity = mat.userData.baseEmissive;
-          }
-        }
-      });
+  if (threeJSData && threeJSData.markerInstances && threeJSData.markerInstances[key]) {
+    const entry = threeJSData.markerInstances[key];
+    entry.bodyMaterials.forEach(mat => {
+      // Restore from each part's own resting glow — the stalk, anchor and head
+      // are lit differently, so a single hard-coded restore value dims them.
+      mat.emissiveIntensity = highlight ? 0.8 : captureFocusBase(mat).emissiveIntensity;
     });
+    writeMarkerBodyMatrices(entry, highlight ? 1.5 : 1);
     const btn = document.querySelector(`.explorer-marker-btn[data-marker-key="${key}"]`);
     if (btn) {
       if (highlight) btn.classList.add('highlighted');
       else btn.classList.remove('highlighted');
     }
   }
-  
+
   // 2D Canvas Fallback Mode
   if (canvas3DData && canvas3DData.markers[key]) {
     canvas3DData.highlightedKey = highlight ? key : null;
@@ -4243,6 +4243,89 @@ function highlight3DMarker(key, highlight) {
       else btn.classList.remove('highlighted');
     }
   }
+}
+
+// ==========================================================================
+// Focus mode — spotlight one CD (hover) or a laser's whole conjugate set
+// (laser click) by fading the cell body and every off-target receptor.
+// ==========================================================================
+
+// How far a dimmed material falls back. Structure keeps a faint ghost so the
+// receptor still reads as sitting on a cell rather than floating in space.
+const FOCUS_DIM = { color: 0.20, opacity: 0.20, emissive: 0.10, fresnel: 0.10 };
+
+let explorerHoverFocus = null;   // marker key currently under the cursor
+
+// Resting values, snapshotted the first time a material is touched. Called
+// eagerly at build time so a dimmed value can never be mistaken for the base.
+function captureFocusBase(mat) {
+  if (!mat.userData.focusBase) {
+    mat.userData.focusBase = {
+      color: mat.color ? mat.color.clone() : null,
+      opacity: mat.opacity,
+      emissiveIntensity: mat.emissiveIntensity,
+      fresnel: (mat.uniforms && mat.uniforms.uIntensity) ? mat.uniforms.uIntensity.value : null
+    };
+  }
+  return mat.userData.focusBase;
+}
+
+// Dimming scales colour, opacity and glow rather than toggling `transparent` —
+// flipping that flag makes three.js rebuild the shader program, which stutters
+// on every hover.
+function setMaterialFocusDim(mat, dimmed) {
+  const base = captureFocusBase(mat);
+  if (base.fresnel !== null) {
+    mat.uniforms.uIntensity.value = base.fresnel * (dimmed ? FOCUS_DIM.fresnel : 1);
+    return;
+  }
+  if (base.color) mat.color.copy(base.color).multiplyScalar(dimmed ? FOCUS_DIM.color : 1);
+  if (mat.transparent) mat.opacity = base.opacity * (dimmed ? FOCUS_DIM.opacity : 1);
+  if (base.emissiveIntensity !== undefined) {
+    mat.emissiveIntensity = base.emissiveIntensity * (dimmed ? FOCUS_DIM.emissive : 1);
+  }
+  // The animation loop rewrites fluorochrome glow every frame, so it reads this
+  // back — otherwise an excited dye would flare straight through the dim.
+  mat.userData.focusMul = dimmed ? FOCUS_DIM.emissive : 1;
+}
+
+// `keys` = marker keys to keep lit, or null/empty to restore the whole cell.
+function applyExplorerFocus(keys) {
+  const focus = (keys && keys.length) ? new Set(keys) : null;
+
+  if (threeJSData && threeJSData.focusMaterials) {
+    const reg = threeJSData.focusMaterials;
+    reg.structure.forEach(mat => setMaterialFocusDim(mat, !!focus));
+    Object.entries(reg.perMarker).forEach(([key, mats]) => {
+      const dim = !!focus && !focus.has(key);
+      mats.forEach(mat => setMaterialFocusDim(mat, dim));
+    });
+  }
+
+  if (canvas3DData) canvas3DData.focusKeys = focus;
+}
+
+// Decides what should be lit right now. The marker under the cursor wins;
+// failing that, every CD whose fluorochrome an active laser excites.
+function refreshExplorerFocus() {
+  if (explorerHoverFocus) {
+    applyExplorerFocus([explorerHoverFocus]);
+    return;
+  }
+
+  const lit = Object.keys(activeLasers).filter(k => activeLasers[k]);
+  if (!isConjugationActive || !lit.length) {
+    applyExplorerFocus(null);
+    return;
+  }
+
+  const source = (threeJSData && threeJSData.markerInstances) ||
+                 (canvas3DData && canvas3DData.markers) || {};
+  const keys = Object.keys(source).filter(key => {
+    const ab = MARKER_FLUOROCHROMES[key];
+    return ab && lit.indexOf(ab.laser) !== -1;
+  });
+  applyExplorerFocus(keys);
 }
 
 // ==========================================================================
@@ -4256,6 +4339,46 @@ function organicNoise3(x, y, z) {
     Math.sin(x * 2.1 + y * 1.3) * Math.sin(y * 1.7 + z * 2.3) * Math.sin(z * 1.9 + x * 1.1) * 0.62 +
     Math.sin(x * 4.3 - z * 3.1) * Math.sin(y * 3.7 + x * 2.9) * 0.28
   );
+}
+
+// Scratch objects for instance-matrix maths. The receptor loops run every
+// frame while a laser is firing, so nothing in here may allocate.
+const _instBase = typeof THREE !== 'undefined' ? new THREE.Matrix4() : null;
+const _instScaled = typeof THREE !== 'undefined' ? new THREE.Matrix4() : null;
+const _instVec = typeof THREE !== 'undefined' ? new THREE.Vector3() : null;
+
+// Rewrites the anchor/stalk/head instance matrices for one CD marker. Used by
+// the hover highlight, which grows the receptor about its own base — the same
+// effect the old per-child `scale.set(1.5)` produced.
+function writeMarkerBodyMatrices(entry, scaleMul) {
+  entry.bodyParts.forEach(inst => {
+    entry.placements.forEach((p, idx) => {
+      const sc = p.scale * scaleMul;
+      _instBase.compose(p.position, p.quaternion, _instVec.set(sc, sc, sc));
+      inst.setMatrixAt(idx, _instBase);
+    });
+    inst.instanceMatrix.needsUpdate = true;
+  });
+}
+
+// Fluorochrome spheres breathe individually when their laser is on, so each
+// instance gets its own scale baked into its matrix.
+function writeFluorochromeMatrices(entry, baseScale, time) {
+  if (!entry.fluoro) return;
+  const list = entry.fluoroPlacements;
+  const locals = entry.fluoroLocals;
+  const perReceptor = entry.placements.length;
+  for (let idx = 0; idx < list.length; idx++) {
+    const p = list[idx];
+    // Phase by receptor index so the shimmer travels over the surface rather
+    // than every sphere pulsing in lockstep.
+    const pulse = time === null ? 0 : 0.5 + 0.5 * Math.sin(time * 6 + (idx % perReceptor) * 0.2);
+    const sc = p.scale * baseScale * (1 + 0.32 * pulse);
+    _instBase.compose(p.position, p.quaternion, _instVec.set(sc, sc, sc));
+    _instScaled.multiplyMatrices(_instBase, locals[idx]);
+    entry.fluoro.setMatrixAt(idx, _instScaled);
+  }
+  entry.fluoro.instanceMatrix.needsUpdate = true;
 }
 
 // Radius of the displaced surface along a (normalised) direction — lets us sit
@@ -4606,9 +4729,15 @@ function initThreeJSRenderer(container, details, cellType) {
 
   const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 400);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setSize(width, height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  // The scene is heavy on additive/transparent shells, so it is fill-rate
+  // bound. A full 2x device ratio quadruples the fragments for very little
+  // visible gain once MSAA is on; 1.5x looks the same and costs ~45% less.
+  // `qualityScale` is dropped further by the frame-time watchdog below.
+  const MAX_DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+  let qualityScale = 1;
+  renderer.setPixelRatio(MAX_DPR);
   // three r128 has no automatic colour management, so leaving the output in
   // linear encoding is what keeps the authored CD marker hexes matching the
   // legend swatches. sRGB output here would gamma-brighten everything to pastel.
@@ -4660,7 +4789,7 @@ function initThreeJSRenderer(container, details, cellType) {
     const freq = profile.membraneFreq;
 
     // Cytoplasm — a translucent filled volume so the cell has interior.
-    const cytoGeom = applyOrganicDisplacement(new THREE.SphereGeometry(R * 0.985, 64, 48), amp, freq, seed);
+    const cytoGeom = applyOrganicDisplacement(new THREE.SphereGeometry(R * 0.985, 40, 28), amp, freq, seed);
     const cytoMat = new THREE.MeshStandardMaterial({
       color: profile.cytoColor,
       roughness: 0.6,
@@ -4676,7 +4805,7 @@ function initThreeJSRenderer(container, details, cellType) {
 
     // Lipid bilayer — glossy shell picking up the key light. Kept thin so the
     // nucleus and granules stay readable through it.
-    const memGeom = applyOrganicDisplacement(new THREE.SphereGeometry(R, 72, 54), amp, freq, seed);
+    const memGeom = applyOrganicDisplacement(new THREE.SphereGeometry(R, 48, 32), amp, freq, seed);
     const memMat = new THREE.MeshPhongMaterial({
       color: profile.cytoColor,
       emissive: profile.cytoColor,
@@ -4694,14 +4823,14 @@ function initThreeJSRenderer(container, details, cellType) {
     membraneMeshes.push(memMesh);
 
     // Fresnel rim — the edge glow that sells the volume.
-    const rimGeom = applyOrganicDisplacement(new THREE.SphereGeometry(R * 1.004, 64, 48), amp, freq, seed);
+    const rimGeom = applyOrganicDisplacement(new THREE.SphereGeometry(R * 1.004, 48, 32), amp, freq, seed);
     const rimMat = makeFresnelMaterial(profile.rimColor, 3.2, 0.62, THREE.FrontSide);
     const rimMesh = new THREE.Mesh(rimGeom, rimMat);
     rimMesh.renderOrder = 6;
     bodyGroup.add(rimMesh);
 
     // Outer halo, drawn from the inside so it hugs the silhouette.
-    const haloGeom = new THREE.SphereGeometry(R * 1.13, 40, 30);
+    const haloGeom = new THREE.SphereGeometry(R * 1.13, 24, 16);
     const haloMat = makeFresnelMaterial(profile.rimColor, 4.2, 0.24, THREE.BackSide);
     const haloMesh = new THREE.Mesh(haloGeom, haloMat);
     haloMesh.renderOrder = 3;
@@ -4709,7 +4838,7 @@ function initThreeJSRenderer(container, details, cellType) {
 
     // Faint geodesic overlay — keeps the original schematic feel and makes
     // rotation legible.
-    const wireGeom = applyOrganicDisplacement(new THREE.IcosahedronGeometry(R * 1.008, 3), amp, freq, seed);
+    const wireGeom = applyOrganicDisplacement(new THREE.IcosahedronGeometry(R * 1.008, 2), amp, freq, seed);
     const wireMat = new THREE.MeshBasicMaterial({
       color: 0x93c5fd, wireframe: true, transparent: true, opacity: 0.055, depthWrite: false
     });
@@ -4734,7 +4863,7 @@ function initThreeJSRenderer(container, details, cellType) {
     const nucRimMat = makeFresnelMaterial(0xc4b5fd, 3.0, 0.5, THREE.FrontSide);
 
     const addLobe = (radius, position, kind) => {
-      let g = new THREE.SphereGeometry(radius, 40, 30);
+      let g = new THREE.SphereGeometry(radius, 32, 22);
       if (kind === 'kidney') {
         applyIndentation(g, new THREE.Vector3(0.85, -0.3, 0.4), 0.52, 2.2);
         applyOrganicDisplacement(g, 0.05, 3.0, 1.3);
@@ -4882,9 +5011,12 @@ function initThreeJSRenderer(container, details, cellType) {
   // =========================================================================
   // CD markers / receptors, anchored to the displaced membrane
   // =========================================================================
-  const markerMeshes = {};
-  const antibodyMeshes = {};
-  const fluorochromeMeshes = {};
+  // Every CD marker becomes a handful of InstancedMeshes rather than ~100
+  // cloned Groups. A blast carries ~110 receptors; as individual meshes that
+  // was ~900 scene nodes and ~450 draw calls a frame, which is what made the
+  // explorer stutter. Instanced, the same picture costs ~40 draw calls.
+  const markerInstances = {};   // key -> { body:[InstancedMesh], antibody:[...], fluoro, base matrices }
+  const antibodyMeshes = {};    // key -> [InstancedMesh] toggled by the conjugation switch
   const markersList = Object.entries(details.markers);
 
   const expressionCount = (expr) => {
@@ -4902,9 +5034,7 @@ function initThreeJSRenderer(container, details, cellType) {
   markersList.forEach(([key, marker]) => {
     counts[key] = expressionCount(marker.expression);
     totalReceptors += counts[key];
-    markerMeshes[key] = [];
     antibodyMeshes[key] = [];
-    fluorochromeMeshes[key] = [];
   });
 
   const slots = [];
@@ -4915,81 +5045,17 @@ function initThreeJSRenderer(container, details, cellType) {
     });
   }
 
-  const receptorPrototypes = {};
-  markersList.forEach(([key, marker]) => {
-    const proto = new THREE.Group();
-
-    const anchorGeom = new THREE.SphereGeometry(0.15, 10, 6);
-    anchorGeom.scale(1, 0.42, 1);
-    const anchorMat = new THREE.MeshStandardMaterial({
-      color: marker.color, roughness: 0.55, metalness: 0.2, emissive: marker.color, emissiveIntensity: 0.1
-    });
-    proto.add(new THREE.Mesh(anchorGeom, anchorMat));
-
-    const stalkGeom = new THREE.CylinderGeometry(0.032, 0.055, 0.62, 7);
-    stalkGeom.translate(0, 0.31, 0);
-    const stalkMat = new THREE.MeshStandardMaterial({
-      color: marker.color, roughness: 0.42, metalness: 0.15, emissive: marker.color, emissiveIntensity: 0.1
-    });
-    proto.add(new THREE.Mesh(stalkGeom, stalkMat));
-
-    const headGeom = new THREE.SphereGeometry(0.118, 14, 10);
-    headGeom.translate(0, 0.665, 0);
-    const headMat = new THREE.MeshStandardMaterial({
-      color: marker.color, roughness: 0.18, metalness: 0.3, emissive: marker.color, emissiveIntensity: 0.32
-    });
-    proto.add(new THREE.Mesh(headGeom, headMat));
-
-    const abData = MARKER_FLUOROCHROMES[key];
-    if (abData) {
-      const abGroup = new THREE.Group();
-      abGroup.name = 'antibodyGroup';
-      abGroup.visible = isConjugationActive;
-
-      const abMat = new THREE.MeshStandardMaterial({
-        color: 0xcbd5e1, roughness: 0.3, metalness: 0.45, transparent: true, opacity: 0.9
-      });
-
-      const stemGeom = new THREE.CylinderGeometry(0.024, 0.024, 0.26, 6);
-      stemGeom.translate(0, 0.13, 0);
-      abGroup.add(new THREE.Mesh(stemGeom, abMat));
-
-      [1, -1].forEach(sign => {
-        const armGeom = new THREE.CylinderGeometry(0.018, 0.018, 0.22, 6);
-        armGeom.translate(0, 0.11, 0);
-        const arm = new THREE.Mesh(armGeom, abMat);
-        arm.position.set(0, 0.26, 0);
-        arm.rotation.z = sign * Math.PI / 4;
-        abGroup.add(arm);
-      });
-
-      const fMat = new THREE.MeshStandardMaterial({
-        color: abData.emissionColor,
-        emissive: abData.emissionColor,
-        emissiveIntensity: 0.35,
-        roughness: 0.15,
-        metalness: 0.1
-      });
-      const fGeom = new THREE.SphereGeometry(0.085, 12, 10);
-      [-0.155, 0.155].forEach(x => {
-        const f = new THREE.Mesh(fGeom, fMat);
-        f.name = 'fluorochrome';
-        f.position.set(x, 0.40, 0);
-        abGroup.add(f);
-      });
-
-      abGroup.position.y = 0.66;
-      proto.add(abGroup);
-    }
-
-    receptorPrototypes[key] = proto;
-  });
-
   const bodyCentres = profile.bodies.map(b => ({
     offset: b.offset.clone().multiplyScalar(R),
     scale: b.scale
   }));
 
+  // Where every receptor of a given CD sits on the membrane. Worked out once,
+  // then baked into instance matrices.
+  const placements = {};
+  markersList.forEach(([key]) => { placements[key] = []; });
+
+  const UP = new THREE.Vector3(0, 1, 0);
   slots.forEach((key, i) => {
     const yy = totalReceptors > 1 ? 1 - (i / (totalReceptors - 1)) * 2 : 0;
     const rr = Math.sqrt(Math.max(0, 1 - yy * yy));
@@ -5000,23 +5066,165 @@ function initThreeJSRenderer(container, details, cellType) {
     const bodySeed = (i % bodyCentres.length) * 7.31;
     const surfaceR = organicSurfaceRadius(dir, R, profile.membraneAmp, profile.membraneFreq, bodySeed);
 
-    const inst = receptorPrototypes[key].clone();
-    inst.scale.setScalar(body.scale);
-    inst.position.copy(dir.clone().multiplyScalar(surfaceR * 0.96 * body.scale)).add(body.offset);
-    inst.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    placements[key].push({
+      position: dir.clone().multiplyScalar(surfaceR * 0.96 * body.scale).add(body.offset),
+      quaternion: new THREE.Quaternion().setFromUnitVectors(UP, dir),
+      scale: body.scale,
+      phase: i * 0.7
+    });
+  });
+
+  // Local offsets of each antibody part inside a receptor's own frame. The
+  // geometries already carry their own translation, so these are just the
+  // transforms the old Mesh/Group nodes used to apply on top.
+  const AB_ROOT = new THREE.Matrix4().makeTranslation(0, 0.66, 0);
+  const abPartMatrix = (m) => new THREE.Matrix4().multiplyMatrices(AB_ROOT, m);
+
+  // `locals` is either one matrix applied to every instance, or one per
+  // instance (the antibody arms and fluorochromes come in mirrored pairs).
+  const makeInstanced = (geom, mat, list, locals) => {
+    const inst = new THREE.InstancedMesh(geom, mat, list.length);
     inst.renderOrder = 2;
-    inst.userData.baseDir = dir.clone();
-    inst.userData.phase = i * 0.7;
+    // Receptors ride the cell, so per-instance culling would be wrong anyway;
+    // skipping it also removes ~100 bounding-sphere tests per frame.
+    inst.frustumCulled = false;
+
+    const m = new THREE.Matrix4();
+    const base = new THREE.Matrix4();
+    const s = new THREE.Vector3();
+    list.forEach((p, idx) => {
+      base.compose(p.position, p.quaternion, s.set(p.scale, p.scale, p.scale));
+      const local = Array.isArray(locals) ? locals[idx] : locals;
+      inst.setMatrixAt(idx, local ? m.multiplyMatrices(base, local) : base);
+    });
+    inst.instanceMatrix.needsUpdate = true;
 
     cellGroup.add(inst);
-    markerMeshes[key].push(inst);
+    return inst;
+  };
 
-    const ab = inst.children.find(c => c.name === 'antibodyGroup');
-    if (ab) {
-      antibodyMeshes[key].push(ab);
-      fluorochromeMeshes[key].push(...ab.children.filter(c => c.name === 'fluorochrome'));
+  markersList.forEach(([key, marker]) => {
+    const list = placements[key];
+    if (!list.length) return;
+
+    const anchorGeom = new THREE.SphereGeometry(0.15, 8, 5);
+    anchorGeom.scale(1, 0.42, 1);
+    const anchorMat = new THREE.MeshStandardMaterial({
+      color: marker.color, roughness: 0.55, metalness: 0.2, emissive: marker.color, emissiveIntensity: 0.1
+    });
+
+    const stalkGeom = new THREE.CylinderGeometry(0.032, 0.055, 0.62, 7, 1, true);
+    stalkGeom.translate(0, 0.31, 0);
+    const stalkMat = new THREE.MeshStandardMaterial({
+      color: marker.color, roughness: 0.42, metalness: 0.15, emissive: marker.color, emissiveIntensity: 0.1
+    });
+
+    const headGeom = new THREE.SphereGeometry(0.118, 12, 8);
+    headGeom.translate(0, 0.665, 0);
+    const headMat = new THREE.MeshStandardMaterial({
+      color: marker.color, roughness: 0.18, metalness: 0.3, emissive: marker.color, emissiveIntensity: 0.32
+    });
+
+    const bodyParts = [
+      makeInstanced(anchorGeom, anchorMat, list, null),
+      makeInstanced(stalkGeom, stalkMat, list, null),
+      makeInstanced(headGeom, headMat, list, null)
+    ];
+
+    const entry = { placements: list, bodyParts, bodyMaterials: [anchorMat, stalkMat, headMat], fluoro: null, fluoroLocals: null };
+
+    const abData = MARKER_FLUOROCHROMES[key];
+    if (abData) {
+      const abMat = new THREE.MeshStandardMaterial({
+        color: 0xcbd5e1, roughness: 0.3, metalness: 0.45, transparent: true, opacity: 0.9
+      });
+
+      const stemGeom = new THREE.CylinderGeometry(0.024, 0.024, 0.26, 6, 1, true);
+      stemGeom.translate(0, 0.13, 0);
+      const stem = makeInstanced(stemGeom, abMat, list, abPartMatrix(new THREE.Matrix4()));
+      stem.visible = isConjugationActive;
+      antibodyMeshes[key].push(stem);
+
+      // Mirrored parts get one InstancedMesh holding both copies: the whole
+      // receptor list is repeated once per copy, each with its own local
+      // offset.
+      const mirrored = (offsets) => {
+        const outList = [];
+        const outLocals = [];
+        offsets.forEach(local => {
+          list.forEach(p => { outList.push(p); outLocals.push(local); });
+        });
+        return { list: outList, locals: outLocals };
+      };
+
+      const armGeom = new THREE.CylinderGeometry(0.018, 0.018, 0.22, 6, 1, true);
+      armGeom.translate(0, 0.11, 0);
+      const armParts = mirrored([1, -1].map(sign => abPartMatrix(
+        new THREE.Matrix4()
+          .makeTranslation(0, 0.26, 0)
+          .multiply(new THREE.Matrix4().makeRotationZ(sign * Math.PI / 4))
+      )));
+      const arms = makeInstanced(armGeom, abMat, armParts.list, armParts.locals);
+      arms.visible = isConjugationActive;
+      antibodyMeshes[key].push(arms);
+
+      // Fluorochromes: two per receptor. Their matrices are rewritten each
+      // frame while the matching laser is firing, so keep the placements.
+      const fMat = new THREE.MeshStandardMaterial({
+        color: abData.emissionColor,
+        emissive: abData.emissionColor,
+        emissiveIntensity: 0.35,
+        roughness: 0.15,
+        metalness: 0.1
+      });
+      const fGeom = new THREE.SphereGeometry(0.085, 10, 8);
+      const fParts = mirrored([-0.155, 0.155].map(
+        x => abPartMatrix(new THREE.Matrix4().makeTranslation(x, 0.40, 0))
+      ));
+      const fluoro = makeInstanced(fGeom, fMat, fParts.list, fParts.locals);
+      fluoro.visible = isConjugationActive;
+      antibodyMeshes[key].push(fluoro);
+
+      entry.fluoro = fluoro;
+      entry.fluoroPlacements = fParts.list;
+      entry.fluoroLocals = fParts.locals;
+      entry.fluoroMaterial = fMat;
+      entry.antibodyMaterial = abMat;
+      writeFluorochromeMatrices(entry, 1, null);
+      entry.fluoroResting = true;
     }
+
+    markerInstances[key] = entry;
   });
+
+  // Focus-mode registry: which materials belong to which CD, and which belong
+  // to the cell itself. Hovering a marker — or firing a laser — fades the whole
+  // cell and every off-target receptor so the CD under discussion is the only
+  // thing still lit.
+  const focusMaterials = { perMarker: {}, structure: [] };
+  const ownedByMarker = new Set();
+  Object.entries(markerInstances).forEach(([key, entry]) => {
+    const mats = entry.bodyMaterials.slice();
+    if (entry.antibodyMaterial) mats.push(entry.antibodyMaterial);
+    if (entry.fluoroMaterial) mats.push(entry.fluoroMaterial);
+    focusMaterials.perMarker[key] = mats;
+    mats.forEach(m => ownedByMarker.add(m));
+  });
+  // Everything else under cellGroup is structure: cytoplasm, bilayer, rim,
+  // halo, wireframe, nucleus, nucleoli, granules, Auer rods, blebs.
+  cellGroup.traverse(obj => {
+    if (!obj.material) return;
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    mats.forEach(m => {
+      if (!ownedByMarker.has(m) && focusMaterials.structure.indexOf(m) === -1) {
+        focusMaterials.structure.push(m);
+      }
+    });
+  });
+  // Snapshot resting colour/opacity/glow now, while nothing is dimmed — the
+  // hover highlight restores from the same snapshot.
+  focusMaterials.structure.forEach(captureFocusBase);
+  Object.values(focusMaterials.perMarker).forEach(mats => mats.forEach(captureFocusBase));
 
   // =========================================================================
   // Fluidics: sample injection, sheath chamber, quartz cuvette, waste
@@ -5403,9 +5611,9 @@ function initThreeJSRenderer(container, details, cellType) {
     scene,
     camera,
     cellGroup,
-    markerMeshes,
+    markerInstances,
     antibodyMeshes,
-    fluorochromeMeshes,
+    focusMaterials,
     laserBeams,
     nozzleMesh,
     glassMesh,
@@ -5445,9 +5653,10 @@ function initThreeJSRenderer(container, details, cellType) {
   const frameScale = 3.15 / R;
 
   let viewOffsetActive = null;
+  let viewOffsetPanel = null;
   const applyViewOffset = () => {
-    const panel = document.getElementById('simulator-panel');
-    const panelShown = panel && panel.style.display !== 'none';
+    if (!viewOffsetPanel) viewOffsetPanel = document.getElementById('simulator-panel');
+    const panelShown = viewOffsetPanel && viewOffsetPanel.style.display !== 'none';
     const shift = (isFluidicsActive && panelShown) ? 0.15 : 0;
     if (shift === viewOffsetActive) return;
     viewOffsetActive = shift;
@@ -5457,20 +5666,64 @@ function initThreeJSRenderer(container, details, cellType) {
     else camera.setViewOffset(w, h, w * shift, 0, w, h);
   };
 
+  // Reused every frame so the loop allocates nothing.
+  const desiredCamPos = new THREE.Vector3();
+  const targetScaleVec = new THREE.Vector3();
+
+  // Frame-time watchdog. If the machine cannot hold ~50fps we render at a
+  // lower internal resolution rather than letting the whole simulation crawl.
+  let slowFrames = 0;
+  let fastFrames = 0;
+  const adaptQuality = (frameMs) => {
+    if (frameMs > 22 && qualityScale > 0.65) {
+      slowFrames++; fastFrames = 0;
+      if (slowFrames > 45) {
+        slowFrames = 0;
+        qualityScale = Math.max(0.65, qualityScale - 0.175);
+        renderer.setPixelRatio(MAX_DPR * qualityScale);
+      }
+    } else if (frameMs < 15 && qualityScale < 1) {
+      fastFrames++; slowFrames = 0;
+      if (fastFrames > 240) {
+        fastFrames = 0;
+        qualityScale = Math.min(1, qualityScale + 0.175);
+        renderer.setPixelRatio(MAX_DPR * qualityScale);
+      }
+    } else {
+      slowFrames = 0; fastFrames = 0;
+    }
+  };
+
+  let prevFrameTime = performance.now();
+
   const animate = () => {
     threeJSData.animationFrameId = requestAnimationFrame(animate);
-    const time = Date.now() * 0.001;
+
+    // A background tab still gets the odd rAF on some browsers; skip the work.
+    if (document.hidden) return;
+
+    const nowMs = performance.now();
+    const frameMs = nowMs - prevFrameTime;
+    prevFrameTime = nowMs;
+    adaptQuality(frameMs);
+    // Every increment below is authored per 60Hz frame. Scaling by `step`
+    // keeps the animation running at the same wall-clock speed on a slow
+    // machine instead of turning into slow motion. Clamped so a tab-switch
+    // stall cannot teleport the cell down the flow cell.
+    const step = Math.min(3, Math.max(0.2, frameMs / 16.667));
+
+    const time = nowMs * 0.001;
 
     // ---- Camera ------------------------------------------------------------
-    camTarget.y += ((isFluidicsActive ? -0.2 : 0) - camTarget.y) * 0.08;
+    camTarget.y += ((isFluidicsActive ? -0.2 : 0) - camTarget.y) * Math.min(1, 0.08 * step);
     const dist = (isFluidicsActive ? 26.5 : 13.5) / zoomFactor;
     const cp = Math.cos(camPitch);
-    const desired = new THREE.Vector3(
+    desiredCamPos.set(
       camTarget.x + dist * cp * Math.sin(camYaw),
       camTarget.y + dist * Math.sin(camPitch),
       camTarget.z + dist * cp * Math.cos(camYaw)
     );
-    camera.position.lerp(desired, 0.09);
+    camera.position.lerp(desiredCamPos, Math.min(1, 0.09 * step));
     camera.lookAt(camTarget);
 
     // The simulator panel floats over the right of the canvas, so bias the
@@ -5492,8 +5745,8 @@ function initThreeJSRenderer(container, details, cellType) {
         // Mass continuity: as the bore narrows the fluid speeds up and the
         // swirl tightens.
         const accel = Math.min(4.2, Math.pow(FLOW.rWide / r, 1.35));
-        s.y -= s.speed * accel;
-        s.angle += s.spin * accel;
+        s.y -= s.speed * accel * step;
+        s.angle += s.spin * accel * step;
         if (s.y < FLOW.yBot) {
           s.y = FLOW.yTop;
           s.angle = Math.random() * Math.PI * 2;
@@ -5503,7 +5756,7 @@ function initThreeJSRenderer(container, details, cellType) {
         pos.setXYZ(i, Math.cos(s.angle) * rr, s.y, Math.sin(s.angle) * rr);
       }
       pos.needsUpdate = true;
-      streamTex.offset.y = (streamTex.offset.y + 0.028) % 1;
+      streamTex.offset.y = (streamTex.offset.y + 0.028 * step) % 1;
       coreMat.opacity = 0.30 + 0.10 * Math.sin(time * 3);
     }
 
@@ -5525,9 +5778,9 @@ function initThreeJSRenderer(container, details, cellType) {
 
       // Cells tumble in the wide chamber and are aligned by the time they are
       // interrogated — which is exactly why focusing improves CV.
-      cellGroup.rotation.y += 0.004 + 0.055 * focusEase;
-      cellGroup.rotation.x += 0.035 * focusEase;
-      cellGroup.rotation.z = cellGroup.rotation.z * (1 - 0.06);
+      cellGroup.rotation.y += (0.004 + 0.055 * focusEase) * step;
+      cellGroup.rotation.x += 0.035 * focusEase * step;
+      cellGroup.rotation.z = cellGroup.rotation.z * Math.pow(1 - 0.06, step);
 
       const conjugate = { violet: 0, blue: 0, red: 0 };
       if (isConjugationActive) {
@@ -5633,7 +5886,7 @@ function initThreeJSRenderer(container, details, cellType) {
         if (activeLasers.red) FlowSoundSynth.playCellBeep(cellType);
       }
 
-      injectionProgress += 0.0065;
+      injectionProgress += 0.0065 * step;
       if (injectionProgress >= 1.0) {
         isInjecting = false;
         injectionProgress = 0;
@@ -5650,13 +5903,13 @@ function initThreeJSRenderer(container, details, cellType) {
       cellFlash.material.opacity = 0;
       if (isFluidicsActive) {
         cellGroup.position.set(0, FLOW.ySit - 0.35, 0);
-        cellGroup.rotation.y += 0.006;
-        cellGroup.rotation.x += 0.003;
+        cellGroup.rotation.y += 0.006 * step;
+        cellGroup.rotation.x += 0.003 * step;
       } else {
         cellGroup.position.set(0, 0, 0);
         if (autoRotate) {
-          cellGroup.rotation.y += 0.0035;
-          cellGroup.rotation.x += 0.0009;
+          cellGroup.rotation.y += 0.0035 * step;
+          cellGroup.rotation.x += 0.0009 * step;
         }
       }
     }
@@ -5665,7 +5918,7 @@ function initThreeJSRenderer(container, details, cellType) {
     const breathe = 1 + 0.014 * Math.sin(time * 1.9);
     const modeScale = isFluidicsActive ? 0.27 : 1.0;
     const target = frameScale * modeScale * breathe;
-    cellGroup.scale.lerp(new THREE.Vector3(target, target, target), 0.12);
+    cellGroup.scale.lerp(targetScaleVec.set(target, target, target), Math.min(1, 0.12 * step));
 
     membraneMeshes.forEach((m, i) => {
       m.scale.set(
@@ -5677,21 +5930,21 @@ function initThreeJSRenderer(container, details, cellType) {
 
     // Cytoplasmic streaming.
     granuleGroups.forEach(g => {
-      g.rotation.y += 0.0013;
-      g.rotation.x += 0.0007;
+      g.rotation.y += 0.0013 * step;
+      g.rotation.x += 0.0007 * step;
     });
 
     // ---- Laser beams --------------------------------------------------------
     Object.entries(laserBeams).forEach(([laserKey, beam]) => {
       const on = isFluidicsActive && activeLasers[laserKey];
       const targetOpacity = on ? 0.16 + 0.035 * Math.sin(time * 11) : 0;
-      beam.material.opacity += (targetOpacity - beam.material.opacity) * 0.15;
+      beam.material.opacity += (targetOpacity - beam.material.opacity) * Math.min(1, 0.15 * step);
       beam.visible = beam.material.opacity > 0.002;
 
       const glow = laserGlows[laserKey];
       const hit = (firingLaser === laserKey) ? scatterEnvelope : 0;
       const glowTarget = on ? 0.14 + 0.26 * hit : 0;
-      glow.material.opacity += (glowTarget - glow.material.opacity) * 0.2;
+      glow.material.opacity += (glowTarget - glow.material.opacity) * Math.min(1, 0.2 * step);
       glow.visible = glow.material.opacity > 0.002;
       glow.scale.set(1.25 + hit * 1.0, 0.5 + hit * 0.55, 1);
     });
@@ -5699,19 +5952,23 @@ function initThreeJSRenderer(container, details, cellType) {
     // ---- Fluorochrome excitation -------------------------------------------
     markersList.forEach(([key]) => {
       const abData = MARKER_FLUOROCHROMES[key];
-      if (!abData || !fluorochromeMeshes[key]) return;
+      const entry = markerInstances[key];
+      if (!abData || !entry || !entry.fluoro) return;
       const isExcited = isConjugationActive && activeLasers[abData.laser];
-      fluorochromeMeshes[key].forEach((f, idx) => {
-        if (isExcited) {
-          const pulse = 0.5 + 0.5 * Math.sin(time * 6 + idx * 0.2);
-          f.material.emissiveIntensity = 0.7 + 1.1 * pulse;
-          const fScale = 1.0 + 0.32 * pulse;
-          f.scale.set(fScale, fScale, fScale);
-        } else {
-          f.material.emissiveIntensity = 0.35;
-          f.scale.set(1, 1, 1);
-        }
-      });
+      // Focus mode scales the glow so an off-target dye stays faded even while
+      // its laser is firing.
+      const focusMul = entry.fluoroMaterial.userData.focusMul || 1;
+      if (isExcited) {
+        entry.fluoroMaterial.emissiveIntensity = (0.7 + 1.1 * (0.5 + 0.5 * Math.sin(time * 6))) * focusMul;
+        writeFluorochromeMatrices(entry, 1, time);
+        entry.fluoroResting = false;
+      } else if (!entry.fluoroResting) {
+        // Only rewrite the matrices on the transition back to resting, not on
+        // every idle frame.
+        entry.fluoroMaterial.emissiveIntensity = 0.35 * focusMul;
+        writeFluorochromeMatrices(entry, 1, null);
+        entry.fluoroResting = true;
+      }
     });
 
     renderer.render(scene, camera);
@@ -5829,7 +6086,9 @@ function initCanvas3DRenderer(container, details) {
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     },
     markers,
-    highlightedKey: null
+    highlightedKey: null,
+    // Set of CD keys to keep lit, or null for "show everything".
+    focusKeys: null
   };
   
   const distance = 400;
@@ -6014,9 +6273,14 @@ function initCanvas3DRenderer(container, details) {
       ctx.stroke();
     });
     
+    // Focus mode: fade the cell shell and nucleus so the marker(s) in focus
+    // stand alone. Restored just after the nucleus is drawn.
+    const focusKeys = canvas3DData.focusKeys;
+    if (focusKeys) ctx.globalAlpha = 0.22;
+
     ctx.strokeStyle = 'rgba(51, 65, 85, 0.4)';
     ctx.lineWidth = 1;
-    
+
     // Draw longitudinal lines
     for (let s = 0; s < sectors; s++) {
       ctx.beginPath();
@@ -6061,11 +6325,14 @@ function initCanvas3DRenderer(container, details) {
     ctx.arc(corePt.sx, corePt.sy, coreRadius, 0, 2 * Math.PI);
     ctx.fill();
     ctx.stroke();
-    
+
+    ctx.globalAlpha = 1;
+
     // Draw CD Markers
     const allMarkers = [];
     Object.entries(markers).forEach(([key, list]) => {
       const isHighlighted = (canvas3DData.highlightedKey === key);
+      const isDimmed = !!focusKeys && !focusKeys.has(key);
       list.forEach(m => {
         const bx = radius * m.nx;
         const by = radius * m.ny;
@@ -6086,6 +6353,7 @@ function initCanvas3DRenderer(container, details) {
           tipPt,
           color: m.color,
           isHighlighted,
+          isDimmed,
           nx: m.nx,
           ny: m.ny,
           nz: m.nz
@@ -6097,6 +6365,8 @@ function initCanvas3DRenderer(container, details) {
     allMarkers.sort((a, b) => b.sz - a.sz);
     
     allMarkers.forEach(m => {
+      ctx.globalAlpha = m.isDimmed ? 0.15 : 1;
+
       ctx.strokeStyle = m.color;
       ctx.lineWidth = m.isHighlighted ? 3.5 : 1.5;
       ctx.beginPath();
@@ -6175,7 +6445,9 @@ function initCanvas3DRenderer(container, details) {
         }
       }
     });
-    
+
+    ctx.globalAlpha = 1;
+
     frameId = requestAnimationFrame(draw);
   }
   
@@ -6224,7 +6496,10 @@ function resetSimulatorStates() {
   if (vBtn) vBtn.classList.remove('active');
   if (bBtn) bBtn.classList.remove('active');
   if (rBtn) rBtn.classList.remove('active');
-  
+
+  explorerHoverFocus = null;
+  refreshExplorerFocus();
+
   const card = document.getElementById('explorer-conjugate-card');
   if (card) card.style.display = 'none';
   
@@ -6309,6 +6584,8 @@ function initSimulatorEvents() {
           });
         });
       }
+
+      refreshExplorerFocus();
     });
   }
   
@@ -6317,6 +6594,8 @@ function initSimulatorEvents() {
       btn.addEventListener('click', () => {
         activeLasers[colorKey] = !activeLasers[colorKey];
         btn.classList.toggle('active', activeLasers[colorKey]);
+        // Spotlight the conjugates this laser actually excites.
+        refreshExplorerFocus();
       });
     }
   };
@@ -6445,31 +6724,44 @@ function cellTypeGranularityMultiplier(cellType) {
   }
 }
 
-function updateOscilloscope(pulseValue) {
+// The scope is redrawn on every frame of an injection, so the canvas lookup
+// and its 2D context are cached rather than re-fetched 60 times a second.
+let _scopeCanvas = null;
+let _scopeCtx = null;
+function oscilloscopeCtx() {
   const canvas = document.getElementById('oscilloscope-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
+  if (!canvas) return null;
+  if (canvas !== _scopeCanvas) {
+    _scopeCanvas = canvas;
+    _scopeCtx = canvas.getContext('2d');
+  }
+  return _scopeCtx;
+}
+
+function updateOscilloscope(pulseValue) {
+  const ctx = oscilloscopeCtx();
+  if (!ctx) return;
+  const canvas = _scopeCanvas;
   const w = canvas.width;
   const h = canvas.height;
-  
+
   ctx.clearRect(0, 0, w, h);
-  
-  // Grid
+
+  // Grid — one path for all the verticals and one for all the horizontals
+  // instead of a stroke() per line.
   ctx.strokeStyle = 'rgba(0, 229, 255, 0.05)';
   ctx.lineWidth = 1;
+  ctx.beginPath();
   for (let x = 0; x < w; x += 30) {
-    ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, h);
-    ctx.stroke();
   }
   for (let y = 0; y < h; y += 20) {
-    ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(w, y);
-    ctx.stroke();
   }
-  
+  ctx.stroke();
+
   // Append pulse value
   oscilloscopePoints.push(pulseValue);
   if (oscilloscopePoints.length > w) {
@@ -6779,13 +7071,24 @@ function toggleExplorerPlotsPanel() {
   }
 }
 
+// The only thing that genuinely animates in these three panels is the pulsing
+// target ring, so they are redrawn at ~24fps rather than competing with the 3D
+// loop for every frame. The cell cloud underneath comes from a cached bitmap.
+let explorerPlotsLastDraw = 0;
+const EXPLORER_PLOTS_INTERVAL = 1000 / 24;
+
 function animateExplorerPlots() {
-  if (explorerPlotsVisible) {
-    if (explorerPlotFscSsc) explorerPlotFscSsc.draw();
-    if (explorerPlotCd45Ssc) explorerPlotCd45Ssc.draw();
-    if (explorerPlotLineage) explorerPlotLineage.draw();
-    requestAnimationFrame(animateExplorerPlots);
-  }
+  if (!explorerPlotsVisible) return;
+  requestAnimationFrame(animateExplorerPlots);
+  if (document.hidden) return;
+
+  const now = performance.now();
+  if (now - explorerPlotsLastDraw < EXPLORER_PLOTS_INTERVAL) return;
+  explorerPlotsLastDraw = now;
+
+  if (explorerPlotFscSsc) explorerPlotFscSsc.draw();
+  if (explorerPlotCd45Ssc) explorerPlotCd45Ssc.draw();
+  if (explorerPlotLineage) explorerPlotLineage.draw();
 }
 
 

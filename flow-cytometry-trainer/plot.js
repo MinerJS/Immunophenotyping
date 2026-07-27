@@ -32,6 +32,13 @@ class FlowPlot {
     this.filteredEvents = []; // Events that passed the parent gate
     this.gates = [];          // User gates: [{ id, name, type: 'rect'|'poly', xAttr, yAttr, color, points: [...] }]
     this.temporaryPoints = []; // Temporary interrogated cell indicator points
+
+    // Cached grid + point-cloud bitmap, and a token bumped whenever the event
+    // list is replaced so the cache knows to rebuild.
+    this.staticCanvas = null;
+    this.staticCtx = null;
+    this.staticKey = null;
+    this.dataToken = 0;
     
     // Gating drawing state
     this.activeTool = null;   // 'rect', 'poly', or 'zoom'
@@ -99,6 +106,7 @@ class FlowPlot {
     this.events = events;
     this.filteredEvents = filteredEvents;
     this.gates = gates;
+    this.dataToken++;
     this.draw();
   }
 
@@ -431,17 +439,70 @@ class FlowPlot {
     this.activeTool = null;
   }
 
+  // Identity of everything the grid and the point cloud depend on. When this
+  // is unchanged the cached bitmap is still valid.
+  staticLayerKey() {
+    let gateSig = '';
+    for (let i = 0; i < this.gates.length; i++) {
+      const g = this.gates[i];
+      gateSig += g.id + ':' + g.parentId + ':' + g.color + ':' + g.xAttr + ':' + g.yAttr + ':';
+      const pts = g.points || [];
+      for (let j = 0; j < pts.length; j++) gateSig += pts[j].x + ',' + pts[j].y + ';';
+    }
+    return this.xAxis + '|' + this.yAxis + '|' + this.scaleType + '|' +
+      (this.zoomX ? this.zoomX[0] + ',' + this.zoomX[1] : '-') + '|' +
+      (this.zoomY ? this.zoomY[0] + ',' + this.zoomY[1] : '-') + '|' +
+      this.width + 'x' + this.height + '|' +
+      this.dataToken + '|' + this.filteredEvents.length + '|' + gateSig;
+  }
+
+  // Grid + point cloud rendered once into an offscreen canvas and blitted
+  // thereafter. Colouring 6000 events means a gate hit-test each — far too
+  // expensive to repeat 60 times a second for a picture that rarely changes.
+  drawStaticLayer() {
+    if (!this.staticCanvas || this.staticCanvas.width !== this.width || this.staticCanvas.height !== this.height) {
+      this.staticCanvas = document.createElement('canvas');
+      this.staticCanvas.width = this.width;
+      this.staticCanvas.height = this.height;
+      this.staticCtx = this.staticCanvas.getContext('2d');
+      this.staticKey = null;
+    }
+
+    const key = this.staticLayerKey();
+    if (this.staticKey !== key) {
+      this.staticKey = key;
+      this.staticCtx.clearRect(0, 0, this.width, this.height);
+      // drawGrid/drawCells render through this.ctx; point it at the cache for
+      // the rebuild so neither has to know about the offscreen canvas.
+      const liveCtx = this.ctx;
+      this.ctx = this.staticCtx;
+      try {
+        this.drawGrid();
+        this.drawCells();
+      } finally {
+        this.ctx = liveCtx;
+      }
+    }
+
+    this.ctx.drawImage(this.staticCanvas, 0, 0);
+  }
+
+  // Force the cached grid/point cloud to be rebuilt on the next draw.
+  invalidateStaticLayer() {
+    this.staticKey = null;
+  }
+
   // Draw plot
   draw() {
     // Clear canvas
     this.ctx.clearRect(0, 0, this.width, this.height);
-    
-    // Draw background grid & axes
-    this.drawGrid();
-    
-    // Draw cells
-    this.drawCells();
-    
+
+    // Draw background grid & axes, and the cell cloud, from the cached layer
+    this.drawStaticLayer();
+
+    // Interrogation flashes animate, so they go on top of the cache
+    this.drawTemporaryPoints();
+
     // Draw established gates for the CURRENT active axes
     this.drawGates();
     
@@ -786,35 +847,52 @@ class FlowPlot {
       }
     }
     
-    // Draw temporary interrogated indicator points
-    if (this.temporaryPoints && this.temporaryPoints.length > 0) {
-      this.temporaryPoints.forEach(pt => {
-        const px = this.toPixelX(pt.x);
-        const py = this.toPixelY(pt.y);
-        
-        // Skip drawing if outside crop
-        if (pt.x < xMin || pt.x > xMax || pt.y < yMin || pt.y > yMax) return;
-        
-        this.ctx.save();
-        this.ctx.strokeStyle = pt.color;
-        this.ctx.fillStyle = pt.color;
-        this.ctx.globalAlpha = pt.alpha;
-        
-        // Expanding ring
-        this.ctx.lineWidth = 2.5;
-        this.ctx.beginPath();
-        this.ctx.arc(px, py, pt.radius, 0, Math.PI * 2);
-        this.ctx.stroke();
-        
-        // Core dot
-        this.ctx.beginPath();
-        this.ctx.arc(px, py, 4, 0, Math.PI * 2);
-        this.ctx.fill();
-        
-        this.ctx.restore();
-      });
-    }
-    
+    this.ctx.restore();
+  }
+
+  // Interrogated-cell flashes animate frame by frame, so they are drawn live
+  // on top of the cached point cloud rather than baked into it.
+  drawTemporaryPoints() {
+    if (!this.temporaryPoints || this.temporaryPoints.length === 0) return;
+
+    const plotWidth = this.width - this.padding.left - this.padding.right;
+    const plotHeight = this.height - this.padding.top - this.padding.bottom;
+    const xMin = this.zoomX ? this.zoomX[0] : 0;
+    const xMax = this.zoomX ? this.zoomX[1] : 1000;
+    const yMin = this.zoomY ? this.zoomY[0] : 0;
+    const yMax = this.zoomY ? this.zoomY[1] : 1000;
+
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.rect(this.padding.left, this.padding.top, plotWidth, plotHeight);
+    this.ctx.clip();
+
+    this.temporaryPoints.forEach(pt => {
+      const px = this.toPixelX(pt.x);
+      const py = this.toPixelY(pt.y);
+
+      // Skip drawing if outside crop
+      if (pt.x < xMin || pt.x > xMax || pt.y < yMin || pt.y > yMax) return;
+
+      this.ctx.save();
+      this.ctx.strokeStyle = pt.color;
+      this.ctx.fillStyle = pt.color;
+      this.ctx.globalAlpha = pt.alpha;
+
+      // Expanding ring
+      this.ctx.lineWidth = 2.5;
+      this.ctx.beginPath();
+      this.ctx.arc(px, py, pt.radius, 0, Math.PI * 2);
+      this.ctx.stroke();
+
+      // Core dot
+      this.ctx.beginPath();
+      this.ctx.arc(px, py, 4, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      this.ctx.restore();
+    });
+
     this.ctx.restore();
   }
 
