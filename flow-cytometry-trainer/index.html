@@ -167,15 +167,18 @@
             <div class="sidebar-section" style="padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color);">
               <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary);">Select Decision Tree</span>
               <div class="tree-toggle-group" style="display: flex; gap: 4px;">
-                <button class="btn-secondary active" id="tree-btn-acute" style="padding: 3px 8px; font-size: 10px;">Acute</button>
-                <button class="btn-secondary" id="tree-btn-chronic" style="padding: 3px 8px; font-size: 10px;">Chronic</button>
+                <button class="btn-secondary active" id="tree-btn-acute" data-tree="acute" style="padding: 3px 8px; font-size: 10px;">Acute</button>
+                <button class="btn-secondary" id="tree-btn-chronic" data-tree="chronic" style="padding: 3px 8px; font-size: 10px;">Chronic Lymphoid</button>
+                <button class="btn-secondary" id="tree-btn-chronic-myeloid" data-tree="chronic-myeloid" style="padding: 3px 8px; font-size: 10px;">Chronic Myeloid</button>
               </div>
             </div>
-            
+
             <div class="flowchart-container scrollable-sidebar-content" style="flex: 1; overflow: auto; padding: 10px; display: flex; justify-content: center; background-color: var(--bg-main);">
-              <svg id="flowchart-svg" width="100%" height="300" viewBox="0 0 400 300" preserveAspectRatio="xMinYMin meet"></svg>
+              <svg id="flowchart-svg" width="100%" height="215" viewBox="0 0 400 215" preserveAspectRatio="xMinYMin meet"></svg>
             </div>
-            
+
+            <p id="flowchart-caption" style="margin: 0; padding: 6px 12px; font-size: 9.5px; line-height: 1.45; color: var(--text-muted); border-top: 1px solid var(--border-color); text-align: center;"></p>
+
             <div class="flowchart-legend" style="padding: 8px 12px; font-size: 9px; border-top: 1px solid var(--border-color); color: var(--text-secondary); display: flex; gap: 8px; justify-content: center;">
               <span style="display: flex; align-items: center; gap: 3px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--accent-cyan); display: inline-block;"></span> Active</span>
               <span style="display: flex; align-items: center; gap: 3px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: var(--accent-orange); display: inline-block;"></span> Partial</span>
@@ -506,32 +509,60 @@
 
         <!-- Run Mode Control -->
         <div style="display: flex; flex-direction: column; gap: 3px;">
-          <label for="sim-run-mode" style="font-size: 9px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0; line-height: 1; letter-spacing: 0.5px;">Mode</label>
+          <div class="sim-ctrl-label-row">
+            <label for="sim-run-mode" style="font-size: 9px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0; line-height: 1; letter-spacing: 0.5px;">Mode</label>
+            <span class="sim-info-badge" tabindex="0">i
+              <div class="sim-info-popover">
+                <div class="sim-info-row"><strong>Setup (Rolling):</strong> live preview only &mdash; events stream past continuously and nothing is saved. Use it to check gating/alignment first, like "Setup" on a real cytometer.</div>
+                <div class="sim-info-row"><strong>Acquire (Save):</strong> events are recorded into the dataset (up to 6000) and stay on the plots, like pressing "Acquire" for real.</div>
+              </div>
+            </span>
+          </div>
           <select id="sim-run-mode" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 6px; font-size: 11.5px; cursor: pointer; outline: none; width: 110px; max-width: 110px;">
             <option value="setup" selected>Setup (Rolling)</option>
             <option value="acquire">Acquire (Save)</option>
           </select>
         </div>
-        
+
         <!-- Divider -->
         <div style="width: 1px; height: 26px; background-color: var(--border-color); align-self: flex-end; margin-bottom: 2px;"></div>
-        
+
         <!-- Flow Rate Control -->
         <div style="display: flex; flex-direction: column; gap: 3px;">
-          <label for="sim-flow-rate" style="font-size: 9px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0; line-height: 1; letter-spacing: 0.5px;">Flow Rate</label>
+          <div class="sim-ctrl-label-row">
+            <label for="sim-flow-rate" style="font-size: 9px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0; line-height: 1; letter-spacing: 0.5px;">Flow Rate</label>
+            <span class="sim-info-badge" tabindex="0">i
+              <div class="sim-info-popover">
+                <div class="sim-info-row">Sets how tightly sheath fluid focuses the sample core stream through the laser.</div>
+                <div class="sim-info-row"><strong>Low:</strong> narrowest core, single-file cells, &lt;0.1% doublets, tightest CVs &mdash; best resolution, slowest.</div>
+                <div class="sim-info-row"><strong>Medium:</strong> balanced core width, ~2% coincidence &mdash; typical routine setting.</div>
+                <div class="sim-info-row"><strong>High:</strong> widest core, faster throughput, but ~15% doublets/coincidence and broader CVs &mdash; resolution suffers.</div>
+              </div>
+            </span>
+          </div>
           <select id="sim-flow-rate" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 6px; font-size: 11.5px; cursor: pointer; outline: none; width: 120px; max-width: 120px;">
             <option value="low" selected>Low (10 µL/min)</option>
             <option value="medium">Medium (30 µL/min)</option>
             <option value="high">High (60 µL/min)</option>
           </select>
         </div>
-        
+
         <!-- Divider -->
         <div style="width: 1px; height: 26px; background-color: var(--border-color); align-self: flex-end; margin-bottom: 2px;"></div>
-        
+
         <!-- Run Speed Control -->
         <div style="display: flex; flex-direction: column; gap: 3px;">
-          <label for="sim-run-speed" style="font-size: 9px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0; line-height: 1; letter-spacing: 0.5px;">Run Speed</label>
+          <div class="sim-ctrl-label-row">
+            <label for="sim-run-speed" style="font-size: 9px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0; line-height: 1; letter-spacing: 0.5px;">Run Speed</label>
+            <span class="sim-info-badge" tabindex="0">i
+              <div class="sim-info-popover">
+                <div class="sim-info-row">Playback speed only &mdash; it doesn't change the sample, just how fast events are animated across the instrument and plots.</div>
+                <div class="sim-info-row"><strong>Slow Motion:</strong> watch one cell's pulse cross the laser at a time.</div>
+                <div class="sim-info-row"><strong>Normal:</strong> ~150 events/sec, close to a real acquisition's pace.</div>
+                <div class="sim-info-row"><strong>Fast / Instant:</strong> skip ahead to a filled-in dataset. Combined with High flow rate this triggers a coincidence/yield warning, just as it would on a real instrument.</div>
+              </div>
+            </span>
+          </div>
           <select id="sim-run-speed" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 6px; font-size: 11.5px; cursor: pointer; outline: none; width: 155px; max-width: 155px;">
             <option value="slow">Slow Motion (Cell-by-Cell)</option>
             <option value="medium" selected>Normal (150 ev/s)</option>
@@ -557,16 +588,70 @@
     <!-- Body -->
     <div style="display: flex; flex: 1; overflow: hidden; height: calc(100% - 70px);">
       <!-- Main Content Split Workspace -->
-      <div style="flex: 1; display: flex; overflow: hidden; padding: 24px; gap: 24px; background: radial-gradient(circle at center, #070d1e 0%, #020617 100%);">
-        
-        <!-- Left Column: Focused Graph & Explanation Card -->
-        <div style="flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 320px; overflow-y: auto;">
+      <!-- Main Content Workspace: optical bench on top, results beneath -->
+      <div style="flex: 1; display: flex; flex-direction: column; overflow: auto; padding: 20px 24px 24px; gap: 20px; background: radial-gradient(circle at center, #070d1e 0%, #020617 100%);">
+
+        <!-- Row 1: the instrument, full width -->
+          <!-- Instrument Canvas Card -->
+          <div style="background-color: var(--bg-card); border: 1.5px solid var(--border-color); border-radius: 12px; padding: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 10px; height: 700px; min-height: 700px; min-width: 680px; position: relative; flex-shrink: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap;">
+              <h3 style="font-size: 14px; text-transform: uppercase; color: var(--border-active); letter-spacing: 0.5px; font-weight: 700; margin: 0;">Fluidics &amp; Optics Interrogation Zone</h3>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 9.5px; color: var(--accent-cyan); white-space: nowrap;">Click any part to identify it</span>
+                <button id="sim-quiz-btn" class="btn-secondary" style="font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; background: transparent; font-size: 11px;">Identify quiz</button>
+                <div style="font-size: 9.5px; color: var(--text-muted); font-family: monospace; white-space: nowrap;">Side view &middot; 90&deg; arm folded into page</div>
+              </div>
+            </div>
+
+            <!-- Identify-mode prompt bar -->
+            <div id="sim-quiz-bar" style="display: none; align-items: center; gap: 12px; background: rgba(250, 204, 21, 0.08); border: 1px solid rgba(250, 204, 21, 0.45); border-radius: 8px; padding: 7px 12px; flex-shrink: 0;">
+              <div style="flex: 1; min-width: 0;">
+                <div id="sim-quiz-prompt" style="font-size: 12px; font-weight: 700; color: #fde68a; line-height: 1.35;"></div>
+                <div id="sim-quiz-feedback" style="font-size: 11px; color: var(--text-muted); line-height: 1.35; min-height: 15px;"></div>
+              </div>
+              <div style="font-size: 12px; font-family: monospace; font-weight: 700; color: var(--accent-cyan); white-space: nowrap;">Score <span id="sim-quiz-score">0 / 0</span></div>
+              <button id="sim-quiz-skip" class="btn-secondary" style="font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; background: transparent; font-size: 11px;">Skip</button>
+            </div>
+
+            <canvas id="sim-canvas-instrument" style="width: 100%; min-height: 0; flex: 1; display: block; border-radius: 8px; background-color: #030712; border: 1px solid rgba(255,255,255,0.02); outline: none;"></canvas>
+
+            <!-- Selected component explainer -->
+            <div id="sim-component-panel" style="display: none; flex-direction: column; gap: 4px; background: rgba(0, 229, 255, 0.05); border: 1px solid rgba(0, 229, 255, 0.35); border-radius: 8px; padding: 9px 12px; flex-shrink: 0; max-height: 210px; overflow-y: auto;">
+              <div style="display: flex; align-items: baseline; gap: 8px;">
+                <span id="sim-component-name" style="font-size: 12.5px; font-weight: 700; color: var(--accent-cyan); letter-spacing: 0.3px;"></span>
+                <span id="sim-component-sub" style="font-size: 10.5px; color: var(--text-muted); flex: 1;"></span>
+                <button id="sim-component-close" title="Close" style="background: transparent; border: none; color: var(--text-muted); font-size: 15px; line-height: 1; cursor: pointer; padding: 0 2px;">&times;</button>
+              </div>
+              <div id="sim-component-what" style="font-size: 11.5px; line-height: 1.5; color: var(--text-secondary);"></div>
+              <div id="sim-component-why" style="font-size: 11.5px; line-height: 1.5; color: var(--text-primary); border-left: 2px solid rgba(0, 229, 255, 0.5); padding-left: 8px;"></div>
+              <div id="sim-component-markers" style="display: none; font-size: 11px; line-height: 1.6; color: var(--text-secondary); margin-top: 2px;"></div>
+            </div>
+
+            <!-- Hydrodynamic focusing live readout -->
+            <div id="sim-fluidics-stats" style="position: absolute; top: 48px; right: 24px; background: rgba(7, 13, 30, 0.88); border: 1px solid var(--border-color); padding: 8px 10px; border-radius: 6px; font-size: 10.5px; display: flex; flex-direction: column; gap: 3px; pointer-events: none; backdrop-filter: blur(4px); z-index: 5;">
+              <div><span style="color: var(--text-muted);">Core stream:</span> <span id="sim-stream-width-text" style="font-weight: 700; color: var(--accent-cyan);">Narrow (10 &#181;m)</span></div>
+              <div><span style="color: var(--text-muted);">Core velocity:</span> <span id="sim-velocity-text" style="font-weight: 700; color: var(--accent-cyan);">6.0 m/s</span></div>
+              <div><span style="color: var(--text-muted);">Coincidence:</span> <span id="sim-coincidence-rate-text" style="font-weight: 700; color: var(--accent-green);">Low (&lt;0.1%)</span></div>
+              <div><span style="color: var(--text-muted);">Alignment:</span> <span id="sim-alignment-text" style="font-weight: 700; color: var(--accent-green);">Single file</span></div>
+            </div>
+
+            <!-- Coincidence Yield Warning banner -->
+            <div id="sim-warning-msg" style="position: absolute; top: 46px; left: 50%; transform: translateX(-50%); background: rgba(220, 38, 38, 0.95); border: 1.5px solid #ef4444; padding: 6px 16px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #ffffff; display: none; pointer-events: none; backdrop-filter: blur(4px); text-align: center; box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4); letter-spacing: 0.5px; border-color: rgba(255,255,255,0.25);">
+              &#9888;&#65039; YIELD WARNING: High Coincidence / Dilute Sample
+            </div>
+          </div>
+
+        <!-- Row 2: what the instrument produced -->
+        <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+
+          <!-- Left: focused plot and its explanation -->
+          <div style="flex: 1 1 380px; display: flex; flex-direction: column; gap: 20px; min-width: 340px;">
           <!-- Graph Card -->
           <div style="background-color: var(--bg-card); border: 1.5px solid var(--border-color); border-radius: 12px; padding: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; gap: 12px;">
             <h3 id="sim-focused-plot-title" style="font-size: 14px; text-transform: uppercase; color: var(--accent-cyan); letter-spacing: 0.5px; font-weight: 700; align-self: flex-start; margin-bottom: 4px;">FSC-A vs SSC-A (Size vs Complexity)</h3>
-            <canvas id="sim-canvas-focused" width="380" height="380" style="background-color: #020617; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.03); max-width: 100%; aspect-ratio: 1/1;"></canvas>
+            <canvas id="sim-canvas-focused" style="background-color: #020617; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.03); width: 100%; max-width: 460px; aspect-ratio: 1 / 1; display: block;"></canvas>
           </div>
-          
+
           <!-- Educational Explanation Card -->
           <div style="background-color: var(--bg-card); border: 1.5px solid var(--border-color); border-radius: 12px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); flex: 1;">
             <h4 style="font-size: 12px; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.5px; font-weight: 700; margin-bottom: 12px;">How This Graph is Derived</h4>
@@ -574,50 +659,38 @@
               <!-- Populated dynamically based on clicked graph -->
             </div>
           </div>
-        </div>
-        
-        <!-- Right Column: Flow Cytometer Instrument & Signal Oscilloscope -->
-        <div style="flex: 1.2; display: flex; flex-direction: column; gap: 20px; min-width: 380px; overflow-y: auto;">
-          <!-- Instrument Canvas Card -->
-          <div style="background-color: var(--bg-card); border: 1.5px solid var(--border-color); border-radius: 12px; padding: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 12px; height: 450px; min-height: 450px; position: relative;">
-            <h3 style="font-size: 14px; text-transform: uppercase; color: var(--border-active); letter-spacing: 0.5px; font-weight: 700; margin: 0;">Fluidics & Optics Interrogation Zone</h3>
-            <canvas id="sim-canvas-instrument" width="500" height="350" style="width: 100%; height: auto; min-height: 0; flex: 1; display: block; border-radius: 8px; background-color: #030712; border: 1px solid rgba(255,255,255,0.02);"></canvas>
-            
-            <!-- Fluidics Hydrodynamic Focusing overlay stats -->
-            <div id="sim-fluidics-stats" style="position: absolute; top: 50px; left: 30px; background: rgba(7, 13, 30, 0.85); border: 1px solid var(--border-color); padding: 8px 12px; border-radius: 6px; font-size: 11px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; backdrop-filter: blur(4px);">
-              <div><span style="color: var(--text-muted);">Core Stream:</span> <span id="sim-stream-width-text" style="font-weight: 700; color: var(--accent-cyan);">Narrow (12 µm)</span></div>
-              <div><span style="color: var(--text-muted);">Coincident Rate:</span> <span id="sim-coincidence-rate-text" style="font-weight: 700; color: var(--accent-green);">Low (&lt;0.5%)</span></div>
-              <div><span style="color: var(--text-muted);">Alignment:</span> <span id="sim-alignment-text" style="font-weight: 700; color: var(--accent-green);">Single File</span></div>
+          </div>
+
+          <!-- Right: signal processing -->
+          <div style="flex: 1 1 420px; display: flex; flex-direction: column; gap: 20px; min-width: 380px;">
+          <!-- Electronics & Oscilloscope Card -->
+          <div style="background-color: var(--bg-card); border: 1.5px solid var(--border-color); border-radius: 12px; padding: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px;">
+              <h3 style="font-size: 14px; text-transform: uppercase; color: var(--accent-orange); letter-spacing: 0.5px; font-weight: 700; margin: 0;">Electronics Signal Processor (Oscilloscope)</h3>
+              <div style="font-size: 9.5px; color: var(--text-muted); font-family: monospace; white-space: nowrap;">ADC 10 MHz &middot; 100 ns/sample</div>
             </div>
 
-            <!-- Coincidence Yield Warning banner -->
-            <div id="sim-warning-msg" style="position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(220, 38, 38, 0.95); border: 1.5px solid #ef4444; padding: 6px 16px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #ffffff; display: none; pointer-events: none; backdrop-filter: blur(4px); text-align: center; box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4); letter-spacing: 0.5px; border-color: rgba(255,255,255,0.25);">
-              ⚠️ YIELD WARNING: High Coincidence / Dilute Sample
-            </div>
-          </div>
-          
-          <!-- Electronics & Oscilloscope Card -->
-          <div style="background-color: var(--bg-card); border: 1.5px solid var(--border-color); border-radius: 12px; padding: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <h3 style="font-size: 14px; text-transform: uppercase; color: var(--accent-orange); letter-spacing: 0.5px; font-weight: 700;">Electronics Signal Processor (Oscilloscope)</h3>
-              <div style="font-size: 10px; color: var(--text-muted); font-family: monospace;">FSC/SSC/FL Voltage Pulse (40 MHz Digital)</div>
-            </div>
-            
-            <div style="display: flex; gap: 16px;">
-              <!-- Canvas oscilloscope -->
-              <canvas id="sim-canvas-oscilloscope" width="300" height="120" style="background-color: #010409; border-radius: 8px; border: 1.5px solid #30363d; display: block; flex: 1.5;"></canvas>
-              
-              <!-- Metrics readout -->
-              <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 8px; font-size: 11px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                <div style="display: flex; justify-content: space-between;"><span id="sim-pulse-label-x" style="color: var(--text-muted);">CH1 (X):</span> <span id="sim-pulse-height" style="font-family: monospace; font-weight: 700; color: #00e5ff;">-</span></div>
-                <div style="display: flex; justify-content: space-between;"><span id="sim-pulse-label-y" style="color: var(--text-muted);">CH2 (Y):</span> <span id="sim-pulse-area" style="font-family: monospace; font-weight: 700; color: #ff007f;">-</span></div>
-                <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">PULSE WIDTH (TOF):</span> <span id="sim-pulse-width" style="font-family: monospace; font-weight: 700; color: var(--text-primary);">-</span></div>
-                <div id="sim-pulse-type" style="font-size: 10px; font-weight: 700; text-align: center; text-transform: uppercase; margin-top: 4px; padding: 2px; border-radius: 3px; background: rgba(255,255,255,0.05); color: var(--text-muted);">No Event</div>
+            <!-- Canvas oscilloscope -->
+            <canvas id="sim-canvas-oscilloscope" style="background-color: #010409; border-radius: 8px; border: 1.5px solid #30363d; display: block; width: 100%; height: 220px;"></canvas>
+
+            <!-- Pulse geometry readout -->
+            <div style="display: flex; gap: 8px; font-size: 10.5px;">
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 5px; background: rgba(0,0,0,0.25); padding: 9px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="display: flex; justify-content: space-between; gap: 8px;"><span id="sim-pulse-label-x" style="color: var(--text-muted);">Height (FSC-H)</span> <span id="sim-pulse-height" style="font-family: monospace; font-weight: 700; color: #00e5ff;">-</span></div>
+                <div style="display: flex; justify-content: space-between; gap: 8px;"><span id="sim-pulse-label-y" style="color: var(--text-muted);">Area (FSC-A)</span> <span id="sim-pulse-area" style="font-family: monospace; font-weight: 700; color: #7dd3fc;">-</span></div>
+                <div style="display: flex; justify-content: space-between; gap: 8px;"><span style="color: var(--text-muted);">Width (TOF)</span> <span id="sim-pulse-width" style="font-family: monospace; font-weight: 700; color: var(--text-primary);">-</span></div>
+                <div style="display: flex; justify-content: space-between; gap: 8px;"><span style="color: var(--text-muted);">Area &divide; Height</span> <span id="sim-pulse-ratio" style="font-family: monospace; font-weight: 700; color: var(--text-primary);">-</span></div>
+              </div>
+              <div style="flex: 1.15; display: flex; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.25); padding: 9px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                <div id="sim-pulse-type" style="font-size: 10px; font-weight: 700; text-align: center; text-transform: uppercase; padding: 3px; border-radius: 4px; background: rgba(255,255,255,0.05); color: var(--text-muted); letter-spacing: 0.5px;">No Event</div>
+                <div id="sim-pulse-note" style="font-size: 10px; line-height: 1.45; color: var(--text-muted);">Start the run. The trace is the raw detector voltage as one cell crosses the 488 nm beam.</div>
               </div>
             </div>
           </div>
+          </div>
+
         </div>
-        
+
       </div>
     </div>
   </div>
@@ -720,11 +793,14 @@
           </div>
         </div>
         
+        <!-- Fluidics Component Explanation (populated when a bench part is clicked) -->
+        <div id="fluidics-detail-card" style="display: none;"></div>
+
         <!-- Interactive Tip -->
         <div style="margin-top: auto; padding: 12px; border-radius: 8px; border: 1px dashed var(--border-color); background: rgba(56, 189, 248, 0.03);">
           <p style="font-size: 11px; color: var(--text-muted); text-align: center; line-height: 1.4;">
             <svg class="icon-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline; vertical-align: middle; margin-right: 4px; margin-top: -2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-            Drag to orbit around the cell and scroll to zoom. Hover over markers in the list to highlight them on the cell surface. Switch on Fluidics Interrogation to send the cell through the flow cell.
+            Drag to orbit around the cell and scroll to zoom. Hover over markers in the list to highlight them on the cell surface. Switch on Fluidics Interrogation to send the cell through the flow cell &mdash; then click any part of the instrument (lasers, flow cell, obscuration bar, detectors) to learn what it does.
           </p>
         </div>
       </div>
@@ -741,6 +817,9 @@
           <h5 style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 700;">CD Legend</h5>
           <!-- Populated dynamically -->
         </div>
+
+        <!-- Fluidics component tooltip (follows cursor over the optical bench) -->
+        <div id="fluidics-tooltip" style="display: none;"></div>
 
         <!-- Zoom Controls Overlay -->
         <div id="explorer-zoom-controls" style="position: absolute; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 45; pointer-events: auto;">
@@ -818,6 +897,9 @@
           </div>
 
           <div class="simulator-section fluidics-controls-box" id="fluidics-controls-container" style="display: none; transition: all 0.3s ease;">
+            <p class="explainer-text-card" style="margin: 0 0 4px 0;">
+              Hover any part of the optical bench &mdash; lasers, flow cell, obscuration bar, detectors &mdash; and click it to read what it does.
+            </p>
             <div style="display: flex; gap: 8px; align-items: center;">
               <button class="sim-action-btn" id="sim-inject-btn" style="flex: 1;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>

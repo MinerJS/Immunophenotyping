@@ -3830,6 +3830,182 @@ let isInjecting = false;
 let injectionProgress = 0;
 let currentInterrogatedCellType = 'CD4_TCell';
 
+// ==========================================================================
+// Fluidics hotspots — teaching content for every part of the optical bench
+// drawn while Fluidics Interrogation is on. Keyed by the `hotspotId` stamped
+// onto the meshes in initThreeJSRenderer.
+//
+// `facts` are the at-a-glance numbers; `body` is the explanation, ordered
+// what-it-is -> what-it-does -> why-a-scientist-cares.
+// ==========================================================================
+const FLUIDICS_COMPONENTS = {
+  sit: {
+    title: 'Sample Injection Tube (SIT)',
+    subtitle: 'Fluidics — sample delivery',
+    color: '#e2e8f0',
+    facts: [
+      ['Bore', '~200 µm'],
+      ['Delivers', 'Stained cell suspension'],
+      ['Controlled by', 'Differential pressure / syringe pump']
+    ],
+    body: [
+      { h: 'What it is', p: 'A fine steel needle that dips into the sample tube and carries the stained cell suspension into the centre of the flow chamber. On a Navios it is the probe that descends into the tube when you press Run.' },
+      { h: 'What it does', p: 'Sample is pushed out of the SIT tip at a slightly higher pressure than the surrounding sheath. Because it exits into the middle of a fast-moving sheath stream, it never touches the chamber wall — the sample forms a thin thread suspended in the centre of the flow.' },
+      { h: 'Why it matters', p: 'Flow rate is set here. Low/medium/high on the instrument changes the sample pressure, which widens or narrows the core. A wide core means cells cross the beam at different positions, which broadens every CV. Run rare-event and DNA work on LOW. A partial blockage of this bore is the classic cause of a falling event rate mid-acquisition and a ragged Time vs CD45 plot.' }
+    ]
+  },
+  sheath: {
+    title: 'Sheath Fluid & Inlets',
+    subtitle: 'Fluidics — the carrier stream',
+    color: '#38bdf8',
+    facts: [
+      ['Fluid', 'Isotonic, 0.2 µm filtered saline'],
+      ['Flow', 'Laminar (low Reynolds number)'],
+      ['Pressure', 'Lower than sample, but far greater volume']
+    ],
+    body: [
+      { h: 'What it is', p: 'A large volume of particle-free isotonic buffer fed into the chamber from the sides, forming the envelope that the sample is injected into.' },
+      { h: 'What it does', p: 'The sheath moves as smooth laminar flow — parallel layers that do not mix. That laminar envelope is what stops the sample thread from diffusing outward, and it is what carries cells single-file to the laser at a constant, reproducible velocity.' },
+      { h: 'Why it matters', p: 'Sheath must be isotonic or the cells will shrink/swell and your FSC scale shifts. It must be filtered, because any particle in the sheath is an event the instrument will happily count as a cell. Empty or low sheath, or air drawn into the line, produces bubbles — seen as sudden dropouts and spikes on the Time parameter.' }
+    ]
+  },
+  chamber: {
+    title: 'Hydrodynamic Focusing',
+    subtitle: 'Fluidics — the tapering flow chamber',
+    color: '#7dd3fc',
+    facts: [
+      ['Principle', 'Laminar flow + mass continuity'],
+      ['Core narrows to', '~10–20 µm'],
+      ['Result', 'Cells in single file']
+    ],
+    body: [
+      { h: 'What it is', p: 'The tapering bore of the chamber, where the wide sheath channel narrows sharply toward the flow cell.' },
+      { h: 'What it does', p: 'The same volume of fluid must pass through a smaller cross-section, so the fluid accelerates. Accelerating laminar flow stretches the sample thread thinner and thinner — the core is squeezed down until it is barely wider than a cell. This is hydrodynamic focusing: the cells are not physically funnelled, they are drawn into single file by the velocity gradient.' },
+      { h: 'Why it matters', p: 'This is the single feature that makes flow cytometry quantitative. It guarantees one cell at a time, each crossing the same part of the beam at the same speed, so signal height is proportional to how much fluorochrome the cell carries rather than to where it happened to be. Lose the focusing and you get doublets, coincident events and unusable CVs.' }
+    ]
+  },
+  core: {
+    title: 'Sample Core Stream',
+    subtitle: 'Fluidics — the focused cell thread',
+    color: '#22d3ee',
+    facts: [
+      ['Diameter', '~10–20 µm at the beam'],
+      ['Contains', 'One cell at a time'],
+      ['Widened by', 'Higher sample flow rate']
+    ],
+    body: [
+      { h: 'What it is', p: 'The narrow, faintly glowing thread running down the centre of the chamber — the sample itself, held in the middle of the sheath and never touching the walls.' },
+      { h: 'What it does', p: 'It presents the cells to the laser one at a time, at a fixed position and a fixed velocity, roughly 1,000–10,000 cells per second.' },
+      { h: 'Why it matters', p: 'Core diameter is the practical meaning of the flow-rate setting. A narrow core (low flow) gives tight CVs — essential for DNA ploidy, MRD and any dim-versus-negative call. A wide core (high flow) is faster but positions cells across the beam profile, smearing the population. If two cells enter the beam together you get a doublet, which is why FSC-A vs FSC-H gating exists.' }
+    ]
+  },
+  cuvette: {
+    title: 'Quartz Flow Cell',
+    subtitle: 'Optics — the interrogation point',
+    color: '#67e8f9',
+    facts: [
+      ['Material', 'Fused quartz, square bore'],
+      ['Why quartz', 'UV-transparent, low autofluorescence'],
+      ['Role', 'Gel-coupled to collection optics']
+    ],
+    body: [
+      { h: 'What it is', p: 'A precision square-bore quartz channel. This is the interrogation point — the one place in the instrument where fluid, light and detection meet.' },
+      { h: 'What it does', p: 'Its flat optical faces let the focused laser enter and the scattered/emitted light leave without the lensing distortion a round tube would cause. Cuvette systems are optically coupled to the collection lens, which gathers far more of the emitted light than a stream-in-air design.' },
+      { h: 'Why it matters', p: 'The efficiency of this coupling is why benchtop analysers are more sensitive than jet-in-air sorters, and it is what lets you resolve dim antigens such as CD34 on blasts or a small MRD population. A dirty or protein-coated flow cell raises background and lowers resolution — hence the daily clean and the bleach/rinse cycle.' }
+    ]
+  },
+  laser_violet: {
+    title: 'Violet Laser — 405 nm',
+    subtitle: 'Optics — excitation source',
+    color: '#a855f7',
+    facts: [
+      ['Wavelength', '405 nm'],
+      ['Excites', 'Pacific Blue, Krome Orange, BV421'],
+      ['Beam shape', 'Elliptical: wide across flow, thin along it']
+    ],
+    body: [
+      { h: 'What it is', p: 'A solid-state violet laser, focused by the lens on the front of the housing onto the core stream.' },
+      { h: 'What it does', p: 'Photons at 405 nm are absorbed by any fluorochrome whose excitation spectrum covers that wavelength. The dye is lifted to an excited state and, nanoseconds later, drops back down and re-emits at a longer wavelength (the Stokes shift) — Pacific Blue emits around 450 nm.' },
+      { h: 'Why it matters', p: 'Spatially separated lasers are the basis of multicolour panels: a cell crosses violet, then blue, then red a few microseconds apart, so the instrument can attribute each signal to the right laser and keep spillover manageable. The beam is focused to a flat ellipse so that every cell in the core sees the same illumination intensity.' }
+    ]
+  },
+  laser_blue: {
+    title: 'Blue Laser — 488 nm',
+    subtitle: 'Optics — primary excitation source',
+    color: '#3b82f6',
+    facts: [
+      ['Wavelength', '488 nm'],
+      ['Excites', 'FITC, PE, ECD, PC5.5, PC7'],
+      ['Also drives', 'FSC and SSC']
+    ],
+    body: [
+      { h: 'What it is', p: 'The workhorse 488 nm blue laser. On almost every clinical analyser this is also the scatter laser.' },
+      { h: 'What it does', p: 'It excites the largest family of conjugates — FITC and the whole PE tandem series — and simultaneously generates the forward and side scatter signals used for the primary gates.' },
+      { h: 'Why it matters', p: 'Because FSC and SSC come from this beam, blue laser alignment affects every plot you draw, not just the fluorescence channels. Daily bead QC (Flow-Check / Flow-Set) checks exactly this: if the half-peak CVs on the blue channels drift, alignment or the flow cell is the first thing to investigate.' }
+    ]
+  },
+  laser_red: {
+    title: 'Red Laser — 633 nm',
+    subtitle: 'Optics — excitation source',
+    color: '#ef4444',
+    facts: [
+      ['Wavelength', '633 nm (HeNe or diode)'],
+      ['Excites', 'APC, APC-A700, APC-A750'],
+      ['Advantage', 'Very low cellular autofluorescence']
+    ],
+    body: [
+      { h: 'What it is', p: 'A red laser, historically helium–neon and now usually a solid-state diode.' },
+      { h: 'What it does', p: 'It excites the APC family and its tandems, which sit in a spectral region where cells themselves fluoresce very little.' },
+      { h: 'Why it matters', p: 'Low autofluorescence means a better signal-to-noise ratio, so the red channels are the natural home for dim antigens — CD34 on blasts, CD38, kappa/lambda on small B-cell clones. The trade-off is that APC tandems (A700, A750) degrade with light and heat exposure, so they need protection from light and regular compensation checks.' }
+    ]
+  },
+  obscuration: {
+    title: 'Obscuration Bar',
+    subtitle: 'Optics — forward scatter beam block',
+    color: '#cbd5e1',
+    facts: [
+      ['Position', 'Directly in the beam path, before FSC'],
+      ['Blocks', 'Unscattered (direct) laser light'],
+      ['Passes', 'Light scattered at ~0.5–10°']
+    ],
+    body: [
+      { h: 'What it is', p: 'A small opaque bar — sometimes called the beam stop or beam blocker — sitting on the optical axis directly in front of the forward scatter detector.' },
+      { h: 'What it does', p: 'The vast majority of the laser passes straight through the flow cell without hitting anything. That direct beam is enormously brighter than the light a single cell scatters, and would saturate or destroy the FSC detector. The bar physically shadows the detector from the direct beam, while light deviated by a cell into small forward angles passes around the edges of the bar and reaches the sensor.' },
+      { h: 'Why it matters', p: 'This is why FSC exists as a usable parameter at all: you are measuring a small deflection against a dark background rather than a small change on top of a blinding one. Some instruments let you change the obscuration bar width — a wider bar rejects more low-angle light and improves discrimination of small particles such as platelets and debris, while a narrower bar increases overall FSC sensitivity. If the bar is misaligned, FSC baseline rises, noise floods the plot and the lymphocyte/debris boundary disappears.' }
+    ]
+  },
+  fsc: {
+    title: 'FSC Detector — Forward Scatter',
+    subtitle: 'Detection — relative size',
+    color: '#7dd3fc',
+    facts: [
+      ['Angle collected', '~0.5–10° from the beam axis'],
+      ['Sensor', 'Photodiode (signal is strong)'],
+      ['Proxy for', 'Cell size / surface area']
+    ],
+    body: [
+      { h: 'What it is', p: 'A photodiode sitting in line with the laser, behind the obscuration bar. It is a photodiode rather than a PMT because forward-scattered light is comparatively bright and needs no amplification.' },
+      { h: 'What it does', p: 'It measures light diffracted at small angles as the cell passes through the beam. That signal scales broadly with the cross-sectional size of the cell.' },
+      { h: 'Why it matters', p: 'FSC is your size axis on every scatter plot: debris low-left, lymphocytes small, monocytes larger, granulocytes larger still. It is a relative measure, not a micrometre reading — refractive index matters too, which is why a dying cell with a leaky membrane drops in FSC. Pulse geometry from this detector (FSC-A vs FSC-H) is also how doublets are excluded: a doublet takes twice as long to cross the beam, so its area rises while its height does not.' }
+    ]
+  },
+  ssc: {
+    title: 'SSC + Fluorescence Optics (90°)',
+    subtitle: 'Detection — complexity and colour',
+    color: '#22d3ee',
+    facts: [
+      ['Angle collected', '90° to the beam'],
+      ['Sensor', 'Photomultiplier tubes (PMTs)'],
+      ['Split by', 'Dichroic mirrors + bandpass filters']
+    ],
+    body: [
+      { h: 'What it is', p: 'The side-scatter and fluorescence collection arm, set at right angles to the laser. Light entering here is split by a cascade of dichroic mirrors, each channel finishing at a bandpass filter and a PMT.' },
+      { h: 'What it does', p: 'Light refracted and reflected by internal structures — granules, nuclear lobes, membrane folds — reaches this arm as side scatter, so SSC reports internal complexity. Fluorescent emission from the conjugated antibodies arrives at the same aperture and is then separated by wavelength: each dichroic reflects one band toward its PMT and transmits the rest onward.' },
+      { h: 'Why it matters', p: 'SSC is what separates granulocytes (very high) from monocytes (intermediate) from lymphocytes (low), and it is the y-axis of the CD45 vs SSC gate that defines the blast region. Because the signals here are weak, PMT voltage is set per channel during setup, and because emission spectra overlap, this is precisely where compensation is applied.' }
+    ]
+  }
+};
+
 const FlowSoundSynth = {
   ctx: null,
   isMuted: true,
@@ -4326,6 +4502,81 @@ function refreshExplorerFocus() {
     return ab && lit.indexOf(ab.laser) !== -1;
   });
   applyExplorerFocus(keys);
+}
+
+// ==========================================================================
+// Fluidics hotspot UI — cursor tooltip + pinned explanation card
+// ==========================================================================
+
+let fluidicsPinnedId = null;
+
+function fluidicsTooltipEl() { return document.getElementById('fluidics-tooltip'); }
+function fluidicsDetailEl() { return document.getElementById('fluidics-detail-card'); }
+
+// Follows the cursor. Flipped to the left of the pointer near the right edge
+// so it never runs off the canvas or under the simulator panel.
+function moveFluidicsTooltip(e) {
+  const tip = fluidicsTooltipEl();
+  if (!tip || tip.style.display === 'none') return;
+  const host = document.getElementById('explorer-3d-container');
+  if (!host) return;
+  const rect = host.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const flip = x > rect.width - (tip.offsetWidth + 40);
+  tip.style.left = (flip ? x - tip.offsetWidth - 16 : x + 16) + 'px';
+  tip.style.top = Math.max(8, y - 14) + 'px';
+}
+
+function updateFluidicsTooltip(id) {
+  const tip = fluidicsTooltipEl();
+  if (!tip) return;
+  const info = id && FLUIDICS_COMPONENTS[id];
+  if (!info) { tip.style.display = 'none'; return; }
+  tip.style.display = 'block';
+  tip.style.borderColor = info.color;
+  tip.innerHTML =
+    `<span class="fluidics-tip-title" style="color:${info.color}">${info.title}</span>` +
+    `<span class="fluidics-tip-hint">Click to read more</span>`;
+}
+
+function openFluidicsDetail(id) {
+  const info = FLUIDICS_COMPONENTS[id];
+  const card = fluidicsDetailEl();
+  if (!info || !card) return;
+  fluidicsPinnedId = id;
+
+  const facts = (info.facts || []).map(([k, v]) =>
+    `<div class="fluidics-fact"><span>${k}</span><strong>${v}</strong></div>`).join('');
+  const body = (info.body || []).map(sec =>
+    `<div class="fluidics-detail-section"><h5>${sec.h}</h5><p>${sec.p}</p></div>`).join('');
+
+  card.innerHTML =
+    `<button class="fluidics-detail-close" id="fluidics-detail-close" title="Close">&times;</button>` +
+    `<div class="fluidics-detail-head" style="border-color:${info.color}33">` +
+      `<span class="fluidics-detail-sub" style="color:${info.color}">${info.subtitle}</span>` +
+      `<h4 style="color:${info.color}">${info.title}</h4>` +
+    `</div>` +
+    (facts ? `<div class="fluidics-facts">${facts}</div>` : '') +
+    body;
+  card.style.borderColor = info.color + '55';
+  card.style.display = 'flex';
+
+  const close = document.getElementById('fluidics-detail-close');
+  if (close) close.addEventListener('click', closeFluidicsDetail);
+
+  // The card sits low in a scrolling sidebar, so a click on the bench would
+  // otherwise appear to do nothing on a short window.
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  if (threeJSData && threeJSData.showHotspotOutline) threeJSData.showHotspotOutline(id);
+}
+
+function closeFluidicsDetail() {
+  fluidicsPinnedId = null;
+  const card = fluidicsDetailEl();
+  if (card) { card.style.display = 'none'; card.innerHTML = ''; }
+  if (threeJSData && threeJSData.hideHotspotOutline) threeJSData.hideHotspotOutline();
 }
 
 // ==========================================================================
@@ -5233,6 +5484,66 @@ function initThreeJSRenderer(container, details, cellType) {
   fluidicsGroup.visible = isFluidicsActive;
   scene.add(fluidicsGroup);
 
+  // -- Clickable hotspots ---------------------------------------------------
+  // Every part of the bench registers the meshes that represent it, so a ray
+  // from the cursor can name the component under the pointer. Picking resolves
+  // by priority rather than by distance: the transparent chamber wall sits in
+  // front of the core stream from every angle, so nearest-hit-wins would make
+  // the inner components unreachable.
+  const hotspotTargets = [];
+  const hotspotGroups = {};   // id -> { meshes:[], labels:[], box }
+
+  function registerHotspot(id, object, priority) {
+    if (!hotspotGroups[id]) hotspotGroups[id] = { meshes: [], labels: [], box: null };
+    object.traverse(o => {
+      if (!o.isMesh && !o.isSprite) return;
+      o.userData.hotspotId = id;
+      // Text labels float above everything with depthTest off, so they must
+      // out-rank the geometry they sit over or they can never be hit.
+      o.userData.hotspotPriority = (priority || 1) + (o.isSprite ? 20 : 0);
+      hotspotTargets.push(o);
+      if (o.isSprite) hotspotGroups[id].labels.push(o);
+      else hotspotGroups[id].meshes.push(o);
+    });
+  }
+
+  // Selection outline, built lazily from the union of a hotspot's meshes.
+  const hotspotBoxGroup = new THREE.Group();
+  hotspotBoxGroup.visible = false;
+  scene.add(hotspotBoxGroup);
+  const hotspotBoxMat = new THREE.LineBasicMaterial({
+    color: 0x67e8f9, transparent: true, opacity: 0.9, depthTest: false
+  });
+  const hotspotBoxMesh = new THREE.LineSegments(new THREE.BufferGeometry(), hotspotBoxMat);
+  hotspotBoxMesh.renderOrder = 70;
+  hotspotBoxGroup.add(hotspotBoxMesh);
+
+  const _hsBox = new THREE.Box3();
+  const _hsVec = new THREE.Vector3();
+
+  function showHotspotOutline(id) {
+    const grp = hotspotGroups[id];
+    if (!grp || !grp.meshes.length) { hotspotBoxGroup.visible = false; return; }
+    _hsBox.makeEmpty();
+    grp.meshes.forEach(m => {
+      m.updateWorldMatrix(true, false);
+      _hsBox.expandByObject(m);
+    });
+    if (_hsBox.isEmpty()) { hotspotBoxGroup.visible = false; return; }
+    // Breathing room so the outline reads as a selection, not a skin.
+    _hsBox.getSize(_hsVec);
+    _hsBox.expandByScalar(Math.max(0.12, _hsVec.length() * 0.02));
+    _hsBox.getSize(_hsVec);
+    const boxGeo = new THREE.BoxGeometry(_hsVec.x, _hsVec.y, _hsVec.z);
+    const geo = new THREE.EdgesGeometry(boxGeo);
+    boxGeo.dispose();   // scaffolding only — the edges are what gets drawn
+    hotspotBoxMesh.geometry.dispose();
+    hotspotBoxMesh.geometry = geo;
+    _hsBox.getCenter(_hsVec);
+    hotspotBoxMesh.position.copy(_hsVec);
+    hotspotBoxGroup.visible = true;
+  }
+
   // -- Sample injection tube (the "nozzle") ---------------------------------
   const nozzleMesh = new THREE.Group();
   nozzleMesh.visible = isFluidicsActive;
@@ -5255,6 +5566,8 @@ function initThreeJSRenderer(container, details, cellType) {
   const sitLabel = makeLabelSprite('Sample injection tube', '#e2e8f0', 0.0032);
   sitLabel.position.set(2.6, FLOW.ySit + 2.5, 0);
   nozzleMesh.add(sitLabel);
+
+  registerHotspot('sit', nozzleMesh, 5);
 
   // -- Flow chamber: tapering sheath body + square quartz cuvette -----------
   const glassMesh = new THREE.Group();
@@ -5320,6 +5633,13 @@ function initThreeJSRenderer(container, details, cellType) {
   focusLabel.position.set(3.0, FLOW.yTaperTop - 0.5, 0);
   glassMesh.add(focusLabel);
 
+  // The chamber wall wraps everything else, so it picks last (priority 1).
+  registerHotspot('chamber', chamberMesh, 1);
+  registerHotspot('chamber', chamberRim, 1);
+  registerHotspot('chamber', focusLabel, 1);
+  registerHotspot('cuvette', cuvetteMesh, 2);
+  registerHotspot('cuvette', cuvetteLabel, 2);
+
   // -- Sheath fluid particles ----------------------------------------------
   const linesGroup = new THREE.Group();
   linesGroup.visible = isFluidicsActive;
@@ -5358,11 +5678,15 @@ function initThreeJSRenderer(container, details, cellType) {
   linesGroup.add(sheathLabel);
 
   // Sheath inlets feeding the chamber from the sides.
+  // The sheath itself is a particle cloud, which raycasts poorly — the inlet
+  // tubes and the label stand in for it as the pickable target.
+  registerHotspot('sheath', sheathLabel, 4);
   [-1, 1].forEach(sign => {
     const inlet = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 2.2, 12), steelMat);
     inlet.position.set(sign * 2.6, FLOW.yTop - 1.0, 0);
     inlet.rotation.z = sign * Math.PI / 3.2;
     linesGroup.add(inlet);
+    registerHotspot('sheath', inlet, 4);
   });
 
   // -- Sample core stream (narrows through the taper) -----------------------
@@ -5390,6 +5714,9 @@ function initThreeJSRenderer(container, details, cellType) {
   const coreLabel = makeLabelSprite('Sample core stream', '#22d3ee', 0.0032);
   coreLabel.position.set(2.4, 3.9, 0);
   linesGroup.add(coreLabel);
+
+  registerHotspot('core', coreMesh, 3);
+  registerHotspot('core', coreLabel, 3);
 
   // =========================================================================
   // Optics: laser sources, beams, detectors
@@ -5448,8 +5775,11 @@ function initThreeJSRenderer(container, details, cellType) {
     const lbl = makeLabelSprite(config.label, '#' + new THREE.Color(config.color).getHexString(), 0.0030);
     lbl.position.set(-0.1, 0.72, 0);
     housing.add(lbl);
-    housing.visible = isFluidicsActive;
+    // Visibility is inherited from fluidicsGroup, which the animation loop
+    // keeps in sync. Pinning it here froze the housings hidden, because the
+    // toggle only ever updates the parent.
     fluidicsGroup.add(housing);
+    registerHotspot('laser_' + laserKey, housing, 5);
   });
 
   const detectorMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.65, roughness: 0.45 });
@@ -5469,6 +5799,7 @@ function initThreeJSRenderer(container, details, cellType) {
   fscLabel.position.set(0, 1.6, 0);
   fscDetector.add(fscLabel);
   fluidicsGroup.add(fscDetector);
+  registerHotspot('fsc', fscDetector, 5);
 
   const obscurationBar = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.5, 2.2), new THREE.MeshStandardMaterial({
     color: 0x0f172a, metalness: 0.4, roughness: 0.7
@@ -5478,6 +5809,10 @@ function initThreeJSRenderer(container, details, cellType) {
   const obscurationLabel = makeLabelSprite('Obscuration bar', '#94a3b8', 0.0028);
   obscurationLabel.position.set(6.4, 0.85, 0);
   fluidicsGroup.add(obscurationLabel);
+  // The bar is small and sits inside the FSC detector's shadow, so it needs to
+  // out-rank its neighbours to stay clickable.
+  registerHotspot('obscuration', obscurationBar, 6);
+  registerHotspot('obscuration', obscurationLabel, 6);
 
   // Side scatter and fluorescence are collected at 90 degrees to the beam.
   const sscDetector = new THREE.Group();
@@ -5493,6 +5828,7 @@ function initThreeJSRenderer(container, details, cellType) {
   sscLabel.position.set(0, 1.6, 0);
   sscDetector.add(sscLabel);
   fluidicsGroup.add(sscDetector);
+  registerHotspot('ssc', sscDetector, 5);
 
   // =========================================================================
   // Scatter + fluorescence emission from the interrogated cell
@@ -5570,26 +5906,88 @@ function initThreeJSRenderer(container, details, cellType) {
   let camYaw = 0.62;
   let camPitch = 0.14;
 
+  // Hotspot picking. Highest priority wins rather than nearest hit — see the
+  // note on registerHotspot.
+  const hsRaycaster = new THREE.Raycaster();
+  const hsPointer = new THREE.Vector2();
+  let hoveredHotspot = null;
+  let dragDistance = 0;
+
+  const pickHotspot = (e) => {
+    if (!isFluidicsActive) return null;
+    const rect = renderer.domElement.getBoundingClientRect();
+    hsPointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    hsPointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    hsRaycaster.setFromCamera(hsPointer, camera);
+    const hits = hsRaycaster.intersectObjects(hotspotTargets, false);
+    let best = null;
+    let bestPriority = -Infinity;
+    for (let i = 0; i < hits.length; i++) {
+      const o = hits[i].object;
+      if (!o.visible || !o.parent || !o.userData.hotspotId) continue;
+      // A hidden ancestor still yields intersections, so walk up and check.
+      let node = o, shown = true;
+      while (node) { if (!node.visible) { shown = false; break; } node = node.parent; }
+      if (!shown) continue;
+      const p = o.userData.hotspotPriority;
+      if (p > bestPriority) { bestPriority = p; best = o.userData.hotspotId; }
+    }
+    return best;
+  };
+
+  const setHoveredHotspot = (id) => {
+    if (id === hoveredHotspot) return;
+    // Labels sit at 0.85 at rest; the hovered component's go fully opaque.
+    if (hoveredHotspot && hotspotGroups[hoveredHotspot]) {
+      hotspotGroups[hoveredHotspot].labels.forEach(l => { l.material.opacity = 0.85; });
+    }
+    hoveredHotspot = id;
+    if (id && hotspotGroups[id]) {
+      hotspotGroups[id].labels.forEach(l => { l.material.opacity = 1.0; });
+      showHotspotOutline(id);
+    } else if (!fluidicsPinnedId) {
+      hotspotBoxGroup.visible = false;
+    } else {
+      showHotspotOutline(fluidicsPinnedId);
+    }
+    renderer.domElement.style.cursor = id ? 'pointer' : (isFluidicsActive ? 'grab' : 'default');
+    updateFluidicsTooltip(id);
+  };
+
   const onMouseDown = (e) => {
     isDragging = true;
+    dragDistance = 0;
     prevMousePos = { x: e.clientX, y: e.clientY };
     autoRotate = false;
     if (autoRotateTimer) clearTimeout(autoRotateTimer);
   };
 
   const onMouseMove = (e) => {
-    if (!isDragging) return;
+    if (!isDragging) {
+      setHoveredHotspot(pickHotspot(e));
+      moveFluidicsTooltip(e);
+      return;
+    }
     const deltaX = e.clientX - prevMousePos.x;
     const deltaY = e.clientY - prevMousePos.y;
+    dragDistance += Math.abs(deltaX) + Math.abs(deltaY);
     camYaw -= deltaX * 0.007;
     camPitch = THREE.MathUtils.clamp(camPitch + deltaY * 0.005, -1.15, 1.15);
     prevMousePos = { x: e.clientX, y: e.clientY };
   };
 
-  const onMouseUp = () => {
+  const onMouseUp = (e) => {
+    // Only a press that did not orbit the camera counts as a click on a part.
+    if (isDragging && dragDistance < 6 && isFluidicsActive && e && e.target === renderer.domElement) {
+      const id = pickHotspot(e);
+      if (id) openFluidicsDetail(id);
+      else if (fluidicsPinnedId) closeFluidicsDetail();
+    }
     isDragging = false;
     autoRotateTimer = setTimeout(() => { autoRotate = true; }, 3000);
   };
+
+  const onMouseLeave = () => setHoveredHotspot(null);
 
   const onWheel = (e) => {
     e.preventDefault();
@@ -5600,6 +5998,7 @@ function initThreeJSRenderer(container, details, cellType) {
 
   renderer.domElement.addEventListener('mousedown', onMouseDown);
   renderer.domElement.addEventListener('mousemove', onMouseMove);
+  renderer.domElement.addEventListener('mouseleave', onMouseLeave);
   window.addEventListener('mouseup', onMouseUp);
   renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
 
@@ -5623,9 +6022,15 @@ function initThreeJSRenderer(container, details, cellType) {
     profile,
     animationFrameId: null,
     autoRotate: () => autoRotate,
+    hotspotGroups,
+    showHotspotOutline,
+    hideHotspotOutline: () => { hotspotBoxGroup.visible = false; },
     cleanup: () => {
+      closeFluidicsDetail();
+      updateFluidicsTooltip(null);
       renderer.domElement.removeEventListener('mousedown', onMouseDown);
       renderer.domElement.removeEventListener('mousemove', onMouseMove);
+      renderer.domElement.removeEventListener('mouseleave', onMouseLeave);
       window.removeEventListener('mouseup', onMouseUp);
       renderer.domElement.removeEventListener('wheel', onWheel);
       if (autoRotateTimer) clearTimeout(autoRotateTimer);
@@ -5735,6 +6140,12 @@ function initThreeJSRenderer(container, details, cellType) {
     glassMesh.visible = isFluidicsActive;
     linesGroup.visible = isFluidicsActive;
     fluidicsGroup.visible = isFluidicsActive;
+
+    // Switching the bench off must take the selection outline with it.
+    if (!isFluidicsActive && hotspotBoxGroup.visible) {
+      hotspotBoxGroup.visible = false;
+      setHoveredHotspot(null);
+    }
 
     // ---- Sheath fluid: converges and accelerates through the taper ---------
     if (isFluidicsActive) {
@@ -6610,7 +7021,13 @@ function initSimulatorEvents() {
       isFluidicsActive = e.target.checked;
       isInjecting = false;
       injectionProgress = 0;
-      
+
+      // The bench is gone when fluidics is off, so its explanation goes too.
+      if (!isFluidicsActive) {
+        closeFluidicsDetail();
+        updateFluidicsTooltip(null);
+      }
+
       if (fluidicsControlsContainer) {
         fluidicsControlsContainer.style.display = isFluidicsActive ? 'flex' : 'none';
       }

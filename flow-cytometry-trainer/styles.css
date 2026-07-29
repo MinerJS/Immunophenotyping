@@ -2095,6 +2095,18 @@ body.fullscreen-mode .plot-card {
   transition: all 0.3s ease;
 }
 
+/* Secondary label lines inside a flow node (the discriminating criterion) */
+.flow-node text tspan.flow-node-sub {
+  font-size: 6.4px;
+  font-weight: 500;
+  fill: var(--text-muted);
+}
+
+.flow-node.active text tspan.flow-node-sub,
+.flow-node.partial text tspan.flow-node-sub {
+  fill: var(--text-secondary);
+}
+
 /* Flow node type styling */
 .flow-node.root rect {
   fill: #1e1b4b; /* Deep purple for root */
@@ -2432,3 +2444,214 @@ body.fullscreen-mode .plot-card {
   box-shadow: inset 0 0 15px rgba(0, 229, 255, 0.15);
 }
 
+
+/* ==========================================================================
+   Fluidics hotspots — cursor tooltip and pinned component explanation card
+   ========================================================================== */
+
+#fluidics-tooltip {
+  position: absolute;
+  z-index: 55;
+  pointer-events: none;
+  background: rgba(2, 6, 23, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid var(--accent-cyan);
+  border-radius: 8px;
+  padding: 7px 11px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 240px;
+}
+
+.fluidics-tip-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 1.25;
+}
+
+.fluidics-tip-hint {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Lives in the left info sidebar, not over the canvas — the 3D bench stays
+   fully visible while you read about the part you just clicked. */
+#fluidics-detail-card {
+  position: relative;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1.5px solid rgba(56, 189, 248, 0.35);
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.05);
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+  animation: fluidics-card-in 0.22s ease;
+}
+
+@keyframes fluidics-card-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fluidics-detail-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fluidics-detail-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+}
+
+.fluidics-detail-head {
+  padding-right: 26px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fluidics-detail-sub {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+.fluidics-detail-head h4 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.fluidics-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 11px;
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.fluidics-fact {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+}
+
+.fluidics-fact span { color: var(--text-muted); flex-shrink: 0; }
+.fluidics-fact strong { color: var(--text-primary); font-weight: 600; text-align: right; }
+
+.fluidics-detail-section h5 {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.fluidics-detail-section p {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ==========================================================================
+   Simulator control-label info badges — hover/focus "?" tooltips explaining
+   what an option means, since setup terms (flow rate, run mode...) aren't
+   self-evident to a trainee reading the raw select values.
+   ========================================================================== */
+
+.sim-ctrl-label-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sim-info-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid var(--text-muted);
+  color: var(--text-muted);
+  font-size: 8.5px;
+  font-weight: 700;
+  font-family: Georgia, 'Times New Roman', serif;
+  line-height: 1;
+  cursor: help;
+  user-select: none;
+}
+
+.sim-info-badge:hover,
+.sim-info-badge:focus {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  outline: none;
+}
+
+.sim-info-popover {
+  display: none;
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  background: rgba(7, 13, 30, 0.98);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-secondary);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 50;
+  cursor: default;
+}
+
+.sim-info-badge:hover .sim-info-popover,
+.sim-info-badge:focus .sim-info-popover {
+  display: block;
+}
+
+.sim-info-popover strong {
+  color: var(--text-primary);
+}
+
+.sim-info-popover .sim-info-row + .sim-info-row {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255,255,255,0.08);
+}
