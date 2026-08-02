@@ -66,6 +66,8 @@ Released under the [MIT License](LICENSE).
 
 An open-source, interactive web-based simulator and diagnostic trainer for clinical flow cytometry, leukocyte immunophenotyping, and Acute Myeloid Leukemia (AML) classification across WHO / FAB subtypes (M0 through M7).
 
+![Flow Cytometry Trainer Demo Video](flow-cytometry-trainer/flow_cytometry_trainer_demo.gif)
+
 Developed in alignment with international guidelines:
 - **Johansson et al. (2014)**: *Guidelines on the use of multicolour flow cytometry in the diagnosis of haematological malignancies* (British Journal of Haematology).
 - **EuroFlow Protocols (2012)**: *Standardization of flow cytometer instrument settings and immunophenotyping protocols*.
