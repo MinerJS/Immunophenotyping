@@ -1,3 +1,8 @@
+# Exclude Docx files and specific SOP guides
+*.docx
+SOP_Immunophenotypic_Interpretation_Guide.md
+SOP_Sample_Preparation_and_Flow_Analysis.md
+
 # Exclude large PDF and PowerPoint documents
 *.pdf
 *.pptx
