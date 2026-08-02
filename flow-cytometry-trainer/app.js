@@ -7511,3 +7511,83 @@ function animateExplorerPlots() {
 
 
 
+
+// Interactive Trainer Guide Modal & Simulator Logic
+document.addEventListener("DOMContentLoaded", () => {
+  const guideModalBtn = document.getElementById("interactive-guide-modal-btn");
+  const guideModal = document.getElementById("interactive-guide-modal");
+  const closeBtnX = document.getElementById("guide-modal-close-x");
+  const closeBtnBottom = document.getElementById("guide-modal-close-btn");
+  const tabBtns = document.querySelectorAll("[data-guidetab]");
+  const simBtns = document.querySelectorAll("[data-simmode]");
+
+  if (guideModalBtn && guideModal) {
+    guideModalBtn.addEventListener("click", () => {
+      guideModal.classList.add("open");
+    });
+  }
+
+  const closeModal = () => {
+    if (guideModal) guideModal.classList.remove("open");
+  };
+
+  if (closeBtnX) closeBtnX.addEventListener("click", closeModal);
+  if (closeBtnBottom) closeBtnBottom.addEventListener("click", closeModal);
+
+  if (guideModal) {
+    guideModal.addEventListener("click", (e) => {
+      if (e.target === guideModal) closeModal();
+    });
+  }
+
+  // Guide Tab Navigation
+  tabBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      tabBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const targetId = "guidetab-" + btn.getAttribute("data-guidetab");
+      document.querySelectorAll(".guide-tab-pane").forEach((pane) => {
+        pane.style.display = pane.id === targetId ? "block" : "none";
+      });
+    });
+  });
+
+  // Simulator Modes
+  const gGr = document.getElementById("g-gr");
+  const gMo = document.getElementById("g-mo");
+  const gLy = document.getElementById("g-ly");
+  const gBlast = document.getElementById("g-blast");
+  const simDesc = document.getElementById("guide-sim-desc");
+
+  simBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      simBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const mode = btn.getAttribute("data-simmode");
+
+      if (gGr) gGr.className.baseVal = "guide-pop-group";
+      if (gMo) gMo.className.baseVal = "guide-pop-group";
+      if (gLy) gLy.className.baseVal = "guide-pop-group";
+      if (gBlast) gBlast.className.baseVal = "guide-pop-group dim";
+
+      if (mode === "all") {
+        if (simDesc) simDesc.innerHTML = "💡 <strong>Full Sample:</strong> Normal leukocyte populations cleanly separate on CD45 vs SSC.";
+      } else if (mode === "singlets") {
+        if (gBlast) gBlast.className.baseVal = "guide-pop-group dim";
+        if (simDesc) simDesc.innerHTML = "🟤 <strong>Singlet Gate:</strong> FSC-A vs FSC-H excludes cell doublets along the linear diagonal.";
+      } else if (mode === "blast") {
+        if (gGr) gGr.className.baseVal = "guide-pop-group dim";
+        if (gMo) gMo.className.baseVal = "guide-pop-group dim";
+        if (gLy) gLy.className.baseVal = "guide-pop-group dim";
+        if (gBlast) gBlast.className.baseVal = "guide-pop-group pulse";
+        if (simDesc) simDesc.innerHTML = "🟣 <strong>CD45dim Blast Gate:</strong> Leukemic blasts exhibit dim CD45 expression and low-to-moderate SSC.";
+      } else if (mode === "apl") {
+        if (gMo) gMo.className.baseVal = "guide-pop-group dim";
+        if (gLy) gLy.className.baseVal = "guide-pop-group dim";
+        if (gGr) gGr.className.baseVal = "guide-pop-group pulse";
+        if (gBlast) gBlast.className.baseVal = "guide-pop-group pulse";
+        if (simDesc) simDesc.innerHTML = "⚠️ <strong>AML-M3 (APL) Shift:</strong> Promyelocytic blasts exhibit high Side Scatter due to dense azurophilic granules, expanding both blast and granulocyte windows.";
+      }
+    });
+  });
+});

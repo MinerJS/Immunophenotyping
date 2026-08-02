@@ -2655,3 +2655,265 @@ body.fullscreen-mode .plot-card {
   padding-top: 6px;
   border-top: 1px dashed rgba(255,255,255,0.08);
 }
+
+
+/* ==========================================================================
+   Interactive Trainer Guide Modal & Animation Simulator
+   ========================================================================== */
+
+.btn-primary-guide {
+  background: linear-gradient(135deg, #00d2ff, #0072ff);
+  color: #ffffff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 15px rgba(0, 114, 255, 0.4);
+  transition: all 0.25s ease;
+  animation: guideBtnGlow 3s infinite alternate;
+}
+
+@keyframes guideBtnGlow {
+  0% { box-shadow: 0 4px 15px rgba(0, 114, 255, 0.4); }
+  100% { box-shadow: 0 0 25px rgba(0, 210, 255, 0.85); transform: translateY(-1px); }
+}
+
+.btn-primary-guide:hover {
+  background: linear-gradient(135deg, #0072ff, #00d2ff);
+  transform: scale(1.03);
+}
+
+.guide-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(5, 10, 25, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.guide-modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.guide-modal-card {
+  background: rgba(13, 22, 45, 0.95);
+  border: 1px solid rgba(0, 210, 255, 0.3);
+  border-radius: 16px;
+  max-width: 860px;
+  width: 100%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+  transform: scale(0.95);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.guide-modal-overlay.open .guide-modal-card {
+  transform: scale(1);
+}
+
+.guide-modal-header {
+  padding: 16px 24px;
+  background: linear-gradient(90deg, rgba(0, 210, 255, 0.1), rgba(0, 114, 255, 0.05));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.guide-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guide-modal-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #a0aec0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+}
+
+.guide-modal-close-btn:hover {
+  background: rgba(255, 60, 60, 0.2);
+  color: #ff5555;
+  border-color: #ff5555;
+}
+
+.guide-modal-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 20px;
+  background: rgba(8, 14, 30, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+}
+
+.guide-tab-btn {
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: #a0aec0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.guide-tab-btn:hover {
+  background: rgba(0, 210, 255, 0.1);
+  color: #00d2ff;
+  border-color: rgba(0, 210, 255, 0.3);
+}
+
+.guide-tab-btn.active {
+  background: #0072ff;
+  color: #ffffff;
+  border-color: #00d2ff;
+  box-shadow: 0 4px 12px rgba(0, 114, 255, 0.4);
+}
+
+.guide-tab-btn.highlight {
+  border-color: #a855f7;
+  color: #c084fc;
+}
+
+.guide-tab-btn.highlight.active {
+  background: linear-gradient(135deg, #9333ea, #7e22ce);
+  color: #ffffff;
+}
+
+.guide-modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.guide-modal-body h3 {
+  color: #ffffff;
+  font-size: 16px;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.guide-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.guide-feature-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px;
+  transition: all 0.2s ease;
+}
+
+.guide-feature-card:hover {
+  border-color: rgba(0, 210, 255, 0.4);
+  background: rgba(0, 210, 255, 0.04);
+}
+
+.guide-feature-card h4 {
+  margin: 0 0 6px;
+  color: #00d2ff;
+  font-size: 13px;
+}
+
+.guide-sim-box {
+  background: #070d1e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.guide-sim-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.guide-sim-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.guide-sim-btn:hover {
+  background: rgba(0, 210, 255, 0.15);
+  border-color: #00d2ff;
+}
+
+.guide-sim-btn.active {
+  background: #0072ff;
+  border-color: #00d2ff;
+  color: #ffffff;
+}
+
+.guide-sim-svg {
+  width: 100%;
+  max-height: 240px;
+  background: #040814;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.guide-pop-group {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.guide-pop-group.dim {
+  opacity: 0.2;
+}
+
+.guide-pop-group.pulse {
+  animation: svgGroupPulse 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes svgGroupPulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.04); }
+}
