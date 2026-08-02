@@ -10,7 +10,7 @@ An open-source, interactive web-based simulator and diagnostic trainer for clini
 
 ## 🎬 Application Overview & Live Preview
 
-![Flow Cytometry Trainer Animated Video Showcase](flow-cytometry-trainer/flow_cytometry_trainer_demo.gif)
+![Flow Cytometry Trainer Animated Video Showcase](flow_cytometry_trainer_demo.gif)
 
 > **Explore single-cell flow cytometry, 10-color dry antibody panels, 3D cell micro-structure, and real-time diagnostic leukemic gating right in your browser!**
 
