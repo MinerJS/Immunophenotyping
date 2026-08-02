@@ -7508,6 +7508,58 @@ function animateExplorerPlots() {
   if (explorerPlotLineage) explorerPlotLineage.draw();
 }
 
+/* ==========================================================================
+   Interactive User Guide & Animations Suite Logic
+   ========================================================================== */
+
+document.addEventListener('DOMContentLoaded', () => {
+  const openBtn = document.getElementById('toggle-guide-modal-btn');
+  const closeBtn = document.getElementById('close-guide-modal-btn');
+  const modal = document.getElementById('user-guide-modal');
+  const tabBtns = document.querySelectorAll('.guide-tab-btn');
+  const tabContents = document.querySelectorAll('.guidetab-content');
+
+  if (openBtn && modal) {
+    openBtn.addEventListener('click', () => {
+      modal.style.display = 'flex';
+    });
+  }
+
+  if (closeBtn && modal) {
+    closeBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+  }
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-guidetab');
+      
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      tabContents.forEach(content => {
+        if (content.id === 'guidetab-' + targetId) {
+          content.style.display = 'flex';
+          content.classList.add('active');
+        } else {
+          content.style.display = 'none';
+          content.classList.remove('active');
+        }
+      });
+    });
+  });
+});
+
+
 
 
 

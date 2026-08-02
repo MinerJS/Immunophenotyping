@@ -39,6 +39,10 @@
       <button id="toggle-tutorial-btn" class="btn-secondary" style="display: none;">Show Tutorial</button>
       <button id="interactive-guide-modal-btn" class="btn-primary-guide">🎓 How to Learn (Interactive Guide)</button>
       <button id="toggle-sandbox-btn" class="btn-secondary">Sandbox Mode</button>
+      <button id="toggle-guide-modal-btn" class="btn-primary" style="display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #0284c7, #0d9488); border: none; font-weight: 700; box-shadow: 0 2px 10px rgba(14, 165, 233, 0.3);">
+        <svg class="icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+        Interactive Guide & Animations
+      </button>
     </div>
   </header>
 
@@ -950,11 +954,385 @@
     </div>
   </div>
 
-  >
+  <!-- Interactive User Guide & Animations Suite Modal -->
+  <div id="user-guide-modal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; padding: 20px;">
+    <div class="modal-card" style="background: #090d16; border: 1.5px solid var(--border-active); border-radius: 16px; width: 92%; max-width: 1000px; height: 88vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8); position: relative;">
+      
+      <!-- Modal Header -->
+      <div style="padding: 16px 24px; border-bottom: 1.5px solid var(--border-color); background: var(--bg-sidebar); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #0284c7, #0d9488); display: flex; align-items: center; justify-content: center; color: #fff;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+          </div>
+          <div>
+            <h2 style="font-size: 17px; font-weight: 700; color: #fff; margin: 0;">Flow-Gate Interactive Learning & Animation Suite</h2>
+            <p style="font-size: 11.5px; color: var(--text-secondary); margin: 2px 0 0 0;">Step-by-step visual guides & live animated demonstrations for all flow cytometry modules</p>
+          </div>
+        </div>
+        <button id="close-guide-modal-btn" class="btn-secondary" style="padding: 6px 12px; font-weight: 700; border-radius: 8px;">✕ Close Guide</button>
+      </div>
 
+      <!-- Navigation Tabs -->
+      <div class="guide-tabs" style="display: flex; gap: 4px; padding: 10px 24px; border-bottom: 1px solid var(--border-color); background: rgba(2, 6, 23, 0.4); flex-shrink: 0; overflow-x: auto;">
+        <button class="guide-tab-btn active" data-guidetab="sim-anim">⚙️ Instrument Simulator & Optics</button>
+        <button class="guide-tab-btn" data-guidetab="cell-anim">🧊 3D Cell Morphology & Receptors</button>
+        <button class="guide-tab-btn" data-guidetab="gating-anim">📊 Gating Strategy & Tools</button>
+        <button class="guide-tab-btn" data-guidetab="pred-anim">🩺 AML Predictor & Flowcharts</button>
+        <button class="guide-tab-btn" data-guidetab="compare-anim">🔬 Normal vs AML Compare Mode</button>
+      </div>
+
+      <!-- Modal Body Content -->
+      <div class="guide-body" style="flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px;">
+
+        <!-- Tab 1: Instrument Simulator & Optics -->
+        <div id="guidetab-sim-anim" class="guidetab-content active" style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+            
+            <!-- Left: Live Animated Visualizer -->
+            <div style="background: #020617; border: 1.5px solid var(--border-color); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent-cyan);">Live Animated Stream Simulation</span>
+                <span style="font-size: 10px; background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); padding: 2px 6px; border-radius: 4px; font-weight: 600;">Laser & Pulse Active</span>
+              </div>
+              
+              <!-- SVG Stream Canvas Animation -->
+              <div style="position: relative; height: 260px; background: radial-gradient(circle at center, #070d1e 0%, #020617 100%); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; display: flex; justify-content: center; align-items: center;">
+                <svg id="guide-sim-svg" width="100%" height="100%" viewBox="0 0 450 240" preserveAspectRatio="xMidYMid meet">
+                  <!-- Sheath fluid stream nozzle -->
+                  <path d="M 170 0 L 190 60 L 190 240 L 260 240 L 260 60 L 280 0 Z" fill="rgba(14, 165, 233, 0.1)" stroke="rgba(14, 165, 233, 0.3)" stroke-width="1.5"/>
+                  <path d="M 215 0 L 215 240" stroke="rgba(56, 189, 248, 0.4)" stroke-width="8" stroke-dasharray="4,4"/>
+                  
+                  <!-- Lasers -->
+                  <line x1="20" y1="80" x2="430" y2="80" stroke="#00e5ff" stroke-width="3" stroke-opacity="0.85"/>
+                  <text x="30" y="72" fill="#00e5ff" font-size="10" font-weight="bold">488nm Blue Laser</text>
+
+                  <line x1="20" y1="130" x2="430" y2="130" stroke="#ff1744" stroke-width="3" stroke-opacity="0.85"/>
+                  <text x="30" y="122" fill="#ff1744" font-size="10" font-weight="bold">638nm Red Laser</text>
+
+                  <line x1="20" y1="180" x2="430" y2="180" stroke="#aa00ff" stroke-width="3" stroke-opacity="0.85"/>
+                  <text x="30" y="172" fill="#aa00ff" font-size="10" font-weight="bold">405nm Violet Laser</text>
+
+                  <!-- Animated Moving Cells -->
+                  <circle id="guide-cell-1" cx="225" cy="20" r="9" fill="#38bdf8" stroke="#fff" stroke-width="1.5">
+                    <animate attributeName="cy" from="0" to="240" dur="2.4s" repeatCount="indefinite" />
+                  </circle>
+                  <circle id="guide-cell-2" cx="225" cy="-80" r="11" fill="#a855f7" stroke="#fff" stroke-width="1.5">
+                    <animate attributeName="cy" from="-80" to="240" dur="2.4s" repeatCount="indefinite" begin="0.8s" />
+                  </circle>
+                  <circle id="guide-cell-3" cx="225" cy="-160" r="8" fill="#4caf50" stroke="#fff" stroke-width="1.5">
+                    <animate attributeName="cy" from="-160" to="240" dur="2.4s" repeatCount="indefinite" begin="1.6s" />
+                  </circle>
+                  
+                  <!-- Oscilloscope Mini Preview -->
+                  <rect x="290" y="15" width="140" height="100" rx="6" fill="#020617" stroke="#1e293b" stroke-width="1"/>
+                  <text x="300" y="30" fill="#38bdf8" font-size="9" font-weight="bold">Pulse Height (H) vs Area (A)</text>
+                  <path d="M 300 95 L 320 95 L 335 45 L 350 95 L 420 95" fill="none" stroke="#22c55e" stroke-width="2">
+                    <animate attributeName="d" values="M 300 95 L 320 95 L 335 45 L 350 95 L 420 95; M 300 95 L 340 95 L 355 55 L 370 95 L 420 95; M 300 95 L 320 95 L 335 45 L 350 95 L 420 95" dur="1.2s" repeatCount="indefinite"/>
+                  </path>
+                </svg>
+              </div>
+
+              <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.45;">
+                <strong style="color: var(--text-primary);">Hydrodynamic Focusing & Laser Interrogation:</strong>
+                Sheath fluid compresses the sample stream so single cells pass through the focal spots of 3 spatially separated lasers (Blue 488nm, Red 638nm, Violet 405nm).
+              </div>
+            </div>
+
+            <!-- Right: Detailed Step Instructions -->
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="guide-step-card">
+                <div class="step-badge">Step 1</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Select Tube Panel & Sample Case</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    Choose between QC Screening, T-Cell, B-Cell, or Myeloid panels. Select Normal Whole Blood or AML cases (M0 through M7).
+                  </p>
+                </div>
+              </div>
+
+              <div class="guide-step-card">
+                <div class="step-badge">Step 2</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Adjust Flow Rate & Hydrodynamic Core</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    Switch between <strong>Low (10 µL/min)</strong> for tightest core stream (<0.1% doublets) vs <strong>High (60 µL/min)</strong> for fast throughput (higher doublet coincidence).
+                  </p>
+                </div>
+              </div>
+
+              <div class="guide-step-card">
+                <div class="step-badge">Step 3</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Inspect Pulse Height, Area, & Width (FSC-A vs FSC-H)</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    Observe the digital signal processor oscilloscope. Singlets fall along the diagonal on FSC-A vs FSC-H; doublets fall below the diagonal due to increased time-of-flight.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab 2: 3D Cell Morphology & Receptors -->
+        <div id="guidetab-cell-anim" class="guidetab-content" style="display: none; flex-direction: column; gap: 20px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+            
+            <div style="background: #020617; border: 1.5px solid var(--border-color); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent-cyan);">3D Cell Structure & Receptor Binding</span>
+                <span style="font-size: 10px; background: rgba(168, 85, 247, 0.15); color: #c084fc; padding: 2px 6px; border-radius: 4px; font-weight: 600;">WebGL Interactive</span>
+              </div>
+              
+              <!-- SVG Animated Cell Model -->
+              <div style="height: 260px; background: radial-gradient(circle at center, #111827 0%, #020617 100%); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: center; align-items: center; position: relative;">
+                <svg width="220" height="220" viewBox="0 0 200 200">
+                  <!-- Outer membrane -->
+                  <circle cx="100" cy="100" r="80" fill="rgba(56, 189, 248, 0.12)" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="6,3">
+                    <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="20s" repeatCount="indefinite"/>
+                  </circle>
+                  <!-- Nucleus -->
+                  <ellipse cx="95" cy="95" rx="45" ry="40" fill="rgba(147, 51, 234, 0.35)" stroke="#a855f7" stroke-width="2"/>
+                  <!-- Nucleolus -->
+                  <circle cx="85" cy="85" r="10" fill="#c084fc"/>
+                  <!-- Receptors -->
+                  <g id="guide-receptors">
+                    <circle cx="100" cy="20" r="5" fill="#eab308"/><line x1="100" y1="20" x2="100" y2="0" stroke="#eab308" stroke-width="2"/>
+                    <circle cx="180" cy="100" r="5" fill="#ef4444"/><line x1="180" y1="100" x2="200" y2="100" stroke="#ef4444" stroke-width="2"/>
+                    <circle cx="100" cy="180" r="5" fill="#22c55e"/><line x1="100" y1="180" x2="100" y2="200" stroke="#22c55e" stroke-width="2"/>
+                    <circle cx="20" cy="100" r="5" fill="#06b6d4"/><line x1="20" y1="100" x2="0" y2="100" stroke="#06b6d4" stroke-width="2"/>
+                    <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="-360 100 100" dur="16s" repeatCount="indefinite"/>
+                  </g>
+                </svg>
+              </div>
+
+              <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.45;">
+                <strong style="color: var(--text-primary);">Morphology & Fluorophore Conjugates:</strong>
+                Inspect CD34, CD117, CD45, CD3, and CD19 receptor proteins bound to fluorophores (FITC, PE, APC, PE-Cy7, PB).
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="guide-step-card">
+                <div class="step-badge">1</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Click 'Zoom' Tool on Any Gated Gate</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    In the main plot window, click <strong>Zoom</strong> on the toolbar, then click inside any population gate (e.g. Lymphocytes or AML Blasts) to open its 3D cell model.
+                  </p>
+                </div>
+              </div>
+
+              <div class="guide-step-card">
+                <div class="step-badge">2</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Rotate & Orbit 3D Cell in Real-Time</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    Use your mouse/touch to rotate the cell 360 degrees. Examine surface receptor density and cytoplasmic granules.
+                  </p>
+                </div>
+              </div>
+
+              <div class="guide-step-card">
+                <div class="step-badge">3</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Toggle Surface CD Markers & Internal Opacity</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    Click receptor legend badges to hide/show specific markers, or adjust membrane transparency to reveal nuclear morphology (e.g. mononucleoli vs segmented nucleus).
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab 3: Gating Strategy & Tools -->
+        <div id="guidetab-gating-anim" class="guidetab-content" style="display: none; flex-direction: column; gap: 20px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+            
+            <div style="background: #020617; border: 1.5px solid var(--border-color); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent-cyan);">Animated Gating Toolbar Demonstration</span>
+              
+              <div style="height: 260px; background: #020617; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center;">
+                <svg width="100%" height="100%" viewBox="0 0 300 220">
+                  <!-- Grid -->
+                  <line x1="40" y1="20" x2="40" y2="180" stroke="#1e293b" stroke-width="1.5"/>
+                  <line x1="40" y1="180" x2="280" y2="180" stroke="#1e293b" stroke-width="1.5"/>
+                  <text x="140" y="205" fill="#64748b" font-size="10">CD45 (PB)</text>
+                  <text x="10" y="100" fill="#64748b" font-size="10" transform="rotate(-90 15 100)">SSC-A</text>
+                  
+                  <!-- Cell clusters -->
+                  <!-- Lymphs -->
+                  <circle cx="210" cy="150" r="14" fill="rgba(0, 229, 255, 0.3)"/>
+                  <text x="210" y="153" fill="#00e5ff" font-size="9" text-anchor="middle">Lymphs</text>
+                  <!-- Blasts -->
+                  <circle cx="110" cy="130" r="22" fill="rgba(168, 85, 247, 0.35)"/>
+                  <text x="110" y="133" fill="#c084fc" font-size="9" text-anchor="middle">Blasts</text>
+
+                  <!-- Animated Rectangle Gate drawing -->
+                  <rect x="75" y="95" width="70" height="70" rx="4" fill="rgba(168, 85, 247, 0.15)" stroke="#c084fc" stroke-width="2" stroke-dasharray="4,4">
+                    <animate attributeName="stroke-dashoffset" from="16" to="0" dur="1s" repeatCount="indefinite"/>
+                  </rect>
+                </svg>
+              </div>
+
+              <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.45;">
+                <strong style="color: var(--text-primary);">CD45 vs SSC Blast Gating:</strong>
+                Identify leukemic blast populations characterized by CD45-dim expression and low-to-intermediate Side Scatter (SSC).
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="guide-step-card">
+                <div class="step-badge">Rect</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Rectangle Gate Tool</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    Click and drag across any scatter plot to define rectangular bounds. Calculates live count, % parent, and % total statistics.
+                  </p>
+                </div>
+              </div>
+
+              <div class="guide-step-card">
+                <div class="step-badge">Poly</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Polygon Gate Tool</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    Click multiple vertices around irregular populations (e.g. monocyte/granulocyte boundaries). Double-click or click start point to close polygon.
+                  </p>
+                </div>
+              </div>
+
+              <div class="guide-step-card">
+                <div class="step-badge">Auto</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Auto-Gating Algorithm</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    Click <strong>Auto</strong> to instantly calculate gates for Lymphocytes, Monocytes, Granulocytes, and Leukemic Blasts.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab 4: AML Predictor & Flowcharts -->
+        <div id="guidetab-pred-anim" class="guidetab-content" style="display: none; flex-direction: column; gap: 20px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+            
+            <div style="background: #020617; border: 1.5px solid var(--border-color); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent-cyan);">Diagnostic Phenotype Matching Engine</span>
+              
+              <div style="padding: 16px; background: rgba(15, 23, 42, 0.6); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                  <span style="color: var(--accent-orange); font-weight: 700;">AML-M3 (APL - Emergency)</span>
+                  <span style="background: rgba(249, 115, 22, 0.2); color: var(--accent-orange); padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 11px;">100% Match</span>
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted);">
+                  Phenotype: CD34(-), HLA-DR(-), CD117(+), CD33(++), MPO(++)
+                </div>
+                <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                  <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #f97316, #ef4444);"></div>
+                </div>
+              </div>
+
+              <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.45;">
+                <strong style="color: var(--text-primary);">WHO / FAB Classification Algorithm:</strong>
+                Calculates phenotypic compatibility scores across FAB M0 to M7 subtypes based on Johansson et al. (2014) guidelines.
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="guide-step-card">
+                <div class="step-badge">1</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Toggle Marker Phenotype (+ / - / Dim)</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    In the <strong>Leukaemia</strong> tab sidebar, select marker expressions for CD34, CD117, HLA-DR, MPO, CD14, CD64, CD41, etc.
+                  </p>
+                </div>
+              </div>
+
+              <div class="guide-step-card">
+                <div class="step-badge">2</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Review Ranked Predicted Diagnoses</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    The system dynamically ranks potential leukemic diagnoses with percentage confidence scores.
+                  </p>
+                </div>
+              </div>
+
+              <div class="guide-step-card">
+                <div class="step-badge">3</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Interactive Decision Flowchart</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    Switch to the <strong>Decision Flowchart</strong> sub-tab to navigate acute myeloid vs lymphoid lineage branching decision trees.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab 5: Normal vs AML Compare Mode -->
+        <div id="guidetab-compare-anim" class="guidetab-content" style="display: none; flex-direction: column; gap: 20px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+            
+            <div style="background: #020617; border: 1.5px solid var(--border-color); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+              <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent-cyan);">Synchronized Dual-Canvas Comparison</span>
+              
+              <div style="display: flex; gap: 10px; height: 180px;">
+                <div style="flex: 1; background: #020617; border: 1px solid #0284c7; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                  <span style="font-size: 10px; color: #0284c7; font-weight: bold;">Normal Whole Blood</span>
+                  <div style="width: 60px; height: 60px; border-radius: 50%; border: 2px dashed #0284c7; margin-top: 10px; opacity: 0.7;"></div>
+                </div>
+                <div style="flex: 1; background: #020617; border: 1px solid #f97316; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                  <span style="font-size: 10px; color: #f97316; font-weight: bold;">Case #18: AML Blast Expansion</span>
+                  <div style="width: 90px; height: 90px; border-radius: 50%; background: rgba(249, 115, 22, 0.3); border: 2px solid #f97316; margin-top: 10px;"></div>
+                </div>
+              </div>
+
+              <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.45;">
+                <strong style="color: var(--text-primary);">Side-by-Side Diagnostic Gating:</strong>
+                Compare normal peripheral blood cell distributions directly against leukemic blast accumulation.
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div class="guide-step-card">
+                <div class="step-badge">1</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Select 'Compare Normal vs Selected AML'</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    In the header case selector dropdown, pick <strong>Compare Normal vs Selected AML</strong> to activate side-by-side plots.
+                  </p>
+                </div>
+              </div>
+
+              <div class="guide-step-card">
+                <div class="step-badge">2</div>
+                <div>
+                  <h4 style="margin: 0; font-size: 13px; color: var(--text-primary);">Synchronized Axes & Gating Bounds</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-secondary);">
+                    Changing axes or drawing gates on one plot automatically mirrors coordinates onto the comparison plot for instant assessment.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
   </div>
 
-  <!-- Scripts -->
   <script src="data.js"></script>
   <script src="plot.js"></script>
   <script src="cytometer-simulator.js"></script>
